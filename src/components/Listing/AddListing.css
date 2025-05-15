@@ -1,0 +1,119 @@
+.accommodation-form {
+  
+  margin: 0 auto;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+  background-color: #fafafa;
+}
+
+.current-user {
+  font-size: 16px;
+  margin: 10px 0 20px;
+}
+
+.tabs-container {
+  
+  display: flex;
+  justify-content: center;
+  margin-bottom: 30px;
+}
+
+.tabs {
+  display: flex;
+  gap: 15px;
+}
+
+.tab-button {
+  padding: 10px 20px;
+  border: none;
+  background-color: #191717;
+  color: white;
+  cursor: pointer;
+  border-radius: 5px;
+  font-weight: bold;
+  transition: background-color 0.3s;
+}
+
+.tab-button.active {
+  background-color: #4b4e51;
+}
+
+.tab-content {
+  padding: 10px;
+}
+
+.form-title {
+  color: #333;
+  font-size: 28px;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.form-subtitle {
+  color: #666;
+  font-size: 18px;
+  font-weight: normal;
+  margin-bottom: 25px;
+  text-align: center;
+}
+
+.options-container {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  max-width: 600px;
+  margin: 0 auto 30px;
+}
+
+.option-item {
+  padding: 15px 20px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background-color: white;
+}
+
+.option-item:hover {
+  background-color: #f5f5f5;
+}
+
+.option-item.selected {
+  border-color: #4CAF50;
+  background-color: #f0fff0;
+}
+
+.form-footer {
+  display: flex;
+  justify-content: space-between;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.back-button,
+.next-button {
+  padding: 10px 25px;
+  font-size: 16px;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.back-button {
+  background-color: #f0f0f0;
+  color: #333;
+}
+
+.back-button:hover {
+  background-color: #e0e0e0;
+}
+
+.next-button {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.next-button:hover {
+  background-color: #45a049;
+}

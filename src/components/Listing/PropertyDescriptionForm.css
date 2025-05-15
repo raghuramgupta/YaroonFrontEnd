@@ -1,0 +1,132 @@
+.room-listing-container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.room-listing-card {
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+  padding: 30px;
+  margin-top: 20px;
+}
+
+.room-listing-card h1 {
+  text-align: center;
+  margin-bottom: 30px;
+  color: #333;
+}
+
+.form-section {
+  margin-bottom: 25px;
+}
+
+.bordered-section {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.with-map {
+  padding-bottom: 30px;
+}
+
+label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: #444;
+}
+
+/* Icon styles */
+label svg {
+  margin-right: 8px;
+  vertical-align: middle;
+  color: #4a6baf;
+}
+
+.checkbox-group label svg,
+.radio-group label svg {
+  margin-right: 5px;
+}
+
+.form-section label {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.checkbox-group label,
+.radio-group label {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 15px;
+  font-weight: normal;
+  cursor: pointer;
+}
+
+input[type="text"],
+input[type="number"],
+input[type="date"],
+input[type="file"],
+select {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 16px;
+  margin-bottom: 10px;
+  box-sizing: border-box;
+}
+
+.radio-group,
+.checkbox-group {
+  margin-top: 10px;
+}
+
+.size-group {
+  display: flex;
+  gap: 20px;
+}
+
+.size-group .form-group {
+  flex: 1;
+}
+
+.submit-btn {
+  background-color: #4a6baf;
+  color: white;
+  border: none;
+  padding: 14px 20px;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+  width: 100%;
+  font-weight: 600;
+  transition: background-color 0.3s;
+}
+
+.submit-btn:hover {
+  background-color: #3a5a9f;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .size-group {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .radio-group,
+  .checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .radio-group label,
+  .checkbox-group label {
+    margin-right: 0;
+  }
+}

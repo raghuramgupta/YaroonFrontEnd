@@ -1,0 +1,120 @@
+/* Container */
+.profile-container {
+  padding: 2rem;
+  background-color: #f4f6f9;
+  min-height: 100vh;
+}
+
+/* Card */
+.profile-card {
+  max-width: 850px;
+  margin: 2rem auto;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+/* Header buttons */
+.profile-header-buttons {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
+}
+
+.profile-header-buttons button {
+  margin-left: 0.5rem;
+  padding: 0.6rem 1.2rem;
+  background-color: #2d6cdf;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background 0.3s ease;
+}
+
+.profile-header-buttons button:hover {
+  background-color: #204d9e;
+}
+
+/* Section titles */
+.profile-title {
+  font-size: 1.6rem;
+  color: #2c3e50;
+  margin-bottom: 1.2rem;
+  display: flex;
+  align-items: center;
+}
+
+.profile-title svg {
+  margin-right: 0.5rem;
+  color: #2d6cdf;
+}
+
+/* Input fields */
+.profile-input-group input,
+.profile-input-group textarea,
+.profile-input-group select {
+  width: 100%;
+  padding: 0.7rem;
+  margin-bottom: 1rem;
+  border: 1px solid #d0d5dd;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-family: inherit;
+}
+
+/* Info line */
+.profile-info-line {
+  margin-bottom: 1rem;
+  font-size: 1rem;
+  color: #444;
+}
+
+.profile-info-line strong {
+  color: #111;
+}
+
+/* Habits list */
+.profile-habits-list {
+  list-style: none;
+  padding-left: 0;
+  margin: 0;
+}
+
+.profile-habits-list li {
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.profile-habits-list svg {
+  color: #7f8fa6;
+}
+
+/* Footer buttons */
+.profile-footer-buttons {
+  margin-top: 2rem;
+  display: flex;
+  justify-content: flex-start;
+  gap: 1rem;
+}
+
+/* Responsive */
+@media screen and (max-width: 600px) {
+  .profile-card {
+    padding: 1rem;
+  }
+
+  .profile-header-buttons {
+    flex-direction: column;
+    align-items: flex-end;
+  }
+
+  .profile-header-buttons button {
+    margin: 0.25rem 0;
+    width: 100%;
+  }
+}
