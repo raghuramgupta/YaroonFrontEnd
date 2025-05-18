@@ -10,7 +10,8 @@ const MyListings = () => {
   const [listings, setListings] = useState([]);
   const navigate = useNavigate();
 
-  useEffect(() => {const fetchListings = async () => {
+  useEffect(() => {
+    const fetchListings = async () => {
       const currentUserKey = localStorage.getItem('currentUser');
       if (!currentUserKey) return;
 
@@ -22,10 +23,8 @@ const MyListings = () => {
         }
 
         const data = await res.json();
-        console.log('Fetched listings:', data);  // Log the response data
-        
         if (Array.isArray(data) && data.length > 0) {
-          setListings(data);  // Only set if it's a valid array with listings
+          setListings(data);
         } else {
           console.log('No listings found.');
         }
@@ -34,12 +33,28 @@ const MyListings = () => {
       }
     };
 
-
     fetchListings();
   }, []);
+  const handleArchive = async (listingId) => {
+  try {
+    const res = await fetch(`http://localhost:5000/api/listings/${listingId}/archive`, {
+      method: 'PATCH',
+    });
+
+    const data = await res.json();
+
+    if (res.ok) {
+      // Remove archived listing from active list
+      setListings((prev) => prev.filter((l) => l._id !== listingId));
+    } else {
+      alert(data.message || 'Archive failed');
+    }
+  } catch (err) {
+    console.error('Archive failed:', err);
+  }
+};
 
   const handleDelete = async (listingId) => {
-  
     try {
       const res = await fetch(`http://localhost:5000/api/listings/${listingId}`, {
         method: 'DELETE',
@@ -71,58 +86,62 @@ const MyListings = () => {
     } else if (platform === 'twitter') {
       shareUrl = `https://twitter.com/intent/tweet?text=${text}&url=${url}`;
     } else if (platform === 'instagram') {
-      // Instagram doesn't support direct URL sharing like this
+      // Instagram doesn't support direct sharing via URL
       return;
     }
 
     window.open(shareUrl, '_blank');
   };
 
-  useEffect(() => {
-  if (listings.length > 0) {
-    listings.forEach(listing => console.log(`Rent: ₹${listing.rent}`));
-  }
-}, [listings]);
-
   return (
-   
     <div className="my-listings-container">
-      <h1>My Listings</h1>
       {listings.length === 0 ? (
         <p>No listings yet.</p>
       ) : (
-        <div className="listings-grid">
-          {listings.map((listing) => (
-            
-            <div key={listing._id} className="listing-card">
-              <div className="listing-details">
-                <h3>{listing.accommodationType}</h3>
-                <p><strong>Address:</strong> {listing.propertyAddress || 'N/A'}</p>
-                <p><strong>Rent:</strong> ₹{listing.rent || 'N/A'}</p>
-                <p><strong>Available From:</strong> {listing.availableFrom || 'N/A'}</p>
-              </div>
-              <div className="listing-actions">
-                <button onClick={() => handleEdit(listing._id)} className="action-btn edit-btn">
-                  <FontAwesomeIcon icon={faEdit} />
-                </button>
-                <button onClick={() => handleDelete(listing._id)} className="action-btn delete-btn">
-                  <FontAwesomeIcon icon={faTrash} />
-                </button>
-                <div className="share-buttons">
-                  <button onClick={() => share('facebook', listing)} className="share-btn facebook-btn">
-                    <FontAwesomeIcon icon={faFacebookF} />
-                  </button>
-                  <button onClick={() => share('twitter', listing)} className="share-btn twitter-btn">
-                    <FontAwesomeIcon icon={faTwitter} />
-                  </button>
-                  <button onClick={() => share('instagram', listing)} className="share-btn instagram-btn">
-                    <FontAwesomeIcon icon={faInstagram} />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+        <table className="listings-table">
+          <thead>
+            <tr>
+              <th>Type</th>
+              <th className="address-column">Address</th>
+              <th>Rent (₹)</th>
+              <th>Available From</th>
+              <th>Actions</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {listings.map((listing, index) => (
+              <tr key={listing._id}>
+                <td>{index + 1}</td>
+                <td className="address-column">{listing.propertyAddress || 'N/A'}</td>
+                <td>{listing.rent || 'N/A'}</td>
+                <td>{listing.availableFrom || 'N/A'}</td>
+                <td>
+                  <div className="action-buttons">
+                    <button onClick={() => handleEdit(listing._id)} className="action-btn edit-btn">
+                      <FontAwesomeIcon icon={faEdit} />
+                    </button>
+                    <button onClick={() => handleDelete(listing._id)} className="action-btn delete-btn">
+                      <FontAwesomeIcon icon={faTrash} />
+                    </button> <button onClick={() => handleArchive(listing._id)} className="action-btn archive-btn">
+      Archive
+    </button></div>
+                </td><td>
+                  <div className="action-buttons">
+                    <button onClick={() => share('facebook', listing)} className="share-btn facebook-btn">
+                      <FontAwesomeIcon icon={faFacebookF} />
+                    </button>
+                    <button onClick={() => share('twitter', listing)} className="share-btn twitter-btn">
+                      <FontAwesomeIcon icon={faTwitter} />
+                    </button>
+                    <button onClick={() => share('instagram', listing)} className="share-btn instagram-btn">
+                      <FontAwesomeIcon icon={faInstagram} />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       )}
     </div>
   );

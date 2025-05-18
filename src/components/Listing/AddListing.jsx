@@ -2,26 +2,28 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './AddListing.css';
 import Header from '../Header/Header';
-import MyListings from './MyListings'; // Adjust path if needed
+import MyListings from './MyListings';
+import Dashboard from './Dashboard';
 
 const AddListing = ({ onBack }) => {
   const [selectedOption, setSelectedOption] = useState(null);
   const [activeTab, setActiveTab] = useState('listings');
   const [profile, setProfile] = useState(null);
-  const navigate = useNavigate();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const navigate = useNavigate();
+
   useEffect(() => {
-  const currentUserKey = localStorage.getItem('currentUser');
-  if (currentUserKey) {
-    setIsLoggedIn(true);
-  } else {
-    alert('Current user not found in localStorage');
-  }
-}, []);
+    const currentUserKey = localStorage.getItem('currentUser');
+    if (currentUserKey) {
+      setIsLoggedIn(true);
+    } else {
+      alert('Current user not found in localStorage');
+    }
+  }, []);
 
   const handleOptionChange = (option) => setSelectedOption(option);
 
-   const handleNext = () => {
+  const handleNext = () => {
     if (!selectedOption) return;
     const routeMap = {
       "Room(s) in an existing shareholder": "/room-in-shareholder",
@@ -38,10 +40,10 @@ const AddListing = ({ onBack }) => {
   return (
     <div className="accommodation-form">
       <Header isLoggedIn={isLoggedIn} />
-    
+
       {profile && (
         <div className="current-user">
-          {/* Display user profile info here if needed */}
+          {/* Optional: Display user profile info here */}
         </div>
       )}
 
@@ -59,16 +61,21 @@ const AddListing = ({ onBack }) => {
           >
             Add New Listing
           </button>
+          <button
+            className={`tab-button ${activeTab === 'dashboard' ? 'active' : ''}`}
+            onClick={() => setActiveTab('dashboard')}
+          >
+            Dashboard
+          </button>
         </div>
       </div>
 
       <div className="tab-content">
         {activeTab === 'listings' && <MyListings />}
+
         {activeTab === 'add' && (
           <div className="listing-form">
-            <h1 className="form-title">Facts</h1>
             <h2 className="form-subtitle">What type of accommodation are you offering?</h2>
-
             <div className="options-container">
               {[
                 "Room(s) in an existing shareholder",
@@ -111,6 +118,8 @@ const AddListing = ({ onBack }) => {
             </div>
           </div>
         )}
+
+        {activeTab === 'dashboard' && <Dashboard />}
       </div>
     </div>
   );

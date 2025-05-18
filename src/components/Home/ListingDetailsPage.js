@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import './ListingDetailsPage.css';
 import Header from '../Header/Header';
 
 const ListingDetailsPage = () => {
+  const { id: listingId } = useParams(); // 👈 get ID from URL
   const [listing, setListing] = useState(null);
   const [user, setUser] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -12,48 +14,49 @@ const ListingDetailsPage = () => {
   useEffect(() => {
     const currentUserKey = localStorage.getItem('currentUser');
     setUser(currentUserKey);
+    setIsLoggedIn(!!currentUserKey);
 
-    if (currentUserKey) {
-      setIsLoggedIn(true);
-      const userProfileStr = localStorage.getItem(`userProfile_${currentUserKey}`);
-      if (userProfileStr) {
-        const userProfile = JSON.parse(userProfileStr);
-        // Do something with userProfile if needed
+    const fetchListing = async () => {
+      try {
+        const res = await fetch(
+          `http://localhost:5000/api/listings/${listingId}?viewer=${currentUserKey || ''}`
+        );
+        if (!res.ok) {
+          console.error('Failed to fetch listing:', res.status);
+          return;
+        }
+        const data = await res.json();
+
+        // Normalize arrays
+        setListing({
+          ...data,
+          amenities: Array.isArray(data.amenities) ? data.amenities : [],
+          images: Array.isArray(data.images) ? data.images : [],
+        });
+      } catch (err) {
+        console.error('Error fetching listing:', err);
       }
-    }
+    };
 
-    const stored = localStorage.getItem('selectedListing');
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      // Normalize amenities and images as arrays to avoid errors
-      setListing({
-        ...parsed,
-        amenities: Array.isArray(parsed.amenities) ? parsed.amenities : [],
-        images: Array.isArray(parsed.images) ? parsed.images : [],
-      });
-    }
-  }, []);
+    if (listingId) fetchListing();
+  }, [listingId]);
 
   const handleSendMessage = async () => {
-    
     if (!user || !listing || !listing.userKey || !messageText.trim()) return;
-      
+
     try {
       const response = await fetch('http://localhost:5000/api/messages', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           senderId: user,
           receiverId: listing.userKey,
           listingAddress: listing.propertyAddress,
           content: messageText.trim(),
-          timestamp: new Date()
-        })
+          timestamp: new Date(),
+        }),
       });
       if (response.ok) {
-        
         setMessageText('');
         setMessageSent(true);
         setTimeout(() => setMessageSent(false), 3000);
@@ -61,13 +64,11 @@ const ListingDetailsPage = () => {
         alert('Failed to send message');
       }
     } catch (error) {
-      alert('Error sending message:'+error);
+      alert('Error sending message: ' + error.message);
     }
   };
 
-  if (!listing) {
-    return <div className="listing-details-page">No listing data found.</div>;
-  }
+  if (!listing) return <div className="listing-details-page">Loading…</div>;
 
   return (
     <div className="listing-details-page">
@@ -85,7 +86,7 @@ const ListingDetailsPage = () => {
         <p><strong>Property Type:</strong> {listing.propertyStructure}</p>
 
         {/* Render Amenities */}
-        {Array.isArray(listing.amenities) && listing.amenities.length > 0 && (
+        {listing.amenities.length > 0 && (
           <div>
             <strong>Amenities:</strong>
             <ul>
@@ -96,8 +97,8 @@ const ListingDetailsPage = () => {
           </div>
         )}
 
-        {/* Render Listing Images */}
-        {Array.isArray(listing.images) && listing.images.length > 0 && (
+        {/* Render Images */}
+        {listing.images.length > 0 && (
           <div className="listing-images">
             {listing.images.map((img, idx) => (
               <img key={idx} src={img} alt={`Listing image ${idx + 1}`} />

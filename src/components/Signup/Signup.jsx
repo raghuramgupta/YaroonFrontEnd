@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './SignUpFlow.css';
 import Header from '../Header/Header';
 import sha256 from 'crypto-js/sha256';
+import { useNavigate } from 'react-router-dom';
 
 const initialFormState = {
   mobile: '',
@@ -91,41 +92,41 @@ const Signup = () => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    if (formData.password.length < 6 || formData.password !== formData.confirmPassword) {
-      alert('Invalid password input');
-      return;
-    }
+  if (formData.password.length < 6 || formData.password !== formData.confirmPassword) {
+    alert('Invalid password input');
+    return;
+  }
 
-    const userData = {
-      ...formData,
-      confirmPassword: undefined
-    };
-
-    try {
-      const res = await fetch('http://localhost:5000/api/users/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(userData),
-      });
-
-      const result = await res.json();
-      if (!res.ok) throw new Error(result.message);
-
-      const userKey = formData.email || formData.mobile;
-      localStorage.setItem('currentUser', userKey);
-
-      alert('Signup successful!');
-      setIsLoggedIn(true);
-    } catch (err) {
-      alert(`Signup failed: ${err.message}`);
-    }
+  const userData = {
+    ...formData,
+    confirmPassword: undefined
   };
+
+  try {
+    const res = await fetch('http://localhost:5000/api/users/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(userData),
+    });
+
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.message);
+
+    const userKey = formData.email || formData.mobile;
+    localStorage.setItem('currentUser', userKey);
+
+    alert('Signup successful!');
+    setIsLoggedIn(true);
+    navigate('/'); // 🔁 Redirect here
+  } catch (err) {
+    alert(`Signup failed: ${err.message}`);
+  }
+};
 
   const handleLogin = async (e) => {
   e.preventDefault();
-
   try {
     const res = await fetch('http://localhost:5000/api/users/login', {
       method: 'POST',
@@ -143,10 +144,12 @@ const Signup = () => {
     localStorage.setItem('currentUser', result.userKey);
     setIsLoggedIn(true);
     alert('Login successful!');
+    navigate('/'); // 🔁 Redirect here
   } catch (err) {
     alert(`Login error: ${err.message}`);
   }
 };
+const navigate = useNavigate();
 
   const handleLogout = () => {
     localStorage.removeItem('currentUser');
@@ -175,7 +178,9 @@ const Signup = () => {
               <button type="submit">{otpSent ? 'Verify' : 'Send OTP'}</button>
             </fieldset>
           </form>
-          <button onClick={() => setIsLoginMode(true)} style={{ marginTop: '10px' }}>Existing Customer Login</button>
+          <div className="centered-login-button">
+            <button onClick={() => setIsLoginMode(true)}>Existing Customer Login</button>
+          </div>
         </>
       )}
 
@@ -186,8 +191,8 @@ const Signup = () => {
             <input type="text" name="username" placeholder="Email or Mobile number" value={loginData.username} onChange={(e) => setLoginData({ ...loginData, username: e.target.value })} required />
             <input type="password" name="password" placeholder="Password" value={loginData.password} onChange={(e) => setLoginData({ ...loginData, password: e.target.value })} required />
             <button type="submit">Login</button>
-          </fieldset>
-          <button onClick={() => setIsLoginMode(false)} type="button">Back to Sign Up</button>
+          </fieldset><div className="centered-login-button">
+          <button onClick={() => setIsLoginMode(false)} type="button">Back to Sign Up</button></div>
         </form>
       )}
 

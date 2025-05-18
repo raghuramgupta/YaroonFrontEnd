@@ -27,8 +27,11 @@ useEffect(() => {
     <header className="App-header">
       <div className="logo">
         <Link to="/" className="logo-link">
-          <span style={{ color: 'black' }}>Y A A </span><span style={{ color: 'blue' }}>R O O M</span><sup>®</sup>
-        </Link>
+        <div className="logo-container">
+          <span className="logo-text">YAAR🏠OM</span>
+          <div className="logo-underline"></div>
+        </div>
+      </Link>
       </div>
        {user && (
         <div className="welcome-msg" style={{ color: 'black' }}>
@@ -41,11 +44,11 @@ useEffect(() => {
             <button className="user-menu-button" onClick={toggleMenu}>☰ Menu</button>
             {showMenu && (
               <ul className="user-dropdown">
-                <li><Link to="/profile" onClick={() => setShowMenu(false)} className="dropdown-item">👤 Edit/View Profile</Link></li>
-                <li><Link to="/listings" onClick={() => setShowMenu(false)} className="dropdown-item">📄 My Listings</Link></li>
-                <li><Link to="/support" onClick={() => setShowMenu(false)} className="dropdown-item">🛟 Customer Service</Link></li>
-                <li><Link to="/inbox" onClick={() => setShowMenu(false)} className="dropdown-item">📩 Messages</Link></li>
-                <li><button onClick={handleLogout} className="dropdown-item logout-btn">🚪 Logout</button></li>
+                <li><Link to="/profile" onClick={() => setShowMenu(false)} className="dropdown-item">Edit/View Profile</Link></li>
+                <li><Link to="/listings" onClick={() => setShowMenu(false)} className="dropdown-item">My Listings</Link></li>
+                <li><Link to="/support" onClick={() => setShowMenu(false)} className="dropdown-item">Customer Service</Link></li>
+                <li><Link to="/inbox" onClick={() => setShowMenu(false)} className="dropdown-item">Messages</Link></li>
+                <li><button onClick={handleLogout} className="dropdown-item logout-btn">Logout</button></li>
               </ul>
             )}
           </div>

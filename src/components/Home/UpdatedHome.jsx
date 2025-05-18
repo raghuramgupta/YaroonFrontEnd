@@ -25,38 +25,53 @@ function UpdatedHome() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const navigate = useNavigate();
 
-  // Fetch current user info and all listings from MongoDB
+  // Fetch current user info and listings
   useEffect(() => {
-  const currentUserKey = localStorage.getItem('currentUser');
+    const currentUserKey = localStorage.getItem('currentUser');
     setUser(currentUserKey);
-  if (currentUserKey) {
-    setIsLoggedIn(true);
-    const userProfileStr = localStorage.getItem(`userProfile_${currentUserKey}`);
-    if (userProfileStr) {
-      const userProfile = JSON.parse(userProfileStr);
-      //setUser(currentUserKey);
-    }
-  }
 
-  // Fetch listings from MongoDB
+    if (currentUserKey) {
+      setIsLoggedIn(true);
+    }
+
     axios.get('http://localhost:5000/api/listings')
       .then(res => {
-        
-        console.log("Fetched listings:", res.data);
         if (Array.isArray(res.data)) {
           setMyListings(res.data);
         } else {
-          console.warn("Listings response is not an array:", res.data);
           setMyListings([]);
         }
       })
       .catch(err => {
-        
         console.error("Error fetching listings from backend:", err);
       });
   }, []);
 
-  
+  // Background image slideshow effect
+  useEffect(() => {
+    const images = [
+      './Sample.jpg',
+      './City.jpg',
+      './Yaroon.jpg',
+      './Bangalore.jpg',
+      './Delhi.jpg'
+    ];
+
+    let index = 0;
+    const heroBackground = document.getElementById('heroBackground');
+    if (!heroBackground) return;
+
+    const updateBackground = () => {
+      heroBackground.style.backgroundImage = `url(${images[index]})`;
+      index = (index + 1) % images.length;
+    };
+
+    updateBackground();
+    const interval = setInterval(updateBackground, 5000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   const handleSuggestionClick = (place) => {
     setSearchTerm(place);
     setFilteredPlaces([]);
@@ -88,18 +103,17 @@ function UpdatedHome() {
   };
 
   const handleSearchClick = () => {
-  if (!user) {
-    alert("User not logged in");
-    return;
-  }
+    if (!user) {
+      alert("User not logged in");
+      return;
+    }
 
-  const results = myListings.filter(listing => {
-    return listing.userKey !== user &&
-        (searchTerm === '' || listing.propertyAddress?.toLowerCase().includes(searchTerm.toLowerCase()));
-    });
+    const results = myListings.filter(listing =>
+      listing.userKey !== user &&
+      (searchTerm === '' || listing.propertyAddress?.toLowerCase().includes(searchTerm.toLowerCase()))
+    );
     navigate('/search-results', { state: { results } });
   };
-
 
   const toggleFilters = () => {
     setFiltersVisible(prev => !prev);
@@ -153,7 +167,9 @@ function UpdatedHome() {
     <div className="home-wrapper">
       <Header isLoggedIn={isLoggedIn} />
       <div className="hero-section">
-        <div className="overlay">
+        <div className="hero-background" id="heroBackground"></div>
+        <div className="overlay"></div>
+        <div className="hero-content">
           <h1>Find Compatible Flatmates</h1>
           <p>Your trusted partner to match your lifestyle.</p>
 

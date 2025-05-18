@@ -11,6 +11,7 @@ import PropertyDescriptionForm from './components/Listing/PropertyDescriptionFor
 import SearchResultsPage from './components/Home/SearchResultsPage';
 import ListingDetailsPage from './components/Home/ListingDetailsPage'; 
 import MessagesInbox from './components/UserProfile/MessagesInbox';
+import Dashboard from './components/Listing/Dashboard';
 function App() {
   return (
     <Router>
@@ -24,9 +25,10 @@ function App() {
          <Route path="/logout-thank-you" element={<LogoutThankYou />} />
          <Route path="/room-in-shareholder" element={<PropertyDescriptionForm />} />
           <Route path="/search-results" element={<SearchResultsPage />} />
-        <Route path="/listing-details" element={<ListingDetailsPage />} />
+        <Route path="/listing-details/:id" element={<ListingDetailsPage />} />
         <Route path="/inbox" element={<MessagesInbox />} />
         <Route path="/edit-listing/:listingId" element={<PropertyDescriptionForm />} />
+        <Route path="/Daeshboard" element={<Dashboard />} />
         {/* You can add other routes as needed */}
       </Routes>
     </Router>
