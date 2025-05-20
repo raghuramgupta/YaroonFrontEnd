@@ -12,6 +12,7 @@ import SearchResultsPage from './components/Home/SearchResultsPage';
 import ListingDetailsPage from './components/Home/ListingDetailsPage'; 
 import MessagesInbox from './components/UserProfile/MessagesInbox';
 import Dashboard from './components/Listing/Dashboard';
+import WantedRoomForm from './components/Listing/FlaWantedRoomForm';
 function App() {
   return (
     <Router>
@@ -29,6 +30,8 @@ function App() {
         <Route path="/inbox" element={<MessagesInbox />} />
         <Route path="/edit-listing/:listingId" element={<PropertyDescriptionForm />} />
         <Route path="/Daeshboard" element={<Dashboard />} />
+        <Route path="/need-place" element={<WantedRoomForm />} />
+        <Route path="/edit-wanted-listing/:id" element={<WantedRoomForm />} />
         {/* You can add other routes as needed */}
       </Routes>
     </Router>

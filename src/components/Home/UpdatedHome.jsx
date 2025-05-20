@@ -23,31 +23,31 @@ function UpdatedHome() {
   const [searchResults, setSearchResults] = useState([]);
   const [appliedFilterValues, setAppliedFilterValues] = useState({});
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [searchType, setSearchType] = useState('flats');
   const navigate = useNavigate();
 
-  // Fetch current user info and listings
   useEffect(() => {
     const currentUserKey = localStorage.getItem('currentUser');
     setUser(currentUserKey);
+    if (currentUserKey) setIsLoggedIn(true);
 
-    if (currentUserKey) {
-      setIsLoggedIn(true);
+    fetchListings();
+  }, [searchType]);
+
+  const fetchListings = async () => {
+    
+    const endpoint = searchType === 'roommates'
+      ? 'http://localhost:5000/api/wanted-listings'
+      : 'http://localhost:5000/api/listings';
+
+    try {
+      const res = await axios.get(endpoint);
+      setMyListings(Array.isArray(res.data) ? res.data : []);
+    } catch (err) {
+      console.error("Error fetching listings:", err);
     }
+  };
 
-    axios.get('http://localhost:5000/api/listings')
-      .then(res => {
-        if (Array.isArray(res.data)) {
-          setMyListings(res.data);
-        } else {
-          setMyListings([]);
-        }
-      })
-      .catch(err => {
-        console.error("Error fetching listings from backend:", err);
-      });
-  }, []);
-
-  // Background image slideshow effect
   useEffect(() => {
     const images = [
       './Sample.jpg',
@@ -56,7 +56,6 @@ function UpdatedHome() {
       './Bangalore.jpg',
       './Delhi.jpg'
     ];
-
     let index = 0;
     const heroBackground = document.getElementById('heroBackground');
     if (!heroBackground) return;
@@ -68,7 +67,6 @@ function UpdatedHome() {
 
     updateBackground();
     const interval = setInterval(updateBackground, 5000);
-
     return () => clearInterval(interval);
   }, []);
 
@@ -95,16 +93,13 @@ function UpdatedHome() {
     const value = e.target.value;
     setSearchTerm(value);
     setActiveIndex(-1);
-
-    const results = places.filter(place =>
-      place.toLowerCase().includes(value.toLowerCase())
-    );
+    const results = places.filter(place => place.toLowerCase().includes(value.toLowerCase()));
     setFilteredPlaces(value ? results : []);
   };
 
   const handleSearchClick = () => {
     if (!user) {
-      alert("User not logged in");
+      setUser("Dummy");
       return;
     }
 
@@ -112,6 +107,7 @@ function UpdatedHome() {
       listing.userKey !== user &&
       (searchTerm === '' || listing.propertyAddress?.toLowerCase().includes(searchTerm.toLowerCase()))
     );
+
     navigate('/search-results', { state: { results } });
   };
 
@@ -142,26 +138,27 @@ function UpdatedHome() {
     setActiveFilter(null);
   };
 
-  useEffect(() => {
-    let filtered = [...myListings];
+useEffect(() => {
+  let filtered = [...myListings];
 
-    Object.entries(appliedFilterValues).forEach(([filter, value]) => {
-      filtered = filtered.filter(listing => {
-        const key = filter.toLowerCase().replace(/\s/g, '');
-        const listingValue = listing[key];
-        if (!listingValue) return false;
-        return Array.isArray(listingValue)
-          ? listingValue.includes(value)
-          : listingValue === value;
-      });
+  Object.entries(appliedFilterValues).forEach(([filter, value]) => {
+    const key = filter.toLowerCase().replace(/\s/g, '');
+    filtered = filtered.filter(listing => {
+      const listingValue = listing[key];
+      if (!listingValue) return false;
+      return Array.isArray(listingValue)
+        ? listingValue.includes(value)
+        : listingValue === value;
     });
+  });
 
-    if (user) {
-      filtered = filtered.filter(listing => listing.email !== user.email);
-    }
+  if (user) {
+    filtered = filtered.filter(listing => listing.userKey !== user);
+  }
 
-    setSearchResults(filtered);
-  }, [appliedFilterValues, myListings, user]);
+  setSearchResults(filtered);
+}, [appliedFilterValues, myListings, user]);
+
 
   return (
     <div className="home-wrapper">
@@ -171,9 +168,17 @@ function UpdatedHome() {
         <div className="overlay"></div>
         <div className="hero-content">
           <h1>Find Compatible Flatmates</h1>
-          <p>Your trusted partner to match your lifestyle.</p>
-
           <div className="search-container">
+            <div className="search-type-selector">
+              <label className="radio-option">
+                <input type="radio" name="searchType" value="flats" checked={searchType === 'flats'} onChange={() => setSearchType('flats')} />
+                <span>Flats</span>
+              </label>
+              <label className="radio-option">
+                <input type="radio" name="searchType" value="roommates" checked={searchType === 'roommates'} onChange={() => setSearchType('roommates')} />
+                <span>Roommates</span>
+              </label>
+            </div>
             <div className="search-bar-wrapper">
               <div className="search-bar">
                 <input
@@ -201,12 +206,8 @@ function UpdatedHome() {
                   </div>
                 )}
                 <div className="search-buttons">
-                  <button className="search-button" onClick={handleSearchClick}>
-                    Search
-                  </button>
-                  <button className="compatible-search-button" onClick={toggleFilters}>
-                    Compatible Search
-                  </button>
+                  <button className="search-button" onClick={handleSearchClick}>Search</button>
+                  <button className="compatible-search-button" onClick={toggleFilters}>Compatible Search</button>
                 </div>
               </div>
             </div>
@@ -216,34 +217,16 @@ function UpdatedHome() {
             <div className="filters-container">
               {selectedFilters.map((filter, index) => (
                 <div key={index} className="filter-button-container">
-                  <div
-                    className="transparent-filter-button"
-                    onClick={() => showFilterOptions(filter)}
-                  >
-                    <span>
-                      {filter}
-                      {appliedFilterValues[filter] && `: ${appliedFilterValues[filter]}`}
-                    </span>
-                    <span
-                      className="remove-icon"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        removeFilter(filter);
-                      }}
-                    >×</span>
+                  <div className="transparent-filter-button" onClick={() => showFilterOptions(filter)}>
+                    <span>{filter}{appliedFilterValues[filter] && `: ${appliedFilterValues[filter]}`}</span>
+                    <span className="remove-icon" onClick={(e) => { e.stopPropagation(); removeFilter(filter); }}>×</span>
                   </div>
 
                   {activeFilter === filter && (
                     <ul className="filter-options-dropdown">
                       {filterOptions[filter].map((opt, i) => (
-                        <li
-                          key={i}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            applyFilter(filter, opt);
-                          }}
-                          className={appliedFilterValues[filter] === opt ? 'selected' : ''}
-                        >
+                        <li key={i} onClick={(e) => { e.stopPropagation(); applyFilter(filter, opt); }}
+                            className={appliedFilterValues[filter] === opt ? 'selected' : ''}>
                           {opt}
                         </li>
                       ))}

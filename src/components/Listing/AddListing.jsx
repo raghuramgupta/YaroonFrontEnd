@@ -51,18 +51,18 @@ const AddListing = ({ onBack }) => {
         <div className="tabs">
           <button
             className={`tab-button ${activeTab === 'listings' ? 'active' : ''}`}
-            onClick={() => setActiveTab('listings')}
+            onClick={() => setActiveTab('listings')} style={{ fontSize: '12px',justifyContent:'center' }}
           >
             My Listings
           </button>
           <button
-            className={`tab-button ${activeTab === 'add' ? 'active' : ''}`}
+            className={`tab-button ${activeTab === 'add' ? 'active' : ''}`} style={{ fontSize: '12px',justifyContent:'center' }}
             onClick={() => setActiveTab('add')}
           >
             Add New Listing
           </button>
           <button
-            className={`tab-button ${activeTab === 'dashboard' ? 'active' : ''}`}
+            className={`tab-button ${activeTab === 'dashboard' ? 'active' : ''}`} style={{ fontSize: '12px',justifyContent:'center' }}
             onClick={() => setActiveTab('dashboard')}
           >
             Dashboard
@@ -70,11 +70,11 @@ const AddListing = ({ onBack }) => {
         </div>
       </div>
 
-      <div className="tab-content">
+      <div className="tab-content" style={{ fontSize: '12px',padding: '0px' }}>
         {activeTab === 'listings' && <MyListings />}
 
         {activeTab === 'add' && (
-          <div className="listing-form">
+          <div className="listing-form" >
             <h2 className="form-subtitle">What type of accommodation are you offering?</h2>
             <div className="options-container">
               {[

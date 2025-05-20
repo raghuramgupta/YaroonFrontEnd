@@ -17,14 +17,10 @@ const SearchResultsPage = () => {
   }, []);
 
   const openListingDetails = (listing) => {
-  // Save selected listing if needed, optional now
-  localStorage.setItem('selectedListing', JSON.stringify(listing));
-
-  // Open details page with listing ID in the route
-  const detailsUrl = `${window.location.origin}/listing-details/${listing._id}`;
-  window.open(detailsUrl, '_blank');
-};
-
+    localStorage.setItem('selectedListing', JSON.stringify(listing));
+    const detailsUrl = `${window.location.origin}/listing-details/${listing._id}`;
+    window.open(detailsUrl, '_blank');
+  };
 
   return (
     <div className="search-results-page">
@@ -56,4 +52,3 @@ const SearchResultsPage = () => {
 };
 
 export default SearchResultsPage;
-

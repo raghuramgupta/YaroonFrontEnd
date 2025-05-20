@@ -1,20 +1,19 @@
 .my-listings-container {
-  padding: 40px;
+  padding: 0px;
   max-width: 1200px;
-  margin: auto;
-  text-align: center;
+  margin: 0 auto;
 }
 
 .my-listings-container h1 {
   font-size: 2rem;
-  margin-bottom: 30px;
+  margin-bottom: 0px;
 }
 
 .listings-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 16px;
-  margin-top: 20px;
+  margin-top: 5px;
 }
 .archive-btn {
   background-color: #6c757d;
@@ -29,7 +28,25 @@
 .archive-btn:hover {
   background-color: #5a6268;
 }
-  
+/* Filter controls */
+.filter-controls {
+  margin-bottom: 15px;
+}
+
+.filter-input {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  width: 100%;
+  max-width: 400px;
+}
+
+
+/* Table styles */
+
+.address-column {
+  min-width: 200px;
+}  
 .listings-table th,
 .listings-table td {
   border: 1px solid #ddd;
@@ -49,39 +66,204 @@
   white-space: nowrap;
 }
 
-.action-buttons {
+/* MyListings.css */
+
+.my-listings-container {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.tabs {
   display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 8px;
+  margin-bottom: 0px;
+  border-bottom: 1px solid #ddd;
 }
-
-.action-btn {
-  padding: 6px 10px;
-  border: none;
-  border-radius: 5px;
-  color: white;
-  cursor: pointer;
-  font-size: 14px;
+.ab-btn:hover {
+  display: flex;
+  background-color: #666;
+  border-bottom: 1px solid #ddd;
 }
-
-.edit-btn {
-  background-color: #4CAF50;
-}
-
-.delete-btn {
-  background-color: #f44336;
-}
-
-.share-btn {
+.tab-btn {
+  padding: 10px 10px;
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 12px;
+  color: #666;
+  border-bottom: 0px solid transparent;
 }
 
-.share-btn:hover {
-  transform: scale(1.1);
+.tab-btn.active {
+  color: #333;
+  border-bottom: 2px solid #fcfdfe;
+  font-weight: bold;
+}
+filter-toggle-btn {
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  margin-left: 10px;
+  font-size: 14px;
+}
+
+.filter-toggle-btn:hover {
+  color: #333;
+}
+
+.filter-row {
+  background-color: #f5f5f5;
+}
+
+.filter-row th {
+  padding: 8px;
+}
+
+.filter-input {
+  width: 100%;
+  padding: 5px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.hide-filters-btn {
+  background-color: #f0f0f0;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 5px 10px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.hide-filters-btn:hover {
+  background-color: #e0e0e0;
+}
+
+.actions-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.header-with-sort {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sortable-header {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.sort-icon {
+  margin-left: 5px;
+  font-size: 12px;
+}
+.tab-panel {
+  background: white;
+  padding: 0px;
+  border-radius: 5px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.listings-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0px;
+}
+
+.listings-table th {
+  background-color: #f8f9fa;
+  padding: 12px 8px;
+  text-align: left;
+  font-weight: 500;
+  position: relative;
+}
+
+.listings-table td {
+  padding: 12px 8px;
+  border-bottom: 1px solid #eee;
+}
+
+.address-column {
+  min-width: 200px;
+}
+
+.header-with-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.sortable-header {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  gap: 5px;
+}
+
+.sort-icon {
+  font-size: 0.8em;
+  color: #666;
+}
+
+.header-filter-input {
+  padding: 5px 8px;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  font-size: 0.9em;
+  width: 100%;
+}
+
+.header-filter-input:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 5px;
+}
+
+.action-btn {
+  padding: 5px 10px;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.edit-btn {
+  background-color: #ffc107;
+  color: #212529;
+}
+
+.delete-btn {
+  background-color: #dc3545;
+  color: white;
+}
+
+.archive-btn {
+  background-color: #6c757d;
+  color: white;
+  font-size: 0.8em;
+  padding: 5px 8px;
+}
+
+.share-btn {
+  padding: 5px 10px;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
 }
 
 .facebook-btn {
@@ -94,4 +276,11 @@
 
 .instagram-btn {
   color: #e1306c;
+}
+
+.no-results {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+  font-style: italic;
 }

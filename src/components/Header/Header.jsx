@@ -38,7 +38,35 @@ useEffect(() => {
           👋 Welcome back, <strong>{user.fullName || 'User'}</strong>!
         </div>
       )}
-      <div className="header-buttons">
+      <div className="header-buttons"><button
+  style={{
+    backgroundColor: 'transparent',
+    border: '2px solid #3c434f',
+    color: 'black',
+    padding: '8px 16px',
+    borderRadius: '6px',
+    cursor: 'pointer',
+  }}
+  onClick={() => navigate('/need-place')}
+>
+  Need a place
+</button>
+
+<button
+  style={{
+    backgroundColor: 'transparent',
+    border: '2px solid #3c434f',
+    color: 'black',
+    padding: '8px 16px',
+    borderRadius: '6px',
+    cursor: 'pointer',
+    marginLeft: '10px', // optional for spacing
+  }}
+  onClick={() => navigate('/room-in-shareholder')}
+>
+  Flatmate Needed
+</button>
+
         {isLoggedIn ? (
           <div className="user-menu-wrapper">
             <button className="user-menu-button" onClick={toggleMenu}>☰ Menu</button>
@@ -55,7 +83,6 @@ useEffect(() => {
         ) : (
           <button className="login-register" onClick={() => navigate('/signup')}>Login / Signup</button>
         )}
-        <button className="download-app">Download App</button>
       </div>
     </header>
   );
