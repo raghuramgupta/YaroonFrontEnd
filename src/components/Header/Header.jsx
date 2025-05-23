@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import './Header.css';
 import { useEffect } from 'react'; // if not already imported
-
+import axios from 'axios';
 
 const Header = ({ isLoggedIn = false, onLogout = () => {} }) => {
   const navigate = useNavigate();
@@ -10,6 +10,7 @@ const Header = ({ isLoggedIn = false, onLogout = () => {} }) => {
 
   const toggleMenu = () => setShowMenu(prev => !prev);
 const [user, setUser] = useState(null);
+const [username, setUserName] = useState(null);
   const handleLogout = () => {
     setShowMenu(false);
     onLogout();
@@ -21,6 +22,13 @@ useEffect(() => {
     const userProfile = JSON.parse(localStorage.getItem(`userProfile_${currentUserKey}`));
     if (userProfile) setUser(userProfile);
   }
+  axios.get(`http://localhost:5000/api/users/profile/${currentUserKey}`)
+    .then(res => {
+      setUserName(res.data.fullName);
+    }).catch(err => {
+          console.error('Failed to load profile:', err);
+          setUserName("Guest");
+        });
 }, []);
 
   return (
@@ -35,7 +43,7 @@ useEffect(() => {
       </div>
        {user && (
         <div className="welcome-msg" style={{ color: 'black' }}>
-          👋 Welcome back, <strong>{user.fullName || 'User'}</strong>!
+          👋 Welcome back, <strong>{username || 'User'}</strong>!
         </div>
       )}
       <div className="header-buttons"><button

@@ -23,9 +23,9 @@ function App() {
         <Route path="/signup" element={<SignUpFlow />} />
         <Route path="/profile" element={<UserProfile />} />
         <Route path="/listings" element={<AddListing />} />
-         <Route path="/logout-thank-you" element={<LogoutThankYou />} />
-         <Route path="/room-in-shareholder" element={<PropertyDescriptionForm />} />
-          <Route path="/search-results" element={<SearchResultsPage />} />
+        <Route path="/logout-thank-you" element={<LogoutThankYou />} />
+        <Route path="/room-in-shareholder" element={<PropertyDescriptionForm />} />
+        <Route path="/search-results" element={<SearchResultsPage />} />
         <Route path="/listing-details/:id" element={<ListingDetailsPage />} />
         <Route path="/inbox" element={<MessagesInbox />} />
         <Route path="/edit-listing/:listingId" element={<PropertyDescriptionForm />} />

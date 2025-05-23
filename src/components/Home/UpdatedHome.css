@@ -7,7 +7,7 @@
 .hero-section {
   position: relative;
   color: white;
-  padding: 60px 20px;
+  padding: 110px 20px;
   text-align: center;
   overflow: hidden;
 }
@@ -41,7 +41,7 @@
 
 .radio-option input {
   margin-right: 8px;
-  accent-color: #4CAF50;
+  accent-color: #8fae90;
   width: 16px;
   height: 16px;
 }
@@ -111,10 +111,18 @@
 
 .search-input {
   width: 100%;
-  padding: 12px 16px;
+  padding: 12px 40px 12px 16px; /* Right padding for icons */
   border-radius: 8px;
   border: none;
   font-size: 1rem;
+}
+.search-icons {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  gap: 8px;
 }
 
 .search-results-dropdown {
@@ -286,4 +294,35 @@
   text-align: center;
   color: #777;
   font-size: 1.1rem;
+}
+.quick-filters {
+  display: flex;
+  gap: 15px;
+  margin: 15px 0;
+  align-items: center;
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filter-group label {
+  font-weight: 200;
+  color: #333;
+}
+
+.filter-group select {
+  padding: 8px 3px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  background: white;
+  cursor: pointer;
+  min-width: 100px;height: 10;
+}
+
+.filter-group select:focus {
+  outline: none;
+  border-color: #007bff;
 }

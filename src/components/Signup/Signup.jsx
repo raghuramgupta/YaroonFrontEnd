@@ -3,10 +3,10 @@ import './SignUpFlow.css';
 import Header from '../Header/Header';
 import sha256 from 'crypto-js/sha256';
 import { useNavigate } from 'react-router-dom';
-
+import Select from 'react-select';
 const initialFormState = {
   mobile: '',
-  email: '',
+  email: '',userType:'',
   otp: '',
   password: '',
   confirmPassword: '',
@@ -31,7 +31,14 @@ const initialFormState = {
   interests: '',
   traits: ''
 };
-
+const interestOptions = [
+    { value: 'Gaming', label: 'Gaming' }, { value: 'Football', label: 'Football' },
+    { value: 'Cricket', label: 'Cricket' }, { value: 'Tennis', label: 'Tennis' },
+    { value: 'Cooking', label: 'Cooking' }, { value: 'Photography', label: 'Photography' },
+    { value: 'Movies', label: 'Movies' }, { value: 'Music', label: 'Music' },
+    { value: 'Art', label: 'Art' }, { value: 'Sports', label: 'Sports' },
+    { value: 'Volunteering', label: 'Volunteering' }
+  ];
 const Signup = () => {
   const [otpSent, setOtpSent] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
@@ -142,6 +149,7 @@ const Signup = () => {
     }
 
     localStorage.setItem('currentUser', result.userKey);
+    localStorage.setItem('currentUserType', result.userType);
     setIsLoggedIn(true);
     alert('Login successful!');
     navigate('/'); // 🔁 Redirect here
@@ -159,6 +167,33 @@ const navigate = useNavigate();
     setIsLoginMode(false);
     setOtpSent(false);
   };
+  const customStyles = {
+  option: (provided, state) => ({
+    ...provided,
+    color: 'black',
+    backgroundColor: state.isSelected ? '#e0e0e0' : 'white',
+  }),
+  multiValue: (provided) => ({
+    ...provided,
+    backgroundColor: '#f0f0f0',
+  }),
+  multiValueLabel: (provided) => ({
+    ...provided,
+    color: 'black',
+  }),
+  input: (provided) => ({
+    ...provided,
+    color: 'black',
+  }),
+  singleValue: (provided) => ({
+    ...provided,
+    color: 'black',
+  }),
+  placeholder: (provided) => ({
+    ...provided,
+    color: 'gray',
+  }),
+};
 
   return (
     <div className="signup-form">
@@ -198,6 +233,31 @@ const navigate = useNavigate();
 
       {isVerified && !isLoggedIn && (
         <form onSubmit={handleSubmit}>
+          <fieldset className='user-type-options'>
+            <legend>User Type</legend>
+            <label>
+              <input
+                type="radio"
+                name="userType"
+                value="Individual"
+                checked={formData.userType === 'Individual'}
+                onChange={handleChange}
+                required
+              />
+              Individual
+            </label>
+            <label>
+              <input
+                type="radio"
+                name="userType"
+                value="Property Agent"
+                checked={formData.userType === 'Property Agent'}
+                onChange={handleChange}
+              />
+              Property Agent
+            </label>
+          </fieldset>
+
           <fieldset>
             <legend>Create Password</legend>
             <input type="password" name="password" placeholder="Create password" value={formData.password} onChange={handleChange} required />
@@ -268,10 +328,22 @@ const navigate = useNavigate();
               )
             )}
           </fieldset>
-
+            
           <fieldset>
             <legend>Interests</legend>
-            <input type="text" name="interests" placeholder="e.g., Music, Movies" value={formData.interests} onChange={handleChange} />
+            <Select
+              isMulti
+              name="interests"
+              options={interestOptions}
+              styles={customStyles}
+              value={interestOptions.filter(option => formData.interests.includes(option.value))}
+              onChange={(selectedOptions) =>
+                setFormData({
+                  ...formData,
+                  interests: selectedOptions.map(option => option.value)
+                })
+              }
+            />
           </fieldset>
 
           <fieldset>

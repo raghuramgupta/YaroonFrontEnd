@@ -1,79 +1,305 @@
-/* SearchResultsPage.css */
-
 .search-results-page {
-  padding: 0;
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
+}
+
+.main-content-container {
+  display: flex;
+  flex: 1;
+}
+
+.filters-sidebar {
+  width: 280px;
+  padding: 20px;
   background-color: #f9f9f9;
+  border-right: 1px solid #eee;
+}
+.filters-sidebar,
+.filter-section {
+  text-align: left;
+}
+
+.filters-sidebar .filter-option {
+  display: flex !important;          /* stay in one row                */
+  flex-direction: row !important;
+  align-items: center !important;    /* vertical centring               */
+  justify-content: flex-start !important;  /* left-align the whole row  */
+  margin: 10px 0 !important;         /* keep your existing spacing      */
+}
+.filters-sidebar .filter-option label {
+  text-align: left !important;
+}
+/* radio → label spacing */
+.filters-sidebar .filter-option input[type="radio"] {
+  justify-items: left;
+  margin: 0 0 0 0 !important;      /* wipe out any ‘auto’ margins     */
+}
+.filter-section {
+  align-content: flex-start;
+  margin-bottom: 25px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #eee;
+}
+
+.filter-section h4 {
+  margin-bottom: 12px;
+  color: #333;
+  font-size: 16px;
+}
+
+.filter-option {
+  margin: 10px 0;
+  display: flex;
+  align-items:flex-start;
+  justify-content: flex-start; /* Add this line */
+}
+
+.filter-option input {
+  align-items:flex-start;
+  /* Remove any margin-left if present */
+  margin-left: 0; /* Ensure no left margin */
+}
+
+.filter-option label {
+  cursor: pointer;
+  font-size: 14px;
+  /* Remove any text-align if present */
+  text-align: left; /* Explicitly set to left */
+}
+
+.budget-range {
+  display: flex;
+  align-items:start;
+  margin: 15px 0;
+}
+
+.budget-range input[type="range"] {
+  flex: 1;
+  margin: 0 10px;
+  height: 6px;
+  -webkit-appearance: none;
+  background: #ddd;
+  border-radius: 3px;
+}
+
+.budget-range input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  background: #4CAF50;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.budget-values {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  color: #666;
 }
 
 .search-results-content {
-  background: linear-gradient(to right, #4facfe, #00f2fe);
-  color: white;
-  padding: 60px 20px;
-  position: relative;
-  text-align: center;
-}
-
-.search-results-content::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(255, 255, 255, 0.85);
-  z-index: 0;
-}
-
-.search-results-content > * {
-  position: relative;
-  z-index: 1;
-}
-
-.search-results-content h2 {
-  text-align: center;
-  margin-bottom: 2rem;
-  color: #333;
-}
-
-.results-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1.5rem;
+  flex: 1;
+  padding: 20px;
   max-width: 1200px;
   margin: 0 auto;
 }
 
+.search-container {
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.search-bar-wrapper {
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.search-bar {
+  position: relative;
+}
+
+.search-input-container {
+  position: relative;
+}
+
+.search-input {
+  width: 100%;
+  padding: 12px 40px 12px 16px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 16px;
+}
+
+.search-icons {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  gap: 8px;
+}
+
+.icon-button {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.search-icon, .compatible-icon {
+  width: 20px;
+  height: 20px;
+  fill: #555;
+}
+
+.search-results-dropdown {
+  position: absolute;
+  width: 100%;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  z-index: 100;
+}
+
+.dropdown-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.dropdown-list li {
+  padding: 10px 16px;
+  cursor: pointer;
+}
+
+.dropdown-list li:hover, .dropdown-list li.active {
+  background-color: #f5f5f5;
+}
+
+.filters-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 15px 0;
+}
+
+.filter-button-container {
+  position: relative;
+}
+
+.transparent-filter-button {
+  background-color: #f0f0f0;
+  border: 1px solid #ddd;
+  padding: 8px 16px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.remove-icon {
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.filter-options-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  padding: 8px 0;
+  z-index: 50;
+  min-width: 180px;
+}
+
+.filter-options-dropdown li {
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.filter-options-dropdown li:hover, .filter-options-dropdown li.selected {
+  background-color: #f5f5f5;
+}
+
+.results-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 25px;
+  margin-top: 20px;
+}
+
 .listing-card {
-  background-color: #fff;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  padding: 1.5rem;
-  transition: transform 0.2s ease;
+  background-color: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
 }
 
 .listing-card:hover {
   transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
 }
 
-.listing-card h3 {
-  margin: 0 0 0.5rem;
-  font-size: 1.2rem;
-  color: #222;
+.listing-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
 }
 
-.listing-card p {
-  margin: 0.25rem 0;
-  color: #555;
+.listing-header h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #333;
 }
 
-@media (max-width: 600px) {
-  .results-grid {
-    grid-template-columns: 1fr;
-    padding: 0 1rem;
-  }
-  
-  .search-results-content {
-    padding: 1rem;
-  }
+.property-type {
+  background-color: #e3f2fd;
+  color: #1976d2;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.listing-location {
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 15px;
+}
+
+.listing-details {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.rent {
+  font-weight: bold;
+  color: #333;
+  font-size: 16px;
+}
+
+.area {
+  color: #666;
+  font-size: 14px;
+}
+
+.no-results {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+  font-size: 16px;
 }

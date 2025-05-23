@@ -132,7 +132,10 @@
     flex-direction: column;
     gap: 10px;
   }
-  
+  .hidden {
+  display: none;
+}
+
   .wanted-room-card {
     padding: 20px;
   }

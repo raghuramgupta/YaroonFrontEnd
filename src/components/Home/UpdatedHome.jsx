@@ -2,231 +2,363 @@ import React, { useState, useEffect } from 'react';
 import Header from '../Header/Header';
 import './UpdatedHome.css';
 import { useNavigate } from 'react-router-dom';
-import places from '../../places';
 import axios from 'axios';
+import loadGoogleMaps from '../Utils/loadGoogleMaps';
+import MyListings from '../Listing/MyListings';
 
 function UpdatedHome() {
+  // -----------------------
+  // STATE
+  // -----------------------
   const [user, setUser] = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
   const [searchTerm, setSearchTerm] = useState('');
-  const [filteredPlaces, setFilteredPlaces] = useState([]);
-  const [activeIndex, setActiveIndex] = useState(-1);
-  const [filtersVisible, setFiltersVisible] = useState(false);
-  const [selectedFilters, setSelectedFilters] = useState(['Profession', 'Food Options', 'Parking', 'Language']);
-  const [filterOptions, setFilterOptions] = useState({
-    'Profession': ['Student', 'Working Professional', 'Freelancer'],
-    'Food Options': ['Vegetarian', 'Eggetarian', 'Non-Vegetarian'],
-    'Parking': ['Two-Wheeler', 'Four-Wheeler', 'None'],
-    'Language': ['English', 'Hindi', 'Telugu', 'Tamil', 'Kannada', 'Other']
-  });
-  const [activeFilter, setActiveFilter] = useState(null);
+  const [searchType, setSearchType] = useState('flats'); // flats | roommates
+
   const [myListings, setMyListings] = useState([]);
   const [searchResults, setSearchResults] = useState([]);
+
+  const [filtersVisible, setFiltersVisible] = useState(false);
+  const [selectedFilters, setSelectedFilters] = useState([
+    'Profession',
+    'Food Options',
+    'Parking',
+    'Language',
+  ]);
+  const [filterOptions] = useState({
+    Profession: ['Student', 'Working Professional', 'Freelancer'],
+    'Food Options': ['Vegetarian', 'Eggetarian', 'Non-Vegetarian'],
+    Parking: ['Two-Wheeler', 'Four-Wheeler', 'None'],
+    Language: ['English', 'Hindi', 'Telugu', 'Tamil', 'Kannada', 'Other'],
+  });
+  const [activeFilter, setActiveFilter] = useState(null);
   const [appliedFilterValues, setAppliedFilterValues] = useState({});
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [searchType, setSearchType] = useState('flats');
+
+  // hero background rotation
+  const heroImages = [
+    './Sample.jpg',
+    './City.jpg',
+    './Yaroon.jpg',
+    './Bangalore.jpg',
+    './Delhi.jpg',
+  ];
+
   const navigate = useNavigate();
 
+  // -----------------------
+  // INITIALISATION
+  // -----------------------
   useEffect(() => {
     const currentUserKey = localStorage.getItem('currentUser');
     setUser(currentUserKey);
-    if (currentUserKey) setIsLoggedIn(true);
+    setIsLoggedIn(!!currentUserKey);
+  }, []);
+
+  // Fetch listings whenever searchType changes
+  useEffect(() => {
+    const fetchListings = async () => {
+      const endpoint =
+        searchType === 'roommates'
+          ? 'http://localhost:5000/api/wanted-listings'
+          : 'http://localhost:5000/api/listings';
+      try {
+        const res = await axios.get(endpoint);
+        setMyListings(Array.isArray(res.data) ? res.data : []);
+      } catch (err) {
+        console.error('Error fetching listings:', err);
+      }
+    };
 
     fetchListings();
   }, [searchType]);
 
-  const fetchListings = async () => {
-    
-    const endpoint = searchType === 'roommates'
-      ? 'http://localhost:5000/api/wanted-listings'
-      : 'http://localhost:5000/api/listings';
-
-    try {
-      const res = await axios.get(endpoint);
-      setMyListings(Array.isArray(res.data) ? res.data : []);
-    } catch (err) {
-      console.error("Error fetching listings:", err);
-    }
-  };
-
+  // Rotate hero background images
   useEffect(() => {
-    const images = [
-      './Sample.jpg',
-      './City.jpg',
-      './Yaroon.jpg',
-      './Bangalore.jpg',
-      './Delhi.jpg'
-    ];
-    let index = 0;
-    const heroBackground = document.getElementById('heroBackground');
-    if (!heroBackground) return;
-
-    const updateBackground = () => {
-      heroBackground.style.backgroundImage = `url(${images[index]})`;
-      index = (index + 1) % images.length;
+    const el = document.getElementById('heroBackground');
+    if (!el) return;
+    let idx = 0;
+    const changeBg = () => {
+      el.style.backgroundImage = `url(${heroImages[idx]})`;
+      idx = (idx + 1) % heroImages.length;
     };
-
-    updateBackground();
-    const interval = setInterval(updateBackground, 5000);
-    return () => clearInterval(interval);
+    changeBg();
+    const int = setInterval(changeBg, 5000);
+    return () => clearInterval(int);
   }, []);
 
-  const handleSuggestionClick = (place) => {
-    setSearchTerm(place);
-    setFilteredPlaces([]);
-    setActiveIndex(-1);
+  // -----------------------
+  // GOOGLE MAPS AUTOCOMPLETE
+  // -----------------------
+  useEffect(() => {
+    let autocompleteInstance = null;
+    let mounted = true;
+
+    const initAutocomplete = async () => {
+      try {
+        // ⚠️  Replace with your own API key or use env variable
+        const google = await loadGoogleMaps('AIzaSyB6MA27FGtx8g83oF57MAxLAOdcs1rsu7c');
+        if (!mounted) return;
+
+        const input = document.getElementById('searchInput');
+        if (!input) return;
+
+        await new Promise((r) => setTimeout(r, 100)); // allow input to mount
+
+        autocompleteInstance = new google.maps.places.Autocomplete(input, {
+          types: ['geocode'],
+          componentRestrictions: { country: 'in' },
+          fields: ['formatted_address', 'geometry', 'name', 'address_components'],
+        });
+
+        autocompleteInstance.addListener('place_changed', () => {
+          const place = autocompleteInstance.getPlace();
+          if (!place) return;
+          let address = '';
+          if (place.formatted_address) address = place.formatted_address;
+          else if (place.name) address = place.name;
+          else if (place.address_components) {
+            address = place.address_components
+              .map((c) => c.long_name)
+              .join(', ');
+          }
+          setSearchTerm(address);
+        });
+
+        // force drop‑down on focus when value present
+        input.addEventListener('focus', () => {
+          if (input.value) {
+            const ev = new Event('input', { bubbles: true });
+            input.dispatchEvent(ev);
+          }
+        });
+      } catch (err) {
+        console.error('Google Maps Autocomplete error:', err);
+      }
+    };
+
+    initAutocomplete();
+
+    return () => {
+      mounted = false;
+      if (
+        autocompleteInstance &&
+        window.google &&
+        window.google.maps &&
+        window.google.maps.event
+      ) {
+        window.google.maps.event.clearInstanceListeners(autocompleteInstance);
+      }
+    };
+  }, []);
+
+  // -----------------------
+  // HANDLERS
+  // -----------------------
+  const handleInputChange = (e) => {
+    setSearchTerm(e.target.value);
   };
 
   const handleKeyDown = (e) => {
-    if (e.key === 'Escape') {
-      setSearchTerm('');
-      setFilteredPlaces([]);
-    } else if (e.key === 'ArrowDown') {
-      setActiveIndex((prev) => (prev < filteredPlaces.length - 1 ? prev + 1 : prev));
-    } else if (e.key === 'ArrowUp') {
-      setActiveIndex((prev) => (prev > 0 ? prev - 1 : -1));
-    } else if (e.key === 'Enter' && activeIndex >= 0) {
-      handleSuggestionClick(filteredPlaces[activeIndex]);
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSearchClick();
     }
-  };
-
-  const handleInputChange = (e) => {
-    const value = e.target.value;
-    setSearchTerm(value);
-    setActiveIndex(-1);
-    const results = places.filter(place => place.toLowerCase().includes(value.toLowerCase()));
-    setFilteredPlaces(value ? results : []);
   };
 
   const handleSearchClick = () => {
     if (!user) {
-      setUser("Dummy");
-      return;
+      // You could redirect to login instead of this dummy placeholder
+      setUser('Anonymous');
     }
 
-    const results = myListings.filter(listing =>
-      listing.userKey !== user &&
-      (searchTerm === '' || listing.propertyAddress?.toLowerCase().includes(searchTerm.toLowerCase()))
-    );
+    const results = myListings.filter((listing) => {
+      if (user && listing.userKey === user) return false;
+      if (!searchTerm) return true;
+      
+      const term = searchTerm.toLowerCase();
+      return (
+        listing.propertyAddress?.toLowerCase().includes(term) ||
+        listing.title?.toLowerCase().includes(term) ||
+        listing.description?.toLowerCase().includes(term)
+      );
+    });
 
+    // Navigate to dedicated results page – keeps behaviour identical to before
     navigate('/search-results', { state: { results } });
   };
 
+  // Toggle and manage custom compatibility filters
   const toggleFilters = () => {
-    setFiltersVisible(prev => !prev);
-    setActiveFilter(null);
-  };
-
-  const removeFilter = (filterToRemove) => {
-    setSelectedFilters(prev => prev.filter(filter => filter !== filterToRemove));
-    setAppliedFilterValues(prev => {
-      const newValues = { ...prev };
-      delete newValues[filterToRemove];
-      return newValues;
-    });
+    setFiltersVisible((prev) => !prev);
     setActiveFilter(null);
   };
 
   const showFilterOptions = (filter) => {
-    setActiveFilter(prev => (prev === filter ? null : filter));
+    setActiveFilter((prev) => (prev === filter ? null : filter));
   };
 
   const applyFilter = (filterCategory, option) => {
-    setAppliedFilterValues(prev => ({
+    setAppliedFilterValues((prev) => ({
       ...prev,
-      [filterCategory]: option
+      [filterCategory]: option,
     }));
     setActiveFilter(null);
   };
 
-useEffect(() => {
-  let filtered = [...myListings];
-
-  Object.entries(appliedFilterValues).forEach(([filter, value]) => {
-    const key = filter.toLowerCase().replace(/\s/g, '');
-    filtered = filtered.filter(listing => {
-      const listingValue = listing[key];
-      if (!listingValue) return false;
-      return Array.isArray(listingValue)
-        ? listingValue.includes(value)
-        : listingValue === value;
+  const removeFilter = (filterToRemove) => {
+    setSelectedFilters((prev) => prev.filter((f) => f !== filterToRemove));
+    setAppliedFilterValues((prev) => {
+      const next = { ...prev };
+      delete next[filterToRemove];
+      return next;
     });
-  });
+    setActiveFilter(null);
+  };
 
-  if (user) {
-    filtered = filtered.filter(listing => listing.userKey !== user);
-  }
+  // Re‑filter locally when appliedFilterValues change or listings loaded
+  useEffect(() => {
+    let filtered = [...myListings];
 
-  setSearchResults(filtered);
-}, [appliedFilterValues, myListings, user]);
+    // search term
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      filtered = filtered.filter(
+        (l) =>
+          l.propertyAddress?.toLowerCase().includes(term) ||
+          l.title?.toLowerCase().includes(term) ||
+          l.description?.toLowerCase().includes(term)
+      );
+    }
 
+    // compatibility chips
+    Object.entries(appliedFilterValues).forEach(([filter, value]) => {
+      const key = filter.toLowerCase().replace(/\s/g, ''); // e.g. "Food Options" -> "foodoptions"
+      filtered = filtered.filter((listing) => {
+        const listingValue = listing[key];
+        if (!listingValue) return false;
+        return Array.isArray(listingValue)
+          ? listingValue.includes(value)
+          : listingValue === value;
+      });
+    });
 
+    if (user) filtered = filtered.filter((l) => l.userKey !== user);
+
+    setSearchResults(filtered);
+  }, [appliedFilterValues, myListings, user, searchTerm]);
+
+  // -----------------------
+  // RENDER
+  // -----------------------
   return (
     <div className="home-wrapper">
       <Header isLoggedIn={isLoggedIn} />
+
+      {/* HERO SECTION */}
       <div className="hero-section">
-        <div className="hero-background" id="heroBackground"></div>
-        <div className="overlay"></div>
+        <div className="hero-background" id="heroBackground" />
+        <div className="overlay" />
+
         <div className="hero-content">
           <h1>Find Compatible Flatmates</h1>
+
+          {/* search type radio */}
           <div className="search-container">
             <div className="search-type-selector">
               <label className="radio-option">
-                <input type="radio" name="searchType" value="flats" checked={searchType === 'flats'} onChange={() => setSearchType('flats')} />
+                <input
+                  type="radio"
+                  name="searchType"
+                  value="flats"
+                  checked={searchType === 'flats'}
+                  onChange={() => setSearchType('flats')}
+                />
                 <span>Flats</span>
               </label>
               <label className="radio-option">
-                <input type="radio" name="searchType" value="roommates" checked={searchType === 'roommates'} onChange={() => setSearchType('roommates')} />
+                <input
+                  type="radio"
+                  name="searchType"
+                  value="roommates"
+                  checked={searchType === 'roommates'}
+                  onChange={() => setSearchType('roommates')}
+                />
                 <span>Roommates</span>
               </label>
             </div>
+
+            {/* SEARCH BAR */}
             <div className="search-bar-wrapper">
               <div className="search-bar">
-                <input
-                  type="text"
-                  placeholder="Search Places..."
-                  value={searchTerm}
-                  onChange={handleInputChange}
-                  onKeyDown={handleKeyDown}
-                  className="search-input"
-                  autoComplete="off"
-                />
-                {filteredPlaces.length > 0 && (
-                  <div className="search-results-dropdown">
-                    <ul className="dropdown-list">
-                      {filteredPlaces.map((place, index) => (
-                        <li
-                          key={index}
-                          onClick={() => handleSuggestionClick(place)}
-                          className={index === activeIndex ? 'active' : ''}
-                        >
-                          {place}
-                        </li>
-                      ))}
-                    </ul>
+                <div className="search-input-container">
+                  <input
+                    id="searchInput"
+                    type="text"
+                    placeholder="Search Places..."
+                    value={searchTerm}
+                    onChange={handleInputChange}
+                    onKeyDown={handleKeyDown}
+                    className="search-input"
+                    autoComplete="off"
+                    aria-autocomplete="list"
+                    aria-haspopup="true"
+                  />
+
+                  <div className="search-icons">
+                    <button className="icon-button" onClick={handleSearchClick}>
+                      <svg className="search-icon" viewBox="0 0 24 24">
+                        <path d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 0 0 1.48-5.34c-.47-2.78-2.79-5-5.59-5.34a6.505 6.505 0 0 0-7.27 7.27c.34 2.8 2.56 5.12 5.34 5.59a6.5 6.5 0 0 0 5.34-1.48l.27.28v.79l4.25 4.25c.41.41 1.08.41 1.49 0 .41-.41.41-1.08 0-1.49L15.5 14zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" />
+                      </svg>
+                    </button>
+                    <button className="icon-button" onClick={toggleFilters}>
+                      <svg className="compatible-icon" viewBox="0 0 24 24">
+                        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm4.59-12.42L10 14.17l-2.59-2.58L6 13l4 4 8-8z" />
+                      </svg>
+                    </button>
                   </div>
-                )}
-                <div className="search-buttons">
-                  <button className="search-button" onClick={handleSearchClick}>Search</button>
-                  <button className="compatible-search-button" onClick={toggleFilters}>Compatible Search</button>
                 </div>
               </div>
             </div>
           </div>
 
+          {/* Compatibility filter chips */}
           {filtersVisible && (
             <div className="filters-container">
-              {selectedFilters.map((filter, index) => (
-                <div key={index} className="filter-button-container">
-                  <div className="transparent-filter-button" onClick={() => showFilterOptions(filter)}>
-                    <span>{filter}{appliedFilterValues[filter] && `: ${appliedFilterValues[filter]}`}</span>
-                    <span className="remove-icon" onClick={(e) => { e.stopPropagation(); removeFilter(filter); }}>×</span>
+              {selectedFilters.map((filter, idx) => (
+                <div key={idx} className="filter-button-container">
+                  <div
+                    className="transparent-filter-button"
+                    onClick={() => showFilterOptions(filter)}
+                  >
+                    <span>
+                      {filter}
+                      {appliedFilterValues[filter] && `: ${appliedFilterValues[filter]}`}
+                    </span>
+                    <span
+                      className="remove-icon"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeFilter(filter);
+                      }}
+                    >
+                      ×
+                    </span>
                   </div>
 
                   {activeFilter === filter && (
                     <ul className="filter-options-dropdown">
                       {filterOptions[filter].map((opt, i) => (
-                        <li key={i} onClick={(e) => { e.stopPropagation(); applyFilter(filter, opt); }}
-                            className={appliedFilterValues[filter] === opt ? 'selected' : ''}>
+                        <li
+                          key={i}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            applyFilter(filter, opt);
+                          }}
+                          className={
+                            appliedFilterValues[filter] === opt ? 'selected' : ''
+                          }
+                        >
                           {opt}
                         </li>
                       ))}
@@ -239,16 +371,23 @@ useEffect(() => {
         </div>
       </div>
 
+      {/* SEARCH RESULTS / NO RESULTS */}
       {searchResults.length > 0 ? (
         <div className="search-results">
           <h2>Search Results:</h2>
           <div className="results-grid">
-            {searchResults.map((listing, index) => (
-              <div key={index} className="listing-card">
+            {searchResults.map((listing, idx) => (
+              <div key={idx} className="listing-card">
                 <h3>{listing.title}</h3>
-                <p><strong>Address:</strong> {listing.propertyAddress}</p>
-                <p><strong>Rent:</strong> ₹{listing.rent}</p>
-                <p><strong>Description:</strong> {listing.description}</p>
+                <p>
+                  <strong>Address:</strong> {listing.propertyAddress}
+                </p>
+                <p>
+                  <strong>Rent:</strong> ₹{listing.rent}
+                </p>
+                <p>
+                  <strong>Description:</strong> {listing.description}
+                </p>
               </div>
             ))}
           </div>
