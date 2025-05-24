@@ -1,65 +1,139 @@
 .signup-form {
-  max-width: max;
-  margin: auto;
+  min-height: 100vh;
+  width: 100%;
+  margin: 0;
+  padding: 20px;
   background: #f0faff;
-  box-shadow: 0 0 10px rgba(0,0,0,0.1);
   font-family: sans-serif;
+  box-sizing: border-box;
 }
+
+/* Main form container */
+.signup-form > form {
+  max-width: max;
+  margin: 0 auto;
+  padding: 20px;
+  background: white;
+  border-radius: 10px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+}
+
+/* Make all buttons blue */
+button {
+  background-color: #2563eb;
+  color: white;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 6px;
+  font-size: 16px;
+  cursor: pointer;
+  margin: 5px 0;
+  width: auto;
+  transition: background-color 0.3s;
+}
+
+button:hover {
+  background-color: #1d4ed8;
+}
+
+/* Verification section specific styles */
+.verification-section fieldset {
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+/* Full-width inputs */
+input, select, textarea {
+  width: 100%;
+  padding: 12px;
+  margin: 8px 0 15px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  box-sizing: border-box;
+}
+.auth-tabs {
+  display: flex;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #ccc;
+}
+
+.tab-button {
+  padding: 10px 20px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: #666;
+  border-bottom: 2px solid transparent;
+}
+
+.tab-button.active {
+  color: #2563eb;
+  border-bottom: 2px solid #c0c1c3;
+  font-weight: bold;
+}
+
+.tab-button:hover {
+  background-color: #f5f5f5;
+}
+/* Fieldset styling */
+fieldset {
+  border: 1px solid #e2e8f0;
+  margin-bottom: 25px;
+  padding: 20px;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+legend {
+  color: #1e293b;
+  font-weight: 600;
+  padding: 0 10px;
+  font-size: 1.1em;
+}
+
+/* Responsive layout */
+@media (min-width: 768px) {
+  .user-type-options {
+    display: flex;
+    gap: 20px;
+  }
+  
+  .habits-section {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+  }
+}
+
+/* Keep your existing specific styles */
 .centered-login-button {
   display: flex;
   justify-content: center;
-  margin-top: 10px;
+  margin-top: 15px;
 }
 
 .signup-form h2 {
-  color: #022125;
+  color: #1e293b;
   text-align: center;
+  margin-bottom: 20px;
 }
+
 .user-type-options {
-  display: flex; color:black;
-  gap: 1rem; /* space between options */
-  align-items: center;
-  margin-bottom: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-bottom: 15px;
 }
 
 .user-type-options label {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  font-weight: normal;
+  gap: 8px;
 }
 
-fieldset {
-  border: 1px solid #87d3c9;
-  margin-bottom: 20px;
-  padding: 15px;
-  border-radius: 8px;
-}
-
-legend {
-  font-weight: bold;
-  color: #0b7a75;
-}
-
-input, select, textarea {
-  width: 100%;
-  padding: 10px;
-  margin-top: 8px;
-  margin-bottom: 15px;
-  border: 1px solid #bde0db;
-  border-radius: 6px;
-}
-
-button {
-  background-color: #00a693;
-  color: white;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 6px;
-  font-size: 16px;
-  cursor: pointer;
-}
-
-button:hover {
-  background-color: #dddbd3e0;
+/* Select dropdown styling */
+.Select__control {
+  border: 1px solid #ddd !important;
+  min-height: 44px !important;
 }

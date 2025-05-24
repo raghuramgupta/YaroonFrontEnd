@@ -21,7 +21,9 @@ export const AuthProvider = ({ children }) => {
     setLoadingProfile(true);
     axios
       .get(`http://localhost:5000/api/users/profile/${currentUserEmail}`)
-      .then(res => setProfile(res.data))
+      .then(res => {
+        setProfile(res.data);
+      })
       .catch(err => {
         console.error('Failed to load profile:', err);
         // Optional: force logout or show toast
@@ -52,6 +54,7 @@ export const AuthProvider = ({ children }) => {
 
   /* ------------------------------------------------------------------ */
   return (
+    
     <AuthContext.Provider
       value={{ userKey, profile, loadingProfile, login, logout }}
     >

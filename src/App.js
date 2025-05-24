@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import Login from './components/Login';
 import Register from './components/Register';
+import { AuthProvider } from './context/AuthContext'; // Adjust the import path as needed
 import UpdatedHome from './components/Home/UpdatedHome'
 import SignUpFlow from './components/Signup/Signup'
 import UserProfile from './components/UserProfile/UserProfile'
@@ -14,7 +15,7 @@ import MessagesInbox from './components/UserProfile/MessagesInbox';
 import Dashboard from './components/Listing/Dashboard';
 import WantedRoomForm from './components/Listing/FlaWantedRoomForm';
 function App() {
-  return (
+  return (<AuthProvider>
     <Router>
       <Routes>
         <Route path="/" element={<UpdatedHome />} />
@@ -34,7 +35,7 @@ function App() {
         <Route path="/edit-wanted-listing/:id" element={<WantedRoomForm />} />
         {/* You can add other routes as needed */}
       </Routes>
-    </Router>
+    </Router></AuthProvider>
   );
 }
 

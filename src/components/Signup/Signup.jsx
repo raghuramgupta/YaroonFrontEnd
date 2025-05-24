@@ -4,9 +4,11 @@ import Header from '../Header/Header';
 import sha256 from 'crypto-js/sha256';
 import { useNavigate } from 'react-router-dom';
 import Select from 'react-select';
+
 const initialFormState = {
   mobile: '',
-  email: '',userType:'',
+  email: '',
+  userType: '',
   otp: '',
   password: '',
   confirmPassword: '',
@@ -31,19 +33,21 @@ const initialFormState = {
   interests: '',
   traits: ''
 };
+
 const interestOptions = [
-    { value: 'Gaming', label: 'Gaming' }, { value: 'Football', label: 'Football' },
-    { value: 'Cricket', label: 'Cricket' }, { value: 'Tennis', label: 'Tennis' },
-    { value: 'Cooking', label: 'Cooking' }, { value: 'Photography', label: 'Photography' },
-    { value: 'Movies', label: 'Movies' }, { value: 'Music', label: 'Music' },
-    { value: 'Art', label: 'Art' }, { value: 'Sports', label: 'Sports' },
-    { value: 'Volunteering', label: 'Volunteering' }
-  ];
+  { value: 'Gaming', label: 'Gaming' }, { value: 'Football', label: 'Football' },
+  { value: 'Cricket', label: 'Cricket' }, { value: 'Tennis', label: 'Tennis' },
+  { value: 'Cooking', label: 'Cooking' }, { value: 'Photography', label: 'Photography' },
+  { value: 'Movies', label: 'Movies' }, { value: 'Music', label: 'Music' },
+  { value: 'Art', label: 'Art' }, { value: 'Sports', label: 'Sports' },
+  { value: 'Volunteering', label: 'Volunteering' }
+];
+
 const Signup = () => {
   const [otpSent, setOtpSent] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isLoginMode, setIsLoginMode] = useState(false);
+  const [activeTab, setActiveTab] = useState('signup'); // 'signup' or 'login'
   const [loginData, setLoginData] = useState({ username: '', password: '' });
   const [showSelects, setShowSelects] = useState({
     smoking: false,
@@ -55,6 +59,7 @@ const Signup = () => {
   });
 
   const [formData, setFormData] = useState(initialFormState);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const currentUser = localStorage.getItem('currentUser');
@@ -99,139 +104,154 @@ const Signup = () => {
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  if (formData.password.length < 6 || formData.password !== formData.confirmPassword) {
-    alert('Invalid password input');
-    return;
-  }
-
-  const userData = {
-    ...formData,
-    confirmPassword: undefined
-  };
-
-  try {
-    const res = await fetch('http://localhost:5000/api/users/signup', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(userData),
-    });
-
-    const result = await res.json();
-    if (!res.ok) throw new Error(result.message);
-
-    const userKey = formData.email || formData.mobile;
-    localStorage.setItem('currentUser', userKey);
-
-    alert('Signup successful!');
-    setIsLoggedIn(true);
-    navigate('/'); // 🔁 Redirect here
-  } catch (err) {
-    alert(`Signup failed: ${err.message}`);
-  }
-};
-
-  const handleLogin = async (e) => {
-  e.preventDefault();
-  try {
-    const res = await fetch('http://localhost:5000/api/users/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(loginData),
-    });
-
-    const result = await res.json();
-
-    if (!res.ok) {
-      alert(result.message || 'Login failed');
+    if (formData.password.length < 6 || formData.password !== formData.confirmPassword) {
+      alert('Invalid password input');
       return;
     }
 
-    localStorage.setItem('currentUser', result.userKey);
-    localStorage.setItem('currentUserType', result.userType);
-    setIsLoggedIn(true);
-    alert('Login successful!');
-    navigate('/'); // 🔁 Redirect here
-  } catch (err) {
-    alert(`Login error: ${err.message}`);
-  }
-};
-const navigate = useNavigate();
+    const userData = {
+      ...formData,
+      confirmPassword: undefined
+    };
+
+    try {
+      const res = await fetch('http://localhost:5000/api/users/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(userData),
+      });
+
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.message);
+
+      const userKey = formData.email || formData.mobile;
+      localStorage.setItem('currentUser', userKey);
+
+      alert('Signup successful!');
+      setIsLoggedIn(true);
+      navigate('/');
+    } catch (err) {
+      alert(`Signup failed: ${err.message}`);
+    }
+  };
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await fetch('http://localhost:5000/api/users/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(loginData),
+      });
+
+      const result = await res.json();
+
+      if (!res.ok) {
+        alert(result.message || 'Login failed');
+        return;
+      }
+
+      localStorage.setItem('currentUser', result.userKey);
+      localStorage.setItem('currentUserType', result.userType);
+      setIsLoggedIn(true);
+      alert('Login successful!');
+      navigate('/');
+    } catch (err) {
+      alert(`Login error: ${err.message}`);
+    }
+  };
 
   const handleLogout = () => {
     localStorage.removeItem('currentUser');
     setFormData(initialFormState);
     setIsVerified(false);
     setIsLoggedIn(false);
-    setIsLoginMode(false);
+    setActiveTab('signup');
     setOtpSent(false);
   };
+
   const customStyles = {
-  option: (provided, state) => ({
-    ...provided,
-    color: 'black',
-    backgroundColor: state.isSelected ? '#e0e0e0' : 'white',
-  }),
-  multiValue: (provided) => ({
-    ...provided,
-    backgroundColor: '#f0f0f0',
-  }),
-  multiValueLabel: (provided) => ({
-    ...provided,
-    color: 'black',
-  }),
-  input: (provided) => ({
-    ...provided,
-    color: 'black',
-  }),
-  singleValue: (provided) => ({
-    ...provided,
-    color: 'black',
-  }),
-  placeholder: (provided) => ({
-    ...provided,
-    color: 'gray',
-  }),
-};
+    option: (provided, state) => ({
+      ...provided,
+      color: 'black',
+      backgroundColor: state.isSelected ? '#e0e0e0' : 'white',
+    }),
+    multiValue: (provided) => ({
+      ...provided,
+      backgroundColor: '#f0f0f0',
+    }),
+    multiValueLabel: (provided) => ({
+      ...provided,
+      color: 'black',
+    }),
+    input: (provided) => ({
+      ...provided,
+      color: 'black',
+    }),
+    singleValue: (provided) => ({
+      ...provided,
+      color: 'black',
+    }),
+    placeholder: (provided) => ({
+      ...provided,
+      color: 'gray',
+    }),
+  };
 
   return (
     <div className="signup-form">
       <Header isLoggedIn={isLoggedIn} onLogout={handleLogout} />
-      <h2>{isLoginMode ? 'Login' : 'Sign Up'}</h2>
-
-      {!isLoggedIn && !isVerified && !isLoginMode && (
-        <>
-          <form onSubmit={handleVerification}>
-            <fieldset>
-              <legend>Verification</legend>
-              <input type="tel" name="mobile" placeholder="Mobile Number" value={formData.mobile} onChange={handleChange} disabled={otpSent} />
-              <input type="email" name="email" placeholder="Email Address" value={formData.email} onChange={handleChange} disabled={otpSent} />
-              {otpSent && (
-                <input type="text" name="otp" placeholder="Enter OTP" value={formData.otp} onChange={handleChange} required />
-              )}
-              <button type="submit">{otpSent ? 'Verify' : 'Send OTP'}</button>
-            </fieldset>
-          </form>
-          <div className="centered-login-button">
-            <button onClick={() => setIsLoginMode(true)}>Existing Customer Login</button>
-          </div>
-        </>
+      
+      {!isLoggedIn && (
+        <div className="auth-tabs">
+          <button 
+            className={`tab-button ${activeTab === 'signup' ? 'active' : ''}`}
+            onClick={() => setActiveTab('signup')}
+          >
+            Sign Up
+          </button>
+          <button 
+            className={`tab-button ${activeTab === 'login' ? 'active' : ''}`}
+            onClick={() => setActiveTab('login')}
+          >
+            Login
+          </button>
+        </div>
       )}
 
-      {isLoginMode && !isLoggedIn && (
+      {!isLoggedIn && activeTab === 'signup' && !isVerified && (
+        <form onSubmit={handleVerification}>
+          <fieldset>
+            <legend>Verification</legend>
+            <input type="tel" name="mobile" placeholder="Mobile Number" value={formData.mobile} onChange={handleChange} disabled={otpSent} />
+            <input type="email" name="email" placeholder="Email Address" value={formData.email} onChange={handleChange} disabled={otpSent} />
+            {otpSent && (
+              <input type="text" name="otp" placeholder="Enter OTP" value={formData.otp} onChange={handleChange} required />
+            )}
+            <button 
+              type="submit" 
+              style={!otpSent ? {backgroundColor: '#2563eb'} : {}}
+            >
+              {otpSent ? 'Verify' : 'Send OTP'}
+            </button>
+          </fieldset>
+        </form>
+      )}
+
+      {!isLoggedIn && activeTab === 'login' && (
         <form onSubmit={handleLogin}>
           <fieldset>
             <legend>Login</legend>
             <input type="text" name="username" placeholder="Email or Mobile number" value={loginData.username} onChange={(e) => setLoginData({ ...loginData, username: e.target.value })} required />
             <input type="password" name="password" placeholder="Password" value={loginData.password} onChange={(e) => setLoginData({ ...loginData, password: e.target.value })} required />
             <button type="submit">Login</button>
-          </fieldset><div className="centered-login-button">
-          <button onClick={() => setIsLoginMode(false)} type="button">Back to Sign Up</button></div>
+          </fieldset>
         </form>
       )}
 
-      {isVerified && !isLoggedIn && (
+      {isVerified && !isLoggedIn && activeTab === 'signup' && (
         <form onSubmit={handleSubmit}>
           <fieldset className='user-type-options'>
             <legend>User Type</legend>

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState,useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import './ListingDetailsPage.css';
 import Header from '../Header/Header';
@@ -10,7 +10,18 @@ const ListingDetailsPage = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [messageText, setMessageText] = useState('');
   const [messageSent, setMessageSent] = useState(false);
-
+  const [isTyping, setIsTyping] = useState(false);
+  const [typing, setTyping] = useState(false);
+  const messageRefs = useRef({});
+        const suggestedMessages = [
+      "Can you arrange a viewing?",
+      "Is the rent negotiable?",
+      "Is the property still available?",
+      "How far is the nearest metro/bus stop?",
+      "Can I schedule a call to discuss?",
+      "Can you share more photos or a video tour?"
+    ];const [showAllSuggestions, setShowAllSuggestions] = useState(false);
+    const [newMessage, setNewMessage] = useState('');
   useEffect(() => {
     const currentUserKey = localStorage.getItem('currentUser');
     setUser(currentUserKey);
@@ -40,6 +51,17 @@ const ListingDetailsPage = () => {
 
     if (listingId) fetchListing();
   }, [listingId]);
+  const handleTyping = (e) => {
+    setMessageText(e.target.value);
+    if (!typing) {
+      setTyping(true);
+      setIsTyping(true);
+      setTimeout(() => {
+        setTyping(false);
+        setIsTyping(false);
+      }, 2000);
+    }
+  };
 
   const handleSendMessage = async () => {
     if (!user || !listing || !listing.userKey || !messageText.trim()) return;
@@ -113,11 +135,30 @@ const ListingDetailsPage = () => {
             <>
               <textarea
                 value={messageText}
-                onChange={(e) => setMessageText(e.target.value)}
+                onChange={handleTyping}
                 placeholder="Type your message here..."
                 rows={4}
                 className="message-box"
               />
+              <div className="suggested-messages">
+                {(showAllSuggestions ? suggestedMessages : suggestedMessages.slice(0, 3)).map((msg, index) => (
+                  <button
+                    key={index}
+                    className="suggested-message-btn"
+                    onClick={() => setMessageText(msg)}
+                  >
+                    {msg}
+                  </button>
+                ))}
+                {suggestedMessages.length > 3 && (
+                  <button
+                    className="suggested-message-btn"
+                    onClick={() => setShowAllSuggestions(!showAllSuggestions)}
+                  >
+                    {showAllSuggestions ? 'Less' : 'More'}
+                  </button>
+                )}
+              </div>
               <button onClick={handleSendMessage}>Send Message</button>
               {messageSent && <p className="success-msg">Message sent!</p>}
             </>

@@ -1,17 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect,useContext } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import './SearchResultsPage.css';
 import Header from '../Header/Header';
-import places from '../../places';
 import axios from 'axios';
 import loadGoogleMaps from '../Utils/loadGoogleMaps'; // adjust path as needed
+import { AuthContext } from '../../context/AuthContext';
 
 const SearchResultsPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { results: initialResults = [] } = location.state || {};
   const [autocomplete, setAutocomplete] = useState(null);
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(null);const { profile, loadingProfile } = useContext(AuthContext);
   const [searchTerm, setSearchTerm] = useState('');
   const [filteredPlaces, setFilteredPlaces] = useState([]);
   const [activeIndex, setActiveIndex] = useState(-1);
@@ -29,13 +29,19 @@ const SearchResultsPage = () => {
   const [appliedFilterValues, setAppliedFilterValues] = useState({});
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [searchType, setSearchType] = useState('flats');
+  const [activeTab, setActiveTab] = useState('All');
   const [sidebarFilters, setSidebarFilters] = useState({
     budget: { min: 0, max: 50000 },
     propertyType: '',
     availability: '',
     amenities: []
   });
-
+   useEffect(() => {
+    if (profile) {
+      //alert(profile.gender)
+    }
+  }, [profile]);const normalize = str => (str || '').toLowerCase().trim();
+  
   const propertyTypes = ['Standalone apartment', 'building', 'Gated community'];
   const availabilityOptions = ['Ready to Move', 'Available Soon'];
   const amenitiesOptions = ['Furnished', 'Parking', 'Gym', 'Swimming Pool', 'Security'];
@@ -170,7 +176,37 @@ const handleKeyDown = (e) => {
     });
     setActiveFilter(null);
   };
+  const handleFilterChange = (filterKey, selectedValues) => {
+    setAppliedFilterValues(prevValues => ({
+      ...prevValues,
+      [filterKey]: selectedValues
+    }));
+  };
 
+  const renderTabs = () => {
+    const tabs = ['All', 'Gated Community'];
+    if (profile?.gender?.toLowerCase() === 'female') {
+      tabs.push('Female');
+    }
+    
+    if (profile?.habits.foodChoice?.toLowerCase() === 'Veg') {
+      tabs.push('Veg');
+    }
+
+    return (
+      <div className="tabs-container">
+        {tabs.map(tab => (
+          <button
+            key={tab}
+            className={`tab-button ${activeTab === tab ? 'active' : ''}`}
+            onClick={() => setActiveTab(tab)}
+          >
+            {tab}
+          </button>
+        ))}
+      </div>
+    );
+  };
   const showFilterOptions = (filter) => {
     setActiveFilter(prev => (prev === filter ? null : filter));
   };
@@ -201,6 +237,7 @@ const handleKeyDown = (e) => {
 
   useEffect(() => {
     let filtered = [...myListings];
+    
 
     // Apply sidebar filters
     filtered = filtered.filter(listing => 
@@ -225,7 +262,12 @@ const handleKeyDown = (e) => {
         sidebarFilters.amenities.every(amenity => listing.amenities?.includes(amenity))
       );
     }
-
+    if (user) {
+      filtered = filtered.filter(listing => listing.userKey !== user);
+    }
+    
+    // Apply tab filters
+    
     // Apply existing filters
     Object.entries(appliedFilterValues).forEach(([filter, value]) => {
       const key = filter.toLowerCase().replace(/\s/g, '');
@@ -242,8 +284,29 @@ const handleKeyDown = (e) => {
       filtered = filtered.filter(listing => listing.userKey !== user);
     }
 
-    setSearchResults(filtered);
-  }, [sidebarFilters, appliedFilterValues, myListings, user]);
+      const tabFiltered = filtered.filter(listing => {
+      if (activeTab === 'Gated Community') {
+        return listing.propertyStructure === 'Gated community';
+      }
+      if (activeTab === 'Female' && profile?.gender === 'Female') {
+        return listing.gender === 'Female'; // or adapt to your listing field
+      }
+      if (activeTab === 'Veg' && profile?.habits.foodChoice === 'Veg') {
+        return listing.foodchoices === 'Veg'; // or adapt
+      }
+      return true; // All tab
+    });
+
+    setSearchResults(tabFiltered);
+
+  }, [
+  sidebarFilters,
+  appliedFilterValues,
+  myListings,
+  user,
+  activeTab,
+  profile
+]);
 
   const openListingDetails = (listing) => {
     localStorage.setItem('selectedListing', JSON.stringify(listing));
@@ -285,14 +348,18 @@ const handleKeyDown = (e) => {
             <h4>Property Type</h4>
             {propertyTypes.map(type => (
               <div key={type} className="filter-option">
-                <input
-                  type="radio"
-                  id={type}
-                  name="propertyType"
-                  checked={sidebarFilters.propertyType === type}
-                  onChange={() => handleSidebarFilterChange('propertyType', type)}
-                />
-                <label htmlFor={type}>{type}</label>
+                <div>
+                  <input
+                    type="radio"
+                    id={`propertyType-${type}`}
+                    name="propertyType"
+                    checked={sidebarFilters.propertyType === type}
+                    onChange={() => handleSidebarFilterChange('propertyType', type)}
+                  />
+                </div>
+                <div>
+                  <label htmlFor={`propertyType-${type}`}>{type}</label>
+                </div>
               </div>
             ))}
           </div>
@@ -301,36 +368,44 @@ const handleKeyDown = (e) => {
             <h4>Availability</h4>
             {availabilityOptions.map(option => (
               <div key={option} className="filter-option">
-                <input
-                  type="radio"
-                  id={option}
-                  name="availability"
-                  checked={sidebarFilters.availability === option}
-                  onChange={() => handleSidebarFilterChange('availability', option)}
-                />
-                <label htmlFor={option}>{option}</label>
+                <div>
+                  <input
+                    type="radio"
+                    id={`availability-${option}`}
+                    name="availability"
+                    checked={sidebarFilters.availability === option}
+                    onChange={() => handleSidebarFilterChange('availability', option)}
+                  />
+                </div>
+                <div>
+                  <label htmlFor={`availability-${option}`}>{option}</label>
+                </div>
               </div>
             ))}
           </div>
-          
+         
           <div className="filter-section">
             <h4>Amenities</h4>
             {amenitiesOptions.map(amenity => (
-              <div key={amenity} className="filter-option">
+              <div key={amenity} className="filter-option"><div>
                 <input
                   type="checkbox"
                   id={amenity}
                   checked={sidebarFilters.amenities.includes(amenity)}
                   onChange={() => handleAmenityToggle(amenity)}
-                />
+                /></div><div>
                 <label htmlFor={amenity}>{amenity}</label>
-              </div>
+              </div></div>
             ))}
           </div>
         </div>
 
         {/* Main Content Area */}
-        <div className="search-results-content">
+        <div className="search-results-content" style={{
+    backgroundImage: 'url(./SearchResults.jpg) ', // First image as background
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+  }}>
           <div className="search-container">
             <div className="search-bar-wrapper">
               <div className="search-bar">
@@ -403,8 +478,20 @@ const handleKeyDown = (e) => {
               ))}
             </div>
           )}
-
-          <h2>Search Results</h2>
+          <div className="tabs-container">
+  {['All', 'Gated Community',
+    ...(profile?.gender === 'Female' ? ['Female'] : []),
+    ...(profile?.habits.foodChoice === 'Veg' ? ['Veg'] : [])
+  ].map(tab => (
+    <button
+      key={tab}
+      className={`tab-button ${activeTab === tab ? 'active' : ''}`}
+      onClick={() => setActiveTab(tab)}
+    >
+      {tab}
+    </button>
+  ))}
+</div>
           {searchResults.length > 0 ? (
             <div className="results-grid">
               {searchResults.map((listing, idx) => (

@@ -30,6 +30,41 @@ button {
 button:hover {
   background-color: #0056b3;
 }
+.suggested-messages {
+  display: flex; color: rgb(136, 31, 31);
+  flex-wrap: wrap;
+  gap: 1px;
+  margin-bottom: 0px;
+}
+
+.suggested-message-btn {
+  background-color: #007bff; /* Blue color */
+  color: rgb(77, 37, 37);
+  border: none;
+  border-radius: 4px;
+  padding: 8px 12px;
+  margin: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.suggested-message-btn:hover {
+  background-color: #0056b3; /* Darker blue on hover */
+}
+.message-menu button {
+  background-color: transparent;
+  border: none;
+  padding: 4px 8px;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  color: rgba(29, 33, 41, 0.8); /* slightly transparent dark text */
+  font-size: 14px;
+}
+
+.message-menu button:hover {
+  background-color: rgba(255, 255, 255, 0.2); /* light hover effect */
+}
 
 .success-msg {
   color: green;

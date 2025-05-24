@@ -21,11 +21,11 @@ const PropertyDescriptionForm = () => {
     propertyStructure: '', roomType: '', washroomType: '', parkingType: '',
     roomSize: '', apartmentSize: '', rent: '', availableFrom: todayDate, openDate: '',
     securityDepositOption: '', customSecurityDeposit: '',userType:'',
-    amenities: { TV: false, Fridge: false, WashingMachine: false, kitchen: false },
-    cookingType: '', images: [], videos: [], mapLocation: ''
+    amenities: { TV: false, Fridge: false, WashingMachine: false, kitchen: false},
+    cookingType: '', images: [], videos: [], mapLocation: '',userinterests:'',gender:'',languages:'',foodchoices:''
   });
-
-  const [showMap, setShowMap] = useState(false);
+  const [selectedLatLng, setSelectedLatLng] = useState(null);
+  const [showMap, setShowMap] = useState(true);
   const { listingId } = useParams();
   const navigate = useNavigate();
   const mapRef = useRef(null);
@@ -76,21 +76,38 @@ const PropertyDescriptionForm = () => {
   };
 
   const initAutocomplete = () => {
-    const autocomplete = new window.google.maps.places.Autocomplete(inputRef.current, { types: ['geocode'] });
-    autocomplete.addListener('place_changed', () => {
-      const place = autocomplete.getPlace();
-      if (!place.geometry) return;
-      const location = place.geometry.location;
-      const p = extractAddressParts(place.address_components);
-      renderMap(location);
-      setFormData(prev => ({
-        ...prev,
-        propertyAddress: place.formatted_address,
-        mapLocation: `${location.lat()},${location.lng()}`,
-        locality: p.locality, city: p.city, state: p.state, country: p.country, pinCode: p.pinCode
-      }));
-    });
-  };
+  const autocomplete = new window.google.maps.places.Autocomplete(
+    inputRef.current,
+    { types: ['geocode'] }
+  );
+
+  autocomplete.addListener('place_changed', () => {
+    const place = autocomplete.getPlace();
+    if (!place.geometry) return;
+
+    const location = place.geometry.location;     // google.maps.LatLng
+    const parts = extractAddressParts(place.address_components);
+
+    /* Save form data */
+    setFormData(prev => ({
+      ...prev,
+      propertyAddress: place.formatted_address,
+      mapLocation: `${location.lat()},${location.lng()}`,
+      ...parts
+    }));
+
+    /* Remember coords and make the map panel visible */
+    setSelectedLatLng(location);
+    setShowMap(true);
+  });
+};
+
+/* --- create / update the map when both things are ready --- */
+useEffect(() => {
+  if (showMap && selectedLatLng && mapRef.current) {
+    renderMap(selectedLatLng);
+  }
+}, [showMap, selectedLatLng]);
 
   useEffect(() => {
     if (!window.google) {
@@ -115,7 +132,7 @@ const PropertyDescriptionForm = () => {
         .then(res => {
           console.log('API Response:', res);
           setProfile(res.data);
-          setFormData(prev => ({ ...prev, userKey: currentUserKey,userType:res.data.userType}));
+          setFormData(prev => ({ ...prev, userKey: currentUserKey,userType:res.data.userType,userinterests:res.data.interests,gender:res.data.gender,languages:res.data.languages,foodchoices:res.data.habits.foodChoice}));
         })
         .catch(err => {setFormData(prev => ({ ...prev, userKey: currentUserKey}));
           console.error('Failed to load profile:', err);
@@ -125,24 +142,35 @@ const PropertyDescriptionForm = () => {
   }, []);
   
   useEffect(() => {
-    if (listingId) {
-      const fetchListing = async () => {
-        try {
-          const res = await fetch(`http://localhost:5000/api/listings/${listingId}`);
-          const data = await res.json();
-          if (res.ok) {
-            setFormData(prev => ({ ...prev, ...data }));
-            if (window.google && data.mapLocation) {
-              const [lat, lng] = data.mapLocation.split(',').map(Number);
-              const latLng = new window.google.maps.LatLng(lat, lng);
-              setTimeout(() => renderMap(latLng), 500);
-            }
+  if (listingId) {
+    const fetchListing = async () => {
+      try {
+        const res = await fetch(`http://localhost:5000/api/listings/${listingId}`);
+        const data = await res.json();
+        if (res.ok) {
+          const parsedAmenities = typeof data.amenities === 'string'
+            ? JSON.parse(data.amenities)
+            : data.amenities;
+
+          setFormData(prev => ({
+            ...prev,
+            ...data,
+            amenities: parsedAmenities
+          }));
+
+          if (window.google && data.mapLocation) {
+            const [lat, lng] = data.mapLocation.split(',').map(Number);
+            const latLng = new window.google.maps.LatLng(lat, lng);
+            setTimeout(() => renderMap(latLng), 500);
           }
-        } catch (err) { console.error('Error loading listing:', err); }
-      };
-      fetchListing();
-    }
-  }, [listingId]);
+        }
+      } catch (err) {
+        console.error('Error loading listing:', err);
+      }
+    };
+    fetchListing();
+  }
+}, [listingId]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -161,11 +189,10 @@ const PropertyDescriptionForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.propertyAddress?.trim()) { alert('Property address is required.'); return; }
-    
+    console.log("checking whether address loaded or not")
     const finalDeposit = formData.securityDepositOption === 'Other' 
       ? formData.customSecurityDeposit 
       : formData.securityDepositOption;
-    
     const listingData = {
       ...formData,
       securityDepositOption: finalDeposit,
@@ -327,7 +354,7 @@ const PropertyDescriptionForm = () => {
               </div>
               
               <div className="price-group">
-                <label><FaCalendarAlt /> Open Date</label>
+                <label><FaCalendarAlt /> Open House</label>
                 <input type="datetime-local" name="openDate" value={formData.openDate} onChange={handleChange} min={todayDateTime} />
               </div>
             </div>
@@ -357,6 +384,7 @@ const PropertyDescriptionForm = () => {
                 <input type="checkbox" name="kitchen" checked={formData.amenities.kitchen} onChange={handleChange} />
                 <FaUtensils /> Kitchen
               </label>
+             
             </div>
             
             <div className="cooking-preference">
@@ -369,6 +397,9 @@ const PropertyDescriptionForm = () => {
                 <label>
                   <input type="radio" name="cookingType" value="Shared" checked={formData.cookingType === 'Shared'} 
                     onChange={handleChange} required /> Shared
+                </label><label>
+                  <input type="radio" name="cookingType" value="NotAllowed" checked={formData.cookingType === 'NotAllowed'} 
+                    onChange={handleChange} required /> Not Allowed
                 </label>
               </div>
             </div>

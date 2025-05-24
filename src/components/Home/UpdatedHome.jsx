@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect,useContext  } from 'react';
 import Header from '../Header/Header';
 import './UpdatedHome.css';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import loadGoogleMaps from '../Utils/loadGoogleMaps';
 import MyListings from '../Listing/MyListings';
-
+import { AuthContext } from '../../context/AuthContext';
 function UpdatedHome() {
   // -----------------------
   // STATE
@@ -15,10 +15,11 @@ function UpdatedHome() {
 
   const [searchTerm, setSearchTerm] = useState('');
   const [searchType, setSearchType] = useState('flats'); // flats | roommates
-
+  const { profile, loadingProfile } = useContext(AuthContext);
   const [myListings, setMyListings] = useState([]);
   const [searchResults, setSearchResults] = useState([]);
-
+  const safeProfile = profile;            // or { gender: null, ... }
+  console.log("Auth data is ",profile)
   const [filtersVisible, setFiltersVisible] = useState(false);
   const [selectedFilters, setSelectedFilters] = useState([
     'Profession',
@@ -50,13 +51,15 @@ function UpdatedHome() {
   // INITIALISATION
   // -----------------------
   useEffect(() => {
+    
     const currentUserKey = localStorage.getItem('currentUser');
     setUser(currentUserKey);
     setIsLoggedIn(!!currentUserKey);
   }, []);
-
+  
   // Fetch listings whenever searchType changes
   useEffect(() => {
+    
     const fetchListings = async () => {
       const endpoint =
         searchType === 'roommates'
@@ -72,6 +75,11 @@ function UpdatedHome() {
 
     fetchListings();
   }, [searchType]);
+    useEffect(() => {
+      if (profile) {
+        console.log("Bio is:", profile.gender);     // will run once data is in
+      }
+    }, [profile]);
 
   // Rotate hero background images
   useEffect(() => {

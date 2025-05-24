@@ -18,6 +18,7 @@
 .filters-sidebar,
 .filter-section {
   text-align: left;
+  background-color:floralwhite;
 }
 
 .filters-sidebar .filter-option {
@@ -48,18 +49,44 @@
   font-size: 16px;
 }
 
-.filter-option {
-  margin: 10px 0;
-  display: flex;
-  align-items:flex-start;
-  justify-content: flex-start; /* Add this line */
+.filter-option{
+  display:flex;          /* input + label on one row            */
+  align-items:center;    /* vertically center them              */
+  gap:6px;               /* little space between radio & text   */
 }
 
-.filter-option input {
-  align-items:flex-start;
-  /* Remove any margin-left if present */
-  margin-left: 0; /* Ensure no left margin */
+.filter-option input[type="radio"]{
+  margin:0;              /* kill any default left-indent margins */
 }
+.tabs-container {
+  display: flex;
+  justify-content: flex-start; /* align tabs to the left */
+  align-items: center;
+  gap: 3px;
+  font-size: 12px;
+  padding: 8px 0;
+}
+
+.tabs-container button {
+  background-color: transparent;
+  border: 1px solid #ccc;
+  padding: 4px 10px;            /* bigger than before */
+  font-size: 14px;
+  cursor: pointer;
+  text-decoration: none;
+  color: #333;
+  border-radius: 4px;
+}
+
+.tabs-container button:hover {
+  background-color: #f5f5f5;
+}
+
+.tabs-container button.active {
+  background-color: #ddd;
+  font-weight: bold;
+}
+
 
 .filter-option label {
   cursor: pointer;
