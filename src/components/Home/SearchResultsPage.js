@@ -283,10 +283,11 @@ const handleKeyDown = (e) => {
     if (user) {
       filtered = filtered.filter(listing => listing.userKey !== user);
     }
-
+      
       const tabFiltered = filtered.filter(listing => {
+        
       if (activeTab === 'Gated Community') {
-        return listing.propertyStructure === 'Gated community';
+        return listing.propertyStructure === 'Gated Community';
       }
       if (activeTab === 'Female' && profile?.gender === 'Female') {
         return listing.gender === 'Female'; // or adapt to your listing field
@@ -309,6 +310,7 @@ const handleKeyDown = (e) => {
 ]);
 
   const openListingDetails = (listing) => {
+    
     localStorage.setItem('selectedListing', JSON.stringify(listing));
     const detailsUrl = `${window.location.origin}/listing-details/${listing._id}`;
     window.open(detailsUrl, '_blank');
@@ -503,7 +505,7 @@ const handleKeyDown = (e) => {
                   <div className="listing-header">
                     <h3>{listing.locality || 'Property Name'}</h3>
                     <span className="property-type">{listing.userType || 'Gated Community'}</span>
-                    <span className="property-type">{listing.propertyType || 'Gated Community'}</span>
+                    <span className="property-type">{listing.propertyStructure || 'Gated Community'}</span>
                   </div>
                   <p className="listing-location">
                     {listing.parkingType || 'Parking type not specified'}, 

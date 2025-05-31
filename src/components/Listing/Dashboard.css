@@ -11,17 +11,17 @@
   display: flex;
   gap: 24px;
   flex-wrap: wrap;
-  margin-bottom: 34px;
+  margin-bottom: 24px;
 }
 
 .card {
-  flex: 1 1 240px;
+  flex: 1 1 100px;
   display: flex;
   align-items: center;
   gap: 16px;
   color: #fff;
   border-radius: 14px;
-  padding: 18px 22px;
+  padding: 1px 12px;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
 }
 
