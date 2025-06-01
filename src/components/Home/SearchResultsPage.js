@@ -5,7 +5,7 @@ import Header from '../Header/Header';
 import axios from 'axios';
 import loadGoogleMaps from '../Utils/loadGoogleMaps'; // adjust path as needed
 import { AuthContext } from '../../context/AuthContext';
-
+import config from '../../config';
 const SearchResultsPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -22,7 +22,8 @@ const SearchResultsPage = () => {
     'Food Options': ['Vegetarian', 'No Preference', 'Non-Vegetarian'],
     'Parking': ['Bike Parking', 'Car Parking', 'None'],
     'Language': ['English', 'Hindi', 'Telugu', 'Tamil', 'Kannada', 'Other']
-  });
+  });const [favorites, setFavorites] = useState([]);
+
   const [activeFilter, setActiveFilter] = useState(null);
   const [myListings, setMyListings] = useState([]);
   const [searchResults, setSearchResults] = useState(initialResults);
@@ -108,6 +109,51 @@ const SearchResultsPage = () => {
     }
   };
 }, []);
+useEffect(() => {
+    const fetchFavorites = async () => {
+      if (!user) return;
+      
+      try {
+        const response = await axios.get(`${config.apiBaseUrl}/api/favorites/${user}`);
+        setFavorites(response.data.favorites || []);
+      } catch (error) {
+        console.error("Error fetching favorites:", error);
+      }
+    };
+
+    fetchFavorites();
+  }, [user]);
+
+  useEffect(() => {
+    if (profile) {
+      //alert(profile.gender)
+    }
+  }, [profile]);
+const toggleFavorite = async (listingId) => {
+    if (!user) {
+      alert("Please login to save favorites");
+      return;
+    }
+    try {
+      const isCurrentlyFavorite = favorites.includes(listingId);
+      
+      if (isCurrentlyFavorite) {
+        await axios.delete(`${config.apiBaseUrl}/api/favorites/${user}/${listingId}`);
+        setFavorites(prev => prev.filter(id => id !== listingId));
+      } else {
+        
+        await axios.post(`${config.apiBaseUrl}/api/favorites`, {
+          
+          userId: user,
+          listingId
+        });
+        setFavorites(prev => [...prev, listingId]);
+      }
+    } catch (error) {
+      console.error("Error updating favorite:", error);
+    }
+  };
+
   useEffect(() => {
     const currentUserKey = localStorage.getItem('currentUser');
     setUser(currentUserKey);
@@ -118,8 +164,8 @@ const SearchResultsPage = () => {
 
   const fetchListings = async () => {
     const endpoint = searchType === 'roommates'
-      ? 'http://localhost:5000/api/wanted-listings'
-      : 'http://localhost:5000/api/listings';
+      ? `${config.apiBaseUrl}/api/wanted-listings`
+      : `${config.apiBaseUrl}/api/listings`;
 
     try {
       const res = await axios.get(endpoint);
@@ -513,7 +559,24 @@ const handleKeyDown = (e) => {
                   </p>
                   <div className="listing-details">
                     <span className="rent">Rent: ₹{listing.rent?.toLocaleString() || '0'}</span>
-                    {listing.roomSize && <span className="area">{listing.roomSize} sqft</span>}
+                    {listing.roomSize && <span className="area">{listing.roomSize} sqft</span>}<button 
+                      className={`favorite-button ${favorites.includes(listing._id) ? 'favorited' : ''}`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleFavorite(listing._id);
+                      }}
+                      aria-label={favorites.includes(listing._id) ? "Remove from favorites" : "Add to favorites"}
+                    >
+                      {favorites.includes(listing._id) ? (
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="gold" stroke="gold">
+    <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+  </svg>
+) : (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#808080">
+    <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" fill="#808080"/>
+  </svg>
+                      )}
+                    </button>
                   </div>
                 </div>
               ))}

@@ -7,7 +7,7 @@ import {
 } from 'react-icons/fa';
 import Select from 'react-select';
 import './UserProfile.css';
-
+import config from '../../config';
 const UserProfile = () => {
   const [profile, setProfile] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -24,7 +24,7 @@ const UserProfile = () => {
   useEffect(() => {
     const currentUserEmail = localStorage.getItem('currentUser');
     if (currentUserEmail) {
-      axios.get(`http://localhost:5000/api/users/profile/${currentUserEmail}`)
+      axios.get(`${config.apiBaseUrl}/api/users/profile/${currentUserEmail}`)
         .then(res => setProfile(res.data))
         .catch(err => console.error('Failed to load profile:', err));
     }
@@ -51,7 +51,7 @@ const UserProfile = () => {
   const handleSave = () => {
     const currentUserEmail = localStorage.getItem('currentUser');
     if (currentUserEmail) {
-      axios.put(`http://localhost:5000/api/users/profile/${currentUserEmail}`, profile)
+      axios.put(`${config.apiBaseUrl}/api/users/profile/${currentUserEmail}`, profile)
         .then(res => {
           setProfile(res.data);
           setIsEditing(false);

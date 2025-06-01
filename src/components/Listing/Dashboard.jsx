@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import "./Dashboard.css";
+import config from "../../config";
 import {
   LineChart,
   Line,
@@ -39,7 +40,7 @@ const Dashboard = () => {
     (async () => {
       try {
         const res = await fetch(
-          `http://localhost:5000/api/listings/stats/${encodeURIComponent(
+          `${config.apiBaseUrl}/api/listings/stats/${encodeURIComponent(
             userKey
           )}`
         );

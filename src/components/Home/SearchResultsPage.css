@@ -20,7 +20,29 @@
   text-align: left;
   background-color:floralwhite;
 }
+.favorite-button {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  position:relative;
+  right: 10px;
+  top: 10px;
+  padding: 0px;
+  z-index: 0;
+}
 
+.favorite-button:hover {
+  transform: scale(1.1);
+}
+
+.favorite-button.favorited {
+  color: red;
+}
+
+.listing-card {
+  position: relative;
+}
 .filters-sidebar .filter-option {
   display: flex !important;          /* stay in one row                */
   flex-direction: row !important;

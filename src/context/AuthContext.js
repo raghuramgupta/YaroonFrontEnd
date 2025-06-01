@@ -1,6 +1,6 @@
 import React, { useState, useEffect, createContext, useCallback } from 'react';
 import axios from 'axios';
-
+import config from '../config';
 export const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
@@ -20,7 +20,7 @@ export const AuthProvider = ({ children }) => {
     const currentUserEmail = localStorage.getItem('currentUser');
     setLoadingProfile(true);
     axios
-      .get(`http://localhost:5000/api/users/profile/${currentUserEmail}`)
+      .get(`${config.apiBaseUrl}/api/users/profile/${currentUserEmail}`)
       .then(res => {
         setProfile(res.data);
       })
@@ -35,7 +35,7 @@ export const AuthProvider = ({ children }) => {
   /* ❷  Helpers that components can call                                */
   /* ------------------------------------------------------------------ */
   const login = useCallback(async (username, password) => {
-    const res = await axios.post('http://localhost:5000/api/users/login', {
+    const res = await axios.post('${config.apiBaseUrl}/api/users/login', {
       username,
       password
     });

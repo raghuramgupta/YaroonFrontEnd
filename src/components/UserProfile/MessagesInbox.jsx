@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import Header from '../Header/Header';
 import './MessagesInbox.css';
-
+import config from '../../config';
 const MessagesInbox = () => {
   const [messages, setMessages] = useState([]);
   const [groupedMessages, setGroupedMessages] = useState({});
@@ -38,8 +38,8 @@ const MessagesInbox = () => {
   const fetchMessages = async (userId) => {
     try {
       const [receivedRes, sentRes] = await Promise.all([
-        fetch(`http://localhost:5000/api/messages/received/${userId}`),
-        fetch(`http://localhost:5000/api/messages/sent/${userId}`)
+        fetch(`${config.apiBaseUrl}/api/messages/received/${userId}`),
+        fetch(`${config.apiBaseUrl}/api/messages/sent/${userId}`)
       ]);
 
       if (receivedRes.ok && sentRes.ok) {
@@ -76,7 +76,7 @@ const MessagesInbox = () => {
     setTyping(false);
 
     try {
-      const response = await fetch('http://localhost:5000/api/messages', {
+      const response = await fetch('${config.apiBaseUrl}/api/messages', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -116,7 +116,7 @@ const MessagesInbox = () => {
 
   const handleMarkAsRead = async (messageId) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/messages/read/${messageId}`, {
+      const response = await fetch(`${config.apiBaseUrl}/api/messages/read/${messageId}`, {
         method: 'POST',
       });
 

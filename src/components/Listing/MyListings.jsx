@@ -5,6 +5,7 @@ import Header from '../Header/Header';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEdit, faTrash, faSort, faSortUp, faSortDown, faFilter } from '@fortawesome/free-solid-svg-icons';
 import { faFacebookF, faTwitter, faInstagram } from '@fortawesome/free-brands-svg-icons';
+import config from '../../config';
 
 /**
  * MyListings – shows two tabbed views:
@@ -51,7 +52,7 @@ const [wantedFilters, setWantedFilters] = useState({
 
     try {
       const res = await fetch(
-        `http://localhost:5000/api/listings/user/${encodeURIComponent(currentUserKey)}`
+        `${config.apiBaseUrl}/api/listings/user/${encodeURIComponent(currentUserKey)}`
       );
 
       if (!res.ok) {
@@ -72,7 +73,7 @@ const [wantedFilters, setWantedFilters] = useState({
     if (!currentUserKey) return;
 
     try {
-      const res = await fetch(`http://localhost:5000/api/wanted-listings/user/${encodeURIComponent(currentUserKey)}`);
+      const res = await fetch(`${config.apiBaseUrl}/api/wanted-listings/user/${encodeURIComponent(currentUserKey)}`);
 
       if (!res.ok) {
         console.error('Server error:', await res.text());
@@ -153,7 +154,7 @@ const [wantedFilters, setWantedFilters] = useState({
   /* ---------------------------------------------------------------------- */
   const handleArchive = async (listingId) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/listings/${listingId}/archive`, {
+      const res = await fetch(`${config.apiBaseUrl}/api/listings/${listingId}/archive`, {
         method: 'PATCH',
       });
       const data = await res.json();
@@ -169,7 +170,7 @@ const [wantedFilters, setWantedFilters] = useState({
 
   const handleDelete = async (listingId) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/listings/${listingId}`, {
+      const res = await fetch(`${config.apiBaseUrl}/api/listings/${listingId}`, {
         method: 'DELETE',
       });
       const data = await res.json();
@@ -203,7 +204,7 @@ const [wantedFilters, setWantedFilters] = useState({
 
   const handleWantedDelete = async (id) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/wanted-listings/${id}`, {
+      const res = await fetch(`${config.apiBaseUrl}/api/wanted-listings/${id}`, {
         method: 'DELETE',
       });
       const data = await res.json();

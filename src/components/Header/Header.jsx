@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import './Header.css';
 import { useEffect } from 'react'; // if not already imported
 import axios from 'axios';
-
+import config from '../../config';
 const Header = ({ isLoggedIn = false, onLogout = () => {} }) => {
   const navigate = useNavigate();
   const [showMenu, setShowMenu] = useState(false);
@@ -22,7 +22,7 @@ useEffect(() => {
     const userProfile = JSON.parse(localStorage.getItem(`userProfile_${currentUserKey}`));
     if (userProfile) setUser(userProfile);
   }
-  axios.get(`http://localhost:5000/api/users/profile/${currentUserKey}`)
+  axios.get(`${config.apiBaseUrl}/api/users/profile/${currentUserKey}`)
     .then(res => {
       setUserName(res.data.fullName);
     }).catch(err => {

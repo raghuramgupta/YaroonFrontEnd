@@ -9,7 +9,7 @@ import {
 } from 'react-icons/fa';
 import { GiWashingMachine } from 'react-icons/gi';
 import axios from 'axios';
-
+import config from '../../config';
 const todayDate = new Date().toISOString().split('T')[0];
 const todayDateTime = new Date().toISOString().slice(0, 16);
 const metroCities = ['Hyderabad', 'Bengaluru', 'Chennai', 'Mumbai', 'Pune', 'Gurugram', 'Noida', 'New Delhi'];
@@ -128,7 +128,7 @@ useEffect(() => {
     if (currentUserKey) {
       setIsLoggedIn(true);
       const userProfile = JSON.parse(localStorage.getItem(`userProfile_${currentUserKey}`));
-        axios.get(`http://localhost:5000/api/users/profile/${currentUserKey}`)
+        axios.get(`${config.apiBaseUrl}/api/users/profile/${currentUserKey}`)
         .then(res => {
           console.log('API Response:', res);
           setProfile(res.data);
@@ -145,7 +145,7 @@ useEffect(() => {
   if (listingId) {
     const fetchListing = async () => {
       try {
-        const res = await fetch(`http://localhost:5000/api/listings/${listingId}`);
+        const res = await fetch(`${config.apiBaseUrl}/api/listings/${listingId}`);
         const data = await res.json();
         if (res.ok) {
           const parsedAmenities = typeof data.amenities === 'string'
@@ -204,8 +204,8 @@ useEffect(() => {
 
     try {
       const endpoint = listingId 
-        ? `http://localhost:5000/api/listings/${listingId}`
-        : 'http://localhost:5000/api/listings/create';
+        ? `${config.apiBaseUrl}/api/listings/${listingId}`
+        : '${config.apiBaseUrl}/api/listings/create';
       const method = listingId ? 'put' : 'post';
       
       await axios[method](endpoint, listingData, { headers: { 'Content-Type': 'application/json' } });

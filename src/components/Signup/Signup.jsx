@@ -4,7 +4,7 @@ import Header from '../Header/Header';
 import sha256 from 'crypto-js/sha256';
 import { useNavigate } from 'react-router-dom';
 import Select from 'react-select';
-
+import config from '../../config';
 const initialFormState = {
   mobile: '',
   email: '',
@@ -117,7 +117,7 @@ const Signup = () => {
     };
 
     try {
-      const res = await fetch('http://localhost:5000/api/users/signup', {
+      const res = await fetch(`${config.apiBaseUrl}/api/users/signup`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(userData),
@@ -140,7 +140,7 @@ const Signup = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const res = await fetch('http://localhost:5000/api/users/login', {
+      const res = await fetch(`${config.apiBaseUrl}/api/users/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(loginData),

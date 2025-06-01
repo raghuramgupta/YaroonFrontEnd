@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-
+import config from '../config';
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -9,7 +9,8 @@ const Login = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('http://localhost:5000/api/login', { email, password });
+      console.log("URL value is ",`${config.apiBaseUrl}`)
+      const response = await axios.post(`${config.apiBaseUrl}/api/login`, { email, password });
       localStorage.setItem('token', response.data.token); // Store the token
       setMessage('Login successful');
     } catch (error) {

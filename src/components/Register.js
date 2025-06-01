@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import axios from 'axios';
-
+import config from '../config';
 const Register = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -19,7 +19,7 @@ const Register = () => {
 
     try {
       // Send POST request to the backend API to register the user
-      const response = await axios.post('http://localhost:5000/api/users/register', userData);
+      const response = await axios.post(`${config.apiBaseUrl}/api/users/register`, userData);
       setMessage(response.data.message); // Display success message
     } catch (error) {
       // Display error message if registration fails

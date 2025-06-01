@@ -63,8 +63,8 @@ function UpdatedHome() {
     const fetchListings = async () => {
       const endpoint =
         searchType === 'roommates'
-          ? 'http://localhost:5000/api/wanted-listings'
-          : 'http://localhost:5000/api/listings';
+          ? '${config.apiBaseUrl}/api/wanted-listings'
+          : '${config.apiBaseUrl}/api/listings';
       try {
         const res = await axios.get(endpoint);
         setMyListings(Array.isArray(res.data) ? res.data : []);

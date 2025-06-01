@@ -14,7 +14,7 @@ import {
   FaEnvelope
 } from 'react-icons/fa';
 import axios from 'axios';
-
+import config from '../../config';
 const metroCities = [
   'Hyderabad',
   'Bengaluru',
@@ -126,7 +126,7 @@ const WantedRoomForm = () => {
 
         // Fetch user profile first
         if (currentUser) {
-          const { data: userProfile } = await axios.get(`http://localhost:5000/api/users/profile/${currentUser}`);
+          const { data: userProfile } = await axios.get(`${config.apiBaseUrl}/api/users/profile/${currentUser}`);
           setFormData(prev => ({
             ...prev,
             userKey: currentUser,
@@ -141,7 +141,7 @@ const WantedRoomForm = () => {
         // Then fetch listing data if in edit mode
         if (isEdit) {
         const { data: listing } = await axios.get(
-          `http://localhost:5000/api/wanted-listings/${listingId}`
+          `${config.apiBaseUrl}/api/wanted-listings/${listingId}`
         );
 
         setFormData(prev => ({
@@ -180,12 +180,12 @@ const WantedRoomForm = () => {
 
     try {
       if (isEdit) {
-        await axios.put(`http://localhost:5000/api/wanted-listings/${listingId}`, formData, {
+        await axios.put(`${config.apiBaseUrl}/api/wanted-listings/${listingId}`, formData, {
           headers: { 'Content-Type': 'application/json' }
         });
         alert('Room request updated successfully!');
       } else {
-        await axios.post('http://localhost:5000/api/wanted-listings/create', { ...formData, user: formData.userKey }, {
+        await axios.post('${config.apiBaseUrl}/api/wanted-listings/create', { ...formData, user: formData.userKey }, {
           headers: { 'Content-Type': 'application/json' }
         });
         alert('Your room request has been posted successfully!');
