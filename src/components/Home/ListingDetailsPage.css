@@ -263,21 +263,21 @@
 
 .suggested-messages {
   background-color: #f8fafc;
-  border-radius: 8px;
-  padding: 12px;
+  border-radius: 2px;
+  padding: 2px;
 }
 
 .suggestion-title {
-  font-size: 14px;
+  font-size: 10px;
   color: #7f8c8d;
-  margin-bottom: 10px;
+  margin-bottom: 1px;
 }
 
 .suggestion-buttons {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 10px;
+  gap: 4px;
+  margin-bottom: 2px;
 }
 
 .suggestion-btn {
