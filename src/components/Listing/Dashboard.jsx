@@ -13,28 +13,27 @@ import {
   CartesianGrid,
   ResponsiveContainer,
 } from "recharts";
-import { FiHome, FiEye, FiUser } from "react-icons/fi";   // ⬅ cute icons
+import { FiHome, FiEye, FiUsers, FiTrendingUp, FiMapPin, FiLayers } from "react-icons/fi";
+import { FaSpinner } from "react-icons/fa";
 
 const Dashboard = () => {
   const [stats, setStats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [userKey] = useState(() => localStorage.getItem("currentUser") || "");
 
-  /* ---------- colours ---------- */
   const palette = [
-    "#42a5f5",
-    "#66bb6a",
-    "#ff7043",
-    "#ab47bc",
-    "#26c6da",
-    "#ffa726",
-    "#8d6e63",
-    "#29b6f6",
-    "#d4e157",
-    "#ec407a",
+    "#4f46e5", // Indigo
+    "#10b981", // Emerald
+    "#f59e0b", // Amber
+    "#3b82f6", // Blue
+    "#ef4444", // Red
+    "#8b5cf6", // Violet
+    "#ec4899", // Pink
+    "#14b8a6", // Teal
+    "#f97316", // Orange
+    "#64748b", // Slate
   ];
 
-  /* ---------- fetch once ---------- */
   useEffect(() => {
     if (!userKey) return;
     (async () => {
@@ -54,7 +53,6 @@ const Dashboard = () => {
     })();
   }, [userKey]);
 
-  /* ---------- helpers ---------- */
   const totalListings = stats.length;
 
   const totalViewsExMe =
@@ -71,7 +69,6 @@ const Dashboard = () => {
   );
   const totalUniqueVisitors = visitors.size;
 
-  /* ---------- daily views line‑chart dataset ---------- */
   const dayMap = {};
   stats.forEach((listing) => {
     const addrKey = listing.propertyAddress;
@@ -89,7 +86,6 @@ const Dashboard = () => {
   );
   const lineData = Object.values(dayMap).sort((a, b) => a.date.localeCompare(b.date));
 
-  /* ---------- bar‑chart datasets ---------- */
   const localityCounts = {};
   const typeCounts = {};
   stats.forEach((l) => {
@@ -104,166 +100,247 @@ const Dashboard = () => {
   }));
   const typeData = Object.entries(typeCounts).map(([type, count]) => ({ type, count }));
 
-  /* ---------- summary tile meta ---------- */
   const tiles = [
     {
       title: "Total Listings",
       value: totalListings,
-      icon: <FiHome size={28} />,
-      gradient: "linear-gradient(135deg,#42a5f5 0%,#4fc3f7 100%)",
+      icon: <FiHome className="tile-icon" />,
+      color: "bg-indigo-100 text-indigo-600",
+      trend: null,
     },
     {
       title: "Total Views",
       value: totalViewsExMe,
-      icon: <FiEye size={28} />,
-      gradient: "linear-gradient(135deg,#66bb6a 0%,#b2ff59 100%)",
+      icon: <FiEye className="tile-icon" />,
+      color: "bg-emerald-100 text-emerald-600",
+      trend: null,
     },
     {
       title: "Unique Visitors",
       value: totalUniqueVisitors,
-      icon: <FiUser size={28} />,
-      gradient: "linear-gradient(135deg,#ff7043 0%,#ffab91 100%)",
+      icon: <FiUsers className="tile-icon" />,
+      color: "bg-amber-100 text-amber-600",
+      trend: null,
     },
   ];
 
-  /* ============================== */
   return (
-    <div className="dashboard-wrapper">
+    <div className="dashboard-container">
+      <header className="dashboard-header">
+        <h1>Property Analytics Dashboard</h1>
+        <p className="dashboard-subtitle">Performance overview of your listings</p>
+      </header>
+
       {loading ? (
-        <p>Loading…</p>
+        <div className="loading-overlay">
+          <FaSpinner className="spinner" />
+          <p>Loading dashboard data...</p>
+        </div>
       ) : (
         <>
-          {/* ---------- summary gradient cards ---------- */}
-          <div className="summary-cards">
-            {tiles.map((t) => (
-              <div className="card" style={{ background: t.gradient }} key={t.title}>
-                <div className="card-icon">{t.icon}</div>
-                <div className="card-text">
-                  <p className="card-value">{t.value}</p>
-                  <p className="card-title">{t.title}</p>
+          <section className="metrics-grid">
+            {tiles.map((tile, index) => (
+              <div key={index} className={`metric-card ${tile.color}`}>
+                <div className="metric-icon">{tile.icon}</div>
+                <div className="metric-content">
+                  <h3>{tile.title}</h3>
+                  <p className="metric-value">{tile.value}</p>
+                  {tile.trend && (
+                    <div className="metric-trend">
+                      <FiTrendingUp />
+                      <span>{tile.trend}</span>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
-          </div>
+          </section>
 
-          {/* ---------- data table ---------- */}
-          <table className="listing-stats-table">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Address</th>
-                <th>Views</th>
-                <th>Unique Visitors</th>
-              </tr>
-            </thead>
-            <tbody>
-              {stats.map((l, i) => {
-                const viewsExMe =
-                  (l.viewsLog || []).filter((v) => v.viewer !== userKey).length / 2;
-                const uniq = new Set(
-                  (l.viewsLog || [])
-                    .filter((v) => v.viewer && v.viewer !== userKey)
-                    .map((v) => v.viewer)
-                ).size;
-                return (
-                  <tr key={l._id}>
-                    <td>{i + 1}</td>
-                    <td>{l.propertyAddress}</td>
-                    <td>{viewsExMe}</td>
-                    <td>{uniq}</td>
+          <section className="data-section">
+            <h2 className="section-title">Listing Performance</h2>
+            <div className="table-container">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Address</th>
+                    <th>
+                      <div className="table-header-cell">
+                        <FiEye />
+                        <span>Views</span>
+                      </div>
+                    </th>
+                    <th>
+                      <div className="table-header-cell">
+                        <FiUsers />
+                        <span>Unique Visitors</span>
+                      </div>
+                    </th>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                </thead>
+                <tbody>
+                  {stats.map((l, i) => {
+                    const viewsExMe =
+                      (l.viewsLog || []).filter((v) => v.viewer !== userKey).length / 2;
+                    const uniq = new Set(
+                      (l.viewsLog || [])
+                        .filter((v) => v.viewer && v.viewer !== userKey)
+                        .map((v) => v.viewer)
+                    ).size;
+                    return (
+                      <tr key={l._id}>
+                        <td>{i + 1}</td>
+                        <td className="address-cell">{l.propertyAddress}</td>
+                        <td>{viewsExMe}</td>
+                        <td>{uniq}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </section>
 
-          {/* ---------- pretty charts ---------- */}
-          <div className="charts-row">
-            {/* --- line chart --- */}
-            {lineData.length > 0 && (
-              <div className="chart-box">
-                <h3>Daily Views per Address</h3>
-                <ResponsiveContainer width="100%" height={260}>
-                  <LineChart data={lineData}>
-                    <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                    <XAxis dataKey="date" />
-                    <YAxis allowDecimals={false} />
-                    <Tooltip />
-                    <Legend />
-                    {stats.map((l, idx) => (
-                      <Line
-                        key={l.propertyAddress}
-                        type="monotone"
-                        dataKey={l.propertyAddress}
-                        stroke={palette[idx % palette.length]}
-                        strokeWidth={2.5}
-                        dot={false}
-                        activeDot={{ r: 5 }}
-                      />
-                    ))}
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            )}
+          <section className="charts-section">
+            <div className="chart-grid">
+              {lineData.length > 0 && (
+                <div className="chart-card">
+                  <div className="chart-header">
+                    <FiTrendingUp className="chart-icon" />
+                    <h3>Daily Views Trend</h3>
+                  </div>
+                  <div className="chart-container">
+                    <ResponsiveContainer width="100%" height={300}>
+                      <LineChart data={lineData}>
+                        <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+                        <XAxis 
+                          dataKey="date" 
+                          tick={{ fill: '#6b7280' }}
+                          tickMargin={10}
+                        />
+                        <YAxis 
+                          allowDecimals={false} 
+                          tick={{ fill: '#6b7280' }}
+                        />
+                        <Tooltip 
+                          contentStyle={{
+                            background: '#fff',
+                            borderRadius: '8px',
+                            boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                            border: 'none'
+                          }}
+                        />
+                        <Legend />
+                        {stats.map((l, idx) => (
+                          <Line
+                            key={l.propertyAddress}
+                            type="monotone"
+                            dataKey={l.propertyAddress}
+                            stroke={palette[idx % palette.length]}
+                            strokeWidth={2}
+                            dot={{ r: 2 }}
+                            activeDot={{ r: 5 }}
+                          />
+                        ))}
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              )}
 
-            {/* --- bar chart locality --- */}
-            {localityData.length > 0 && (
-              <div className="chart-box">
-                <h3>Listings by Locality</h3>
-                <ResponsiveContainer width="100%" height={260}>
-                  <BarChart data={localityData}>
-                    <defs>
-                      <linearGradient id="gradLoc" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%"  stopColor="#42a5f5" />
-                        <stop offset="100%" stopColor="#4fc3f7" />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                    <XAxis dataKey="locality" />
-                    <YAxis allowDecimals={false} />
-                    <Tooltip />
-                    <Legend />
-                    <Bar
-                      dataKey="count"
-                      name="Listings"
-                      fill="url(#gradLoc)"
-                      radius={[8, 8, 0, 0]}
-                      barSize={40}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            )}
+              {localityData.length > 0 && (
+                <div className="chart-card">
+                  <div className="chart-header">
+                    <FiMapPin className="chart-icon" />
+                    <h3>Listings by Locality</h3>
+                  </div>
+                  <div className="chart-container">
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={localityData}>
+                        <defs>
+                          <linearGradient id="gradLoc" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#4f46e5" />
+                            <stop offset="100%" stopColor="#8b5cf6" />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+                        <XAxis 
+                          dataKey="locality" 
+                          tick={{ fill: '#6b7280' }}
+                        />
+                        <YAxis 
+                          allowDecimals={false} 
+                          tick={{ fill: '#6b7280' }}
+                        />
+                        <Tooltip 
+                          contentStyle={{
+                            background: '#fff',
+                            borderRadius: '8px',
+                            boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                            border: 'none'
+                          }}
+                        />
+                        <Legend />
+                        <Bar
+                          dataKey="count"
+                          name="Listings"
+                          fill="url(#gradLoc)"
+                          radius={[4, 4, 0, 0]}
+                          barSize={30}
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              )}
 
-            {/* --- bar chart property type --- */}
-            {typeData.length > 0 && (
-              <div className="chart-box">
-                <h3>Listings by Property Type</h3>
-                <ResponsiveContainer width="100%" height={260}>
-                  <BarChart data={typeData}>
-                    <defs>
-                      <linearGradient id="gradType" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%"  stopColor="#ff7043" />
-                        <stop offset="100%" stopColor="#ffab91" />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                    <XAxis dataKey="type" />
-                    <YAxis allowDecimals={false} />
-                    <Tooltip />
-                    <Legend />
-                    <Bar
-                      dataKey="count"
-                      name="Listings"
-                      fill="url(#gradType)"
-                      radius={[8, 8, 0, 0]}
-                      barSize={40}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-          </div>
+              {typeData.length > 0 && (
+                <div className="chart-card">
+                  <div className="chart-header">
+                    <FiLayers className="chart-icon" />
+                    <h3>Listings by Property Type</h3>
+                  </div>
+                  <div className="chart-container">
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={typeData}>
+                        <defs>
+                          <linearGradient id="gradType" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#10b981" />
+                            <stop offset="100%" stopColor="#34d399" />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+                        <XAxis 
+                          dataKey="type" 
+                          tick={{ fill: '#6b7280' }}
+                        />
+                        <YAxis 
+                          allowDecimals={false} 
+                          tick={{ fill: '#6b7280' }}
+                        />
+                        <Tooltip 
+                          contentStyle={{
+                            background: '#fff',
+                            borderRadius: '8px',
+                            boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                            border: 'none'
+                          }}
+                        />
+                        <Legend />
+                        <Bar
+                          dataKey="count"
+                          name="Listings"
+                          fill="url(#gradType)"
+                          radius={[4, 4, 0, 0]}
+                          barSize={30}
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              )}
+            </div>
+          </section>
         </>
       )}
     </div>

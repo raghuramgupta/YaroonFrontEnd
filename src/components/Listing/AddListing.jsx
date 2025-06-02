@@ -26,8 +26,8 @@ const AddListing = ({ onBack }) => {
   const handleNext = () => {
     if (!selectedOption) return;
     const routeMap = {
-      "Room(s) in an existing shareholder": "/room-in-shareholder",
-      "Whole property for rent": "/whole-property",
+      "List Room in your Property": "/room-in-shareholder",
+      "I need a room": "/need-place",
       "Student accommodation": "/student-accommodation",
       "Homestay": "/homestay"
     };
@@ -76,31 +76,65 @@ const AddListing = ({ onBack }) => {
         {activeTab === 'add' && (
           <div className="listing-form" >
             <h2 className="form-subtitle">What type of accommodation are you offering?</h2>
-            <div className="options-container">
-              {[
-                "Room(s) in an existing shareholder",
-                "Whole property for rent",
-                "Student accommodation",
-                "Homestay"
-              ].map((option) => (
-                <div
-                  key={option}
-                  className={`option-item ${selectedOption === option ? 'selected' : ''}`}
-                  onClick={() => handleOptionChange(option)}
-                >
-                  <input
-                    type="radio"
-                    id={option}
-                    name="accommodationType"
-                    value={option}
-                    checked={selectedOption === option}
-                    onChange={() => handleOptionChange(option)}
-                    hidden
-                  />
-                  <label htmlFor={option}>{option}</label>
-                </div>
-              ))}
-            </div>
+            <div className="options-container" style={{ display: 'flex', gap: '2rem' }}>
+                {[
+                  { text: "List Room in your Property", icon: "🏠" },
+                  { text: "I need a room", icon: "🔍" }
+                ].map((option) => (
+                  <div
+                    key={option.text}
+                    className={`card option-item ${selectedOption === option.text ? 'selected' : ''}`}
+                    onClick={() => handleOptionChange(option.text)}
+                    style={{
+                      padding: '2rem',
+                      border: '1px solid #e0e0e0',
+                      borderRadius: '12px',
+                      cursor: 'pointer',
+                      flex: 1,
+                      minHeight: '180px', // Increased card height
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      backgroundColor: selectedOption === option.text ? '#f5f9ff' : '#ffffff',
+                      boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
+                      transition: 'all 0.3s ease',
+                      '&:hover': {
+                        transform: 'translateY(-5px)'
+                      }
+                    }}
+                  >
+                    <input
+                      type="radio"
+                      id={option.text}
+                      name="accommodationType"
+                      value={option.text}
+                      checked={selectedOption === option.text}
+                      onChange={() => handleOptionChange(option.text)}
+                      hidden
+                    />
+                    <div style={{ 
+                      fontSize: '2.5rem',
+                      marginBottom: '1rem'
+                    }}>
+                      {option.icon}
+                    </div>
+                    <label 
+                      htmlFor={option.text} 
+                      style={{
+                        display: 'block',
+                        fontSize: '1.25rem',
+                        fontWeight: '600',
+                        color: '#000000', // Black text
+                        cursor: 'pointer',
+                        textAlign: 'center'
+                      }}
+                    >
+                      {option.text}
+                    </label>
+                  </div>
+                ))}
+              </div>
 
             <div className="form-footer">
               <button type="button" className="back-button" onClick={onBack}>

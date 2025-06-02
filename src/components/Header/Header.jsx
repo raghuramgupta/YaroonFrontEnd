@@ -84,7 +84,7 @@ useEffect(() => {
                 <li><Link to="/listings" onClick={() => setShowMenu(false)} className="dropdown-item">My Listings</Link></li>
                 <li><Link to="/support" onClick={() => setShowMenu(false)} className="dropdown-item">Customer Service</Link></li>
                 <li><Link to="/inbox" onClick={() => setShowMenu(false)} className="dropdown-item">Messages</Link></li>
-                <li><button onClick={handleLogout} className="dropdown-item logout-btn">Logout</button></li>
+                <li><button onClick={handleLogout} className="dropdown-item">Logout</button></li>
               </ul>
             )}
           </div>
