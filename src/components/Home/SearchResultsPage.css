@@ -43,7 +43,27 @@ body {
   padding: 20px;
   gap: 24px;
 }
+/* Make the header sticky */
+.search-results-page > header {
+  position: sticky;
+  top: 0;
+  z-index: 1000; /* Ensure header stays above other content */
+  background-color: white; /* Or whatever your header background color is */
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* Optional: add shadow for better visibility */
+}
 
+/* Adjust the main content container to account for the sticky header */
+.search-results-container {
+  padding-top: 0; /* Remove any top padding if it exists */
+}
+
+/* If your Header component has its own container, you might need to add this instead: */
+.header-container {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background-color: white;
+}
 /* Filters Sidebar */
 .filters-sidebar {
   width: 300px;

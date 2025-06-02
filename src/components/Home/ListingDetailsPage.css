@@ -2,7 +2,13 @@
   background-color: #f9fafc; /* Very light blue-gray */
   min-height: 100vh;
 }
-
+.listing-page-container > header {
+  position: sticky;
+  top: 0;
+  z-index: 1000; /* Ensure header stays above other content */
+  background-color: white; /* Or whatever your header background color is */
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* Optional: add shadow for better visibility */
+}
 .listing-content {
   max-width: 1200px;
   margin: 0 auto;

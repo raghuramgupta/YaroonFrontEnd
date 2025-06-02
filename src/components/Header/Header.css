@@ -1,42 +1,42 @@
 /* ───────────────────────────────
-   GLOBAL / RESETS
+   HEADER STYLES
 ──────────────────────────────── */
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  font-family: 'Segoe UI', sans-serif;
-  color: #222;
-  background: #fafafa;
-}
-
-/* ───────────────────────────────
-   HEADER + NAV
-──────────────────────────────── */
-.App-header {
+.app-header {
+  position: sticky;
+  top: 0;
   width: 100%;
+  background-color: #ffffff;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  padding: 0 20px;
+}
+
+.header-container {
+  
+  margin: 0 auto;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 24px;
-  background-color: #ffffff;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-  position: relative;
-  z-index: 1000;
+  padding: 12px 0;
 }
+
+/* Logo Section */
+.logo-section {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
 .logo-container {
   position: relative;
   display: inline-block;
 }
 
 .logo-text {
-  color: black;
-  font-weight: bold;
+  color: #2c3e50;
+  font-weight: 700;
   font-size: 24px;
+  letter-spacing: 0.5px;
 }
 
 .logo-underline {
@@ -45,10 +45,192 @@ body {
   left: 0;
   height: 2px;
   width: 100%;
-  background: linear-gradient(to right, #ff7e5f, #feb47b);
+  background: linear-gradient(to right, #4a6bff, #6ddf6d);
   animation: moveLine 2s linear infinite;
 }
 
+.welcome-msg {
+  font-size: 0.95rem;
+  color: #4a5568;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.welcome-icon {
+  font-size: 1.1rem;
+}
+
+/* Navigation Buttons */
+/* Navigation Buttons */
+/* Navigation Buttons */
+.nav-buttons {
+  display: flex;
+  gap: 15px; /* This creates space between buttons */
+  align-items: center; /* Vertically centers buttons */
+}
+
+.nav-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  
+  border-radius: 8px;
+  font-weight: 500;
+  color: #2d3748;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  white-space: nowrap; /* Prevents text from wrapping */
+  flex-shrink: 0; /* Prevents buttons from shrinking */
+}
+
+.nav-button:hover {
+  
+  transform: translateY(-1px);
+}
+
+.button-icon {
+  font-size: 1.1rem;
+}
+/* User Section */
+.user-section {
+  position: relative;
+}
+
+.auth-button {
+  padding: 8px 20px;
+  background: linear-gradient(135deg, #4a6bff, #6d8eff);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.auth-button:hover {
+  background: linear-gradient(135deg, #3a5bef, #5d7eff);
+  transform: translateY(-1px);
+}
+
+.user-menu-button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  transition: background 0.2s ease;
+}
+
+.user-menu-button:hover {
+  background-color: #f1f5f9;
+}
+
+.user-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4a6bff, #6ddf6d);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+}
+
+.menu-icon {
+  font-size: 0.8rem;
+  color: #4a5568;
+}
+
+/* Dropdown Menu */
+.user-dropdown-container {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  margin-top: 10px;
+}
+
+.user-dropdown {
+  width: 280px;
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  animation: slideDown 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.dropdown-header {
+  padding: 16px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  background-color: #f8fafc;
+}
+
+.dropdown-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #4a6bff, #6ddf6d);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+}
+
+.dropdown-user-info {
+  flex: 1;
+}
+
+.dropdown-username {
+  font-weight: 600;
+  color: #1a202c;
+}
+
+.dropdown-email {
+  font-size: 0.8rem;
+  color: #718096;
+  margin-top: 2px;
+}
+
+.dropdown-divider {
+  height: 1px;
+  background-color: #e2e8f0;
+  margin: 8px 0;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  color: #4a5568;
+  text-decoration: none;
+  transition: background 0.2s ease;
+}
+
+.dropdown-item:hover {
+  background-color: #f8fafc;
+  color: #2d3748;
+}
+
+.dropdown-icon {
+  font-size: 1.1rem;
+  width: 24px;
+  text-align: center;
+}
+
+.logout-item:hover {
+  color: #3e5a71;
+}
+
+/* Animations */
 @keyframes moveLine {
   0% {
     transform: translateX(-100%);
@@ -56,138 +238,6 @@ body {
   100% {
     transform: translateX(100%);
   }
-}
-
-.logo-link {
-  text-decoration: none;
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #222;
-}
-
-.welcome-msg {
-  font-size: 0.95rem;
-  margin-left: 1rem;
-}
-
-.header-buttons {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-/* Common button style */
-.login-register,
-.download-app,
-.user-menu-button {
-  padding: 8px 16px;
-  border: none;
-  border-radius: 8px;
-  font-weight: 500;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: background 0.3s ease;
-}
-
-.login-register {
-  background-color: #007bff;
-  color: #fff;
-}
-
-.download-app,
-.user-menu-button {
-  background-color: #eeeeee;
-  color: #333;
-}
-
-.login-register:hover,
-.download-app:hover,
-.user-menu-button:hover {
-  background-color: #d0d0d0;
-}
-
-.user-menu-wrapper {
-  position: relative;
-}
-
-.user-dropdown {
-  position: absolute;
-  top: 110%;
-  right: 0; /* Ensure it aligns with the right of the button */
-  background-color: #fff;
-  border-radius: 12px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
-  list-style: none;
-  margin: 0;
-  padding: 12px 0;
-  min-width: 240px;
-  max-width: 90vw; /* Prevent overflow beyond screen */
-  z-index: 1000;
-  animation: slideDown 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  border: 1px solid rgba(0, 0, 0, 0.05);
-  overflow: hidden;
-  box-sizing: border-box; /* Important for width constraints */
-}
-
-
-.dropdown-item {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  padding: 12px 20px;
-  font-size: 0.95rem;
-  color: #444;
-  background: none;
-  border: none;
-  text-align: left;
-  text-decoration: none;
-  transition: all 0.3s ease;
-  position: relative;
-}
-
-.dropdown-item i {
-  margin-right: 12px;
-  color: #666;
-  font-size: 1.1rem;
-  width: 20px;
-  text-align: center;
-}
-
-.dropdown-item:hover {
-  background-color: #f8f9fa;
-  color: #000;
-  padding-left: 22px;
-}
-
-.dropdown-item:hover i {
-  color: #0066ff;
-}
-
-.divider {
-  height: 1px;
-  background: linear-gradient(to right, transparent, #eee, transparent);
-  margin: 8px 0;
-}
-
-.notification-badge {
-  
-  color: white;
-  border-radius: 10px;
-  padding: 2px 8px;
-  font-size: 0.7rem;
-  margin-left: auto;
-  font-weight: bold;
-}
-
-.logout-btn {
-  color: #111010; /* Keep red text color */
-  font-weight: 500;
-  background-color: transparent; /* Match other dropdown items */
-}
-
-.logout-btn:hover {
-  background-color: #f8f9fa; /* Same hover as other items */
-  color: #0a0909; /* Slightly brighter red on hover */
 }
 
 @keyframes slideDown {
@@ -200,105 +250,36 @@ body {
     transform: translateY(0);
   }
 }
-/* ───────────────────────────────
-   SIGN‑UP FORM
-──────────────────────────────── */
-.signup-form {
-  max-width: 1000px;
-  margin: 60px auto;
-  background-color: #1e1e1e;
-  color: #f2f2f2;
-  border-radius: 16px;
-  padding: 40px;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
-}
 
-.signup-form h2 {
-  text-align: center;
-  color: #ffffff;
-  font-size: 2rem;
-  margin-bottom: 30px;
-}
-
-/* Fieldsets / legends */
-.signup-form fieldset {
-  border: none;
-  margin-bottom: 30px;
-  padding: 0;
-}
-
-.signup-form legend {
-  font-size: 1.2rem;
-  margin-bottom: 15px;
-  color: #7dd87d;
-  font-weight: 600;
-}
-
-/* Inputs & selects */
-.signup-form input[type="text"],
-.signup-form input[type="tel"],
-.signup-form input[type="date"],
-.signup-form select,
-.signup-form textarea {
-  width: 100%;
-  padding: 12px 14px;
-  margin-bottom: 20px;
-  background-color: #2c2c2c;
-  border: 1px solid #444;
-  color: #fff;
-  border-radius: 8px;
-  font-size: 0.95rem;
-  transition: border-color 0.2s ease;
-}
-
-.signup-form input:focus,
-.signup-form select:focus,
-.signup-form textarea:focus {
-  outline: none;
-  border-color: #6ddf6d;
-}
-
-/* Submit button */
-.signup-form button[type="submit"] {
-  width: 100%;
-  padding: 14px;
-  margin-top: 10px;
-  font-size: 1rem;
-  background: linear-gradient(135deg, #4caf50, #2e7d32);
-  color: #fff;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: background 0.3s ease;
-}
-
-.signup-form button[type="submit"]:hover {
-  background: linear-gradient(135deg, #66bb6a, #388e3c);
-}
-
-/* Textarea sizing */
-.signup-form textarea {
-  resize: vertical;
-  min-height: 80px;
-}
-
-/* ───────────────────────────────
-   RESPONSIVE
-──────────────────────────────── */
+/* Responsive Design */
 @media (max-width: 768px) {
-  .signup-form {
-    padding: 25px;
-    margin: 20px;
-  }
-
-  .App-header {
+  .header-container {
     flex-wrap: wrap;
-    gap: 8px 16px;
+    gap: 10px;
+    padding: 10px 0;
   }
-
-  .welcome-msg {
+  
+  .logo-section {
+    order: 1;
+    flex: 1;
+  }
+  
+  .nav-buttons {
+    order: 3;
     width: 100%;
-    text-align: center;
-    margin: 0;
+    justify-content: center;
+  }
+  
+  .user-section {
+    order: 2;
+  }
+  
+  .welcome-msg {
+    display: none;
+  }
+  
+  .user-dropdown {
+    width: 240px;
+    right: -20px;
   }
 }
