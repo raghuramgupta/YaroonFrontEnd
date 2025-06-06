@@ -205,7 +205,7 @@ useEffect(() => {
     try {
       const endpoint = listingId 
         ? `${config.apiBaseUrl}/api/listings/${listingId}`
-        : '${config.apiBaseUrl}/api/listings/create';
+        : `${config.apiBaseUrl}/api/listings/create`;
       const method = listingId ? 'put' : 'post';
       
       await axios[method](endpoint, listingData, { headers: { 'Content-Type': 'application/json' } });
