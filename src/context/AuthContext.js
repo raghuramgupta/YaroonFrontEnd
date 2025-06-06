@@ -35,7 +35,7 @@ export const AuthProvider = ({ children }) => {
   /* ❷  Helpers that components can call                                */
   /* ------------------------------------------------------------------ */
   const login = useCallback(async (username, password) => {
-    const res = await axios.post('${config.apiBaseUrl}/api/users/login', {
+    const res = await axios.post(`${config.apiBaseUrl}/api/users/login`, {
       username,
       password
     });

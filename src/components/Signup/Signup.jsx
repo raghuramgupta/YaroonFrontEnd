@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import './SignUpFlow.css';
 import Header from '../Header/Header';
-import sha256 from 'crypto-js/sha256';
 import { useNavigate } from 'react-router-dom';
 import Select from 'react-select';
 import config from '../../config';
+
 const initialFormState = {
   mobile: '',
   email: '',
-  userType: '',
+  userType: 'Individual',
   otp: '',
   password: '',
   confirmPassword: '',
@@ -35,11 +35,16 @@ const initialFormState = {
 };
 
 const interestOptions = [
-  { value: 'Gaming', label: 'Gaming' }, { value: 'Football', label: 'Football' },
-  { value: 'Cricket', label: 'Cricket' }, { value: 'Tennis', label: 'Tennis' },
-  { value: 'Cooking', label: 'Cooking' }, { value: 'Photography', label: 'Photography' },
-  { value: 'Movies', label: 'Movies' }, { value: 'Music', label: 'Music' },
-  { value: 'Art', label: 'Art' }, { value: 'Sports', label: 'Sports' },
+  { value: 'Gaming', label: 'Gaming' },
+  { value: 'Football', label: 'Football' },
+  { value: 'Cricket', label: 'Cricket' },
+  { value: 'Tennis', label: 'Tennis' },
+  { value: 'Cooking', label: 'Cooking' },
+  { value: 'Photography', label: 'Photography' },
+  { value: 'Movies', label: 'Movies' },
+  { value: 'Music', label: 'Music' },
+  { value: 'Art', label: 'Art' },
+  { value: 'Sports', label: 'Sports' },
   { value: 'Volunteering', label: 'Volunteering' }
 ];
 
@@ -47,20 +52,53 @@ const Signup = () => {
   const [otpSent, setOtpSent] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [activeTab, setActiveTab] = useState('signup'); // 'signup' or 'login'
+  const [activeTab, setActiveTab] = useState('signup');
   const [loginData, setLoginData] = useState({ username: '', password: '' });
-  const [showSelects, setShowSelects] = useState({
-    smoking: false,
-    alcohol: false,
-    partying: false,
-    foodChoice: false,
-    guests: false,
-    pets: false
-  });
-
   const [formData, setFormData] = useState(initialFormState);
+  
+  const [currentStep, setCurrentStep] = useState(1);
   const navigate = useNavigate();
-
+const languageOptions = [
+  { value: 'English', label: 'English' },
+  { value: 'Hindi', label: 'Hindi' },
+  { value: 'Bengali', label: 'Bengali' },
+  { value: 'Telugu', label: 'Telugu' },
+  { value: 'Marathi', label: 'Marathi' },
+  { value: 'Tamil', label: 'Tamil' },
+  { value: 'Urdu', label: 'Urdu' },
+  { value: 'Gujarati', label: 'Gujarati' },
+  { value: 'Kannada', label: 'Kannada' },
+  { value: 'Malayalam', label: 'Malayalam' },
+  { value: 'Punjabi', label: 'Punjabi' },
+  { value: 'Odia', label: 'Odia' },
+  { value: 'Assamese', label: 'Assamese' },
+  { value: 'Maithili', label: 'Maithili' },
+  { value: 'Sanskrit', label: 'Sanskrit' },
+  { value: 'French', label: 'French' },
+  { value: 'Spanish', label: 'Spanish' },
+  { value: 'German', label: 'German' },
+  { value: 'Italian', label: 'Italian' },
+  { value: 'Portuguese', label: 'Portuguese' },
+  { value: 'Russian', label: 'Russian' },
+  { value: 'Japanese', label: 'Japanese' },
+  { value: 'Chinese', label: 'Chinese' },
+  { value: 'Arabic', label: 'Arabic' },
+  { value: 'Korean', label: 'Korean' },
+  { value: 'Dutch', label: 'Dutch' },
+  { value: 'Swedish', label: 'Swedish' },
+  { value: 'Norwegian', label: 'Norwegian' },
+  { value: 'Danish', label: 'Danish' },
+  { value: 'Finnish', label: 'Finnish' },
+  { value: 'Polish', label: 'Polish' },
+  { value: 'Turkish', label: 'Turkish' },
+  { value: 'Hebrew', label: 'Hebrew' },
+  { value: 'Greek', label: 'Greek' },
+  { value: 'Thai', label: 'Thai' },
+  { value: 'Vietnamese', label: 'Vietnamese' },
+  { value: 'Indonesian', label: 'Indonesian' },
+  { value: 'Malay', label: 'Malay' },
+  { value: 'Tagalog', label: 'Tagalog' }
+];
   useEffect(() => {
     const currentUser = localStorage.getItem('currentUser');
     if (currentUser) {
@@ -97,6 +135,7 @@ const Signup = () => {
     } else {
       if (formData.otp === '1234') {
         setIsVerified(true);
+        setCurrentStep(1); // Reset to step 1 (which will now show password setup)
       } else {
         alert('Invalid OTP. Try again with 1234.');
       }
@@ -107,15 +146,18 @@ const Signup = () => {
     e.preventDefault();
 
     if (formData.password.length < 6 || formData.password !== formData.confirmPassword) {
-      alert('Invalid password input');
+      alert('Password must be at least 6 characters and match confirmation');
       return;
     }
 
     const userData = {
       ...formData,
-      confirmPassword: undefined
+      confirmPassword: undefined,
+      interests: Array.isArray(formData.interests) 
+      ? formData.interests.join(', ') 
+      : formData.interests
     };
-
+    alert("Test")
     try {
       const res = await fetch(`${config.apiBaseUrl}/api/users/signup`, {
         method: 'POST',
@@ -128,6 +170,7 @@ const Signup = () => {
 
       const userKey = formData.email || formData.mobile;
       localStorage.setItem('currentUser', userKey);
+      localStorage.setItem('currentUserType', formData.userType);
 
       alert('Signup successful!');
       setIsLoggedIn(true);
@@ -165,214 +208,559 @@ const Signup = () => {
 
   const handleLogout = () => {
     localStorage.removeItem('currentUser');
+    localStorage.removeItem('currentUserType');
     setFormData(initialFormState);
     setIsVerified(false);
     setIsLoggedIn(false);
     setActiveTab('signup');
     setOtpSent(false);
+    setCurrentStep(1);
+  };
+
+  const nextStep = () => {
+    if (currentStep < 4) setCurrentStep(currentStep + 1);
+  };
+
+  const prevStep = () => {
+    if (currentStep > 1) setCurrentStep(currentStep - 1);
   };
 
   const customStyles = {
+    control: (provided) => ({
+      ...provided,
+      minHeight: '44px',
+      borderColor: '#e2e8f0',
+      '&:hover': {
+        borderColor: '#cbd5e0'
+      }
+    }),
     option: (provided, state) => ({
       ...provided,
-      color: 'black',
-      backgroundColor: state.isSelected ? '#e0e0e0' : 'white',
+      backgroundColor: state.isSelected ? '#2563eb' : 'white',
+      color: state.isSelected ? 'white' : '#1a202c',
+      '&:hover': {
+        backgroundColor: '#ebf4ff'
+      }
     }),
     multiValue: (provided) => ({
       ...provided,
-      backgroundColor: '#f0f0f0',
+      backgroundColor: '#ebf4ff',
     }),
     multiValueLabel: (provided) => ({
       ...provided,
-      color: 'black',
-    }),
-    input: (provided) => ({
-      ...provided,
-      color: 'black',
-    }),
-    singleValue: (provided) => ({
-      ...provided,
-      color: 'black',
-    }),
-    placeholder: (provided) => ({
-      ...provided,
-      color: 'gray',
+      color: '#1a202c',
     }),
   };
 
   return (
-    <div className="signup-form">
+    <div className="auth-container">
       <Header isLoggedIn={isLoggedIn} onLogout={handleLogout} />
       
       {!isLoggedIn && (
-        <div className="auth-tabs">
-          <button 
-            className={`tab-button ${activeTab === 'signup' ? 'active' : ''}`}
-            onClick={() => setActiveTab('signup')}
-          >
-            Sign Up
-          </button>
-          <button 
-            className={`tab-button ${activeTab === 'login' ? 'active' : ''}`}
-            onClick={() => setActiveTab('login')}
-          >
-            Login
-          </button>
-        </div>
-      )}
+        <div className="auth-wrapper">
+          <div className="auth-card">
+            <div className="auth-tabs">
+              <button 
+                className={`tab-button ${activeTab === 'signup' ? 'active' : ''}`}
+                onClick={() => setActiveTab('signup')}
+              >
+                Sign Up
+              </button>
+              <button 
+                className={`tab-button ${activeTab === 'login' ? 'active' : ''}`}
+                onClick={() => setActiveTab('login')}
+              >
+                Login
+              </button>
+            </div>
 
-      {!isLoggedIn && activeTab === 'signup' && !isVerified && (
-        <form onSubmit={handleVerification}>
-          <fieldset>
-            <legend>Verification</legend>
-            <input type="tel" name="mobile" placeholder="Mobile Number" value={formData.mobile} onChange={handleChange} disabled={otpSent} />
-            <input type="email" name="email" placeholder="Email Address" value={formData.email} onChange={handleChange} disabled={otpSent} />
-            {otpSent && (
-              <input type="text" name="otp" placeholder="Enter OTP" value={formData.otp} onChange={handleChange} required />
+            {activeTab === 'login' && (
+              <form className="auth-form" onSubmit={handleLogin}>
+                <h2>Welcome back</h2>
+                <p className="auth-subtitle">Enter your credentials to access your account</p>
+                
+                <div className="form-group">
+                  <label>Email or Mobile number</label>
+                  <input 
+                    type="text" 
+                    name="username" 
+                    value={loginData.username} 
+                    onChange={(e) => setLoginData({ ...loginData, username: e.target.value })} 
+                    required 
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label>Password</label>
+                  <input 
+                    type="password" 
+                    name="password" 
+                    value={loginData.password} 
+                    onChange={(e) => setLoginData({ ...loginData, password: e.target.value })} 
+                    required 
+                  />
+                </div>
+                
+                <button type="submit" className="primary-button">Login</button>
+                
+                <div className="auth-footer">
+                  <p>Don't have an account? <button type="button" className="text-button" onClick={() => setActiveTab('signup')}>Sign up</button></p>
+                </div>
+              </form>
             )}
-            <button 
-              type="submit" 
-              style={!otpSent ? {backgroundColor: '#2563eb'} : {}}
-            >
-              {otpSent ? 'Verify' : 'Send OTP'}
-            </button>
-          </fieldset>
-        </form>
-      )}
 
-      {!isLoggedIn && activeTab === 'login' && (
-        <form onSubmit={handleLogin}>
-          <fieldset>
-            <legend>Login</legend>
-            <input type="text" name="username" placeholder="Email or Mobile number" value={loginData.username} onChange={(e) => setLoginData({ ...loginData, username: e.target.value })} required />
-            <input type="password" name="password" placeholder="Password" value={loginData.password} onChange={(e) => setLoginData({ ...loginData, password: e.target.value })} required />
-            <button type="submit">Login</button>
-          </fieldset>
-        </form>
-      )}
+            {activeTab === 'signup' && !isVerified && (
+              <form className="auth-form" onSubmit={handleVerification}>
+                <h2>Create your account</h2>
+                <p className="auth-subtitle">Start your journey with us</p>
+                
+                <div className="form-group">
+                  <label>Mobile Number</label>
+                  <input 
+                    type="tel" 
+                    name="mobile" 
+                    placeholder="Enter mobile number" 
+                    value={formData.mobile} 
+                    onChange={handleChange} 
+                    disabled={otpSent} 
+                  />
+                </div>
+                
+                <div className="form-group">
+                  <label>Email Address</label>
+                  <input 
+                    type="email" 
+                    name="email" 
+                    placeholder="Enter email address" 
+                    value={formData.email} 
+                    onChange={handleChange} 
+                    disabled={otpSent} 
+                  />
+                </div>
+                
+                {otpSent && (
+                  <div className="form-group">
+                    <label>OTP Verification</label>
+                    <input 
+                      type="text" 
+                      name="otp" 
+                      placeholder="Enter OTP (use 1234)" 
+                      value={formData.otp} 
+                      onChange={handleChange} 
+                      required 
+                    />
+                  </div>
+                )}
+                
+                <button type="submit" className="primary-button">
+                  {otpSent ? 'Verify' : 'Send OTP'}
+                </button>
+                
+                <div className="auth-footer">
+                  <p>Already have an account? <button type="button" className="text-button" onClick={() => setActiveTab('login')}>Login</button></p>
+                </div>
+              </form>
+            )}
 
-      {isVerified && !isLoggedIn && activeTab === 'signup' && (
-        <form onSubmit={handleSubmit}>
-          <fieldset className='user-type-options'>
-            <legend>User Type</legend>
-            <label>
-              <input
-                type="radio"
-                name="userType"
-                value="Individual"
-                checked={formData.userType === 'Individual'}
-                onChange={handleChange}
-                required
-              />
-              Individual
-            </label>
-            <label>
-              <input
-                type="radio"
-                name="userType"
-                value="Property Agent"
-                checked={formData.userType === 'Property Agent'}
-                onChange={handleChange}
-              />
-              Property Agent
-            </label>
-          </fieldset>
+            {activeTab === 'signup' && isVerified && (
+              <form className="auth-form" onSubmit={handleSubmit}>
+                <div className="form-progress">
+                  <div className={`progress-step ${currentStep >= 1 ? 'active' : ''}`}>
+                    <span>1</span>
+                    <p>Account</p>
+                  </div>
+                  <div className={`progress-step ${currentStep >= 2 ? 'active' : ''}`}>
+                    <span>2</span>
+                    <p>Personal</p>
+                  </div>
+                  <div className={`progress-step ${currentStep >= 3 ? 'active' : ''}`}>
+                    <span>3</span>
+                    <p>Habits</p>
+                  </div>
+                  <div className={`progress-step ${currentStep >= 4 ? 'active' : ''}`}>
+                    <span>4</span>
+                    <p>Review</p>
+                  </div>
+                </div>
 
-          <fieldset>
-            <legend>Create Password</legend>
-            <input type="password" name="password" placeholder="Create password" value={formData.password} onChange={handleChange} required />
-            <input type="password" name="confirmPassword" placeholder="Confirm password" value={formData.confirmPassword} onChange={handleChange} required />
-          </fieldset>
+                {currentStep === 1 && (
+                  <div className="form-step">
+                    <h2>Account Information</h2>
+                    
+                    <div className="form-group">
+                      <label>User Type</label>
+                      <div className="radio-group">
+                        <label className="radio-option">
+                          <input
+                            type="radio"
+                            name="userType"
+                            value="Individual"
+                            checked={formData.userType === 'Individual'}
+                            onChange={handleChange}
+                            required
+                          />
+                          <span className="radio-label">Individual</span>
+                        </label>
+                        <label className="radio-option">
+                          <input
+                            type="radio"
+                            name="userType"
+                            value="Property Agent"
+                            checked={formData.userType === 'Property Agent'}
+                            onChange={handleChange}
+                          />
+                          <span className="radio-label">Property Agent</span>
+                        </label>
+                      </div>
+                    </div>
+                    
+                    <div className="form-group">
+                      <label>Create Password</label>
+                      <input 
+                        type="password" 
+                        name="password" 
+                        placeholder="At least 6 characters" 
+                        value={formData.password} 
+                        onChange={handleChange} 
+                        required 
+                      />
+                    </div>
+                    
+                    <div className="form-group">
+                      <label>Confirm Password</label>
+                      <input 
+                        type="password" 
+                        name="confirmPassword" 
+                        placeholder="Re-enter your password" 
+                        value={formData.confirmPassword} 
+                        onChange={handleChange} 
+                        required 
+                      />
+                    </div>
+                    
+                    <div className="form-actions">
+                      <button type="button" className="secondary-button" onClick={() => setIsVerified(false)}>
+                        Back
+                      </button>
+                      <button type="button" className="primary-button" onClick={nextStep}>
+                        Continue
+                      </button>
+                    </div>
+                  </div>
+                )}
 
-          <fieldset>
-            <legend>Personal Details</legend>
-            <input type="text" name="fullName" placeholder="Full Name" value={formData.fullName} onChange={handleChange} />
+                {currentStep === 2 && (
+  <div className="form-step">
+    <h2>Personal Details</h2>
+    
+        <div className="form-group">
+          <label>Full Name</label>
+          <input 
+            type="text" 
+            name="fullName" 
+            placeholder="Your full name" 
+            value={formData.fullName} 
+            onChange={handleChange} 
+          />
+        </div>
+        
+        <div className="form-row">
+          <div className="form-group">
+            <label>Gender</label>
             <select name="gender" value={formData.gender} onChange={handleChange}>
-              <option value="">Gender</option>
-              <option>Male</option>
-              <option>Female</option>
-              <option>Others</option>
-            </select>
-            <input type="date" name="dob" value={formData.dob} onChange={handleChange} />
-            <input type="text" name="languages" placeholder="Languages Known" value={formData.languages} onChange={handleChange} />
-          </fieldset>
-
-          <fieldset>
-            <legend>Location</legend>
-            <input type="text" name="location" placeholder="Current City" value={formData.location} onChange={handleChange} />
-          </fieldset>
-
-          <fieldset>
-            <legend>Identity Verification</legend>
-            <select name="idType" value={formData.idType} onChange={handleChange}>
-              <option value="">Select ID</option>
-              <option>Aadhar</option>
-              <option>Passport</option>
-            </select>
-            <input type="text" name="idNumber" placeholder="ID Number" value={formData.idNumber} onChange={handleChange} />
-          </fieldset>
-
-          <fieldset>
-            <legend>Bio</legend>
-            <textarea name="bio" placeholder="Write something about yourself..." value={formData.bio} onChange={handleChange}></textarea>
-          </fieldset>
-
-          <fieldset>
-            <legend>Living Habits</legend>
-            <select name="profession" value={formData.profession} onChange={handleChange}>
-              <option value="">Select your Profession</option>
-              <option value="Working Professional">Working Professional</option>
-              <option value="Job Seeker">Job Seeker</option>
-              <option value="Student">Student</option>
+              <option value="">Select gender</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
               <option value="Others">Others</option>
             </select>
-
-            {formData.profession === 'Others' && (
-              <input type="text" name="customProfession" placeholder="Please specify your profession" value={formData.customProfession} onChange={handleChange} />
-            )}
-
-            {['smoking', 'alcohol', 'partying', 'foodChoice', 'guests', 'pets'].map((habit) =>
-              !showSelects[habit] ? (
-                <button key={habit} type="button" onClick={() => setShowSelects(prev => ({ ...prev, [habit]: true }))}>
-                  {habit.charAt(0).toUpperCase() + habit.slice(1)} Preference
-                </button>
-              ) : (
-                <select key={habit} name={`habits.${habit}`} value={formData.habits[habit]} onChange={handleChange}>
-                  <option value="">{`Select your ${habit} preference`}</option>
-                  {habit === 'foodChoice' && <><option>Veg</option><option>Non-Veg</option><option>Egg</option></>}
-                  {habit === 'guests' && <><option>Daily</option><option>Rare</option><option>Never</option></>}
-                  {habit === 'pets' && <><option>Yes</option><option>No</option><option>May Have</option></>}
-                  {(habit === 'smoking' || habit === 'alcohol') && <><option>Daily</option><option>Occasionally</option><option>Never</option></>}
-                  {habit === 'partying' && <><option>Weekends</option><option>Occasionally</option><option>Never</option></>}
-                </select>
-              )
-            )}
-          </fieldset>
-            
-          <fieldset>
-            <legend>Interests</legend>
-            <Select
-              isMulti
-              name="interests"
-              options={interestOptions}
-              styles={customStyles}
-              value={interestOptions.filter(option => formData.interests.includes(option.value))}
-              onChange={(selectedOptions) =>
-                setFormData({
-                  ...formData,
-                  interests: selectedOptions.map(option => option.value)
-                })
-              }
+          </div>
+          
+          <div className="form-group">
+            <label>Date of Birth</label>
+            <input 
+              type="date" 
+              name="dob" 
+              value={formData.dob} 
+              onChange={handleChange} 
             />
-          </fieldset>
+          </div>
+        </div>
+        
+        <div className="form-group">
+          <label>Languages Known</label>
+          <Select
+            isMulti
+            name="languages"
+            options={languageOptions}
+            value={languageOptions.filter(option => 
+              formData.languages.split(',').map(lang => lang.trim()).includes(option.value))
+            }
+            onChange={(selectedOptions) => {
+              setFormData({
+                ...formData,
+                languages: selectedOptions.map(option => option.value).join(', ')
+              });
+            }}
+            placeholder="Select languages you know..."
+            className="select-input"
+            styles={customStyles}
+          />
+        </div>
+        
+        <div className="form-group">
+          <label>Current City</label>
+          <input 
+            type="text" 
+            name="location" 
+            placeholder="Where do you live?" 
+            value={formData.location} 
+            onChange={handleChange} 
+          />
+        </div>
+        
+        <div className="form-group">
+          <label>ID Verification</label>
+          <div className="form-row">
+            <select name="idType" value={formData.idType} onChange={handleChange} style={{flex: 1}}>
+              <option value="">Select ID type</option>
+              <option value="Aadhar">Aadhar</option>
+              <option value="Passport">Passport</option>
+            </select>
+            <input 
+              type="text" 
+              name="idNumber" 
+              placeholder="ID number" 
+              value={formData.idNumber} 
+              onChange={handleChange} 
+              style={{flex: 2, marginLeft: '10px'}}
+            />
+          </div>
+        </div>
+        
+        <div className="form-group">
+          <label>About You</label>
+          <textarea 
+            name="bio" 
+            placeholder="Tell us about yourself..." 
+            value={formData.bio} 
+            onChange={handleChange}
+            rows="3"
+          ></textarea>
+        </div>
+        
+        <div className="form-actions">
+          <button type="button" className="secondary-button" onClick={prevStep}>
+            Back
+          </button>
+          <button type="button" className="primary-button" onClick={nextStep}>
+            Continue
+          </button>
+        </div>
+      </div>
+    )}
+                {currentStep === 3 && (
+                  <div className="form-step">
+                    <h2>Living Preferences</h2>
+                    
+                    <div className="form-group">
+                      <label>Profession</label>
+                      <select name="profession" value={formData.profession} onChange={handleChange}>
+                        <option value="">Select your profession</option>
+                        <option value="Working Professional">Working Professional</option>
+                        <option value="Job Seeker">Job Seeker</option>
+                        <option value="Student">Student</option>
+                        <option value="Others">Others</option>
+                      </select>
+                    </div>
+                    
+                    {formData.profession === 'Others' && (
+                      <div className="form-group">
+                        <label>Specify Profession</label>
+                        <input 
+                          type="text" 
+                          name="customProfession" 
+                          placeholder="Your profession" 
+                          value={formData.customProfession} 
+                          onChange={handleChange} 
+                        />
+                      </div>
+                    )}
+                    
+                    <div className="form-group">
+                      <label>Food Preference</label>
+                      <select name="habits.foodChoice" value={formData.habits.foodChoice} onChange={handleChange}>
+                        <option value="">Select food preference</option>
+                        <option value="Veg">Vegetarian</option>
+                        <option value="Non-Veg">Non-Vegetarian</option>
+                        <option value="Egg">Eggetarian</option>
+                      </select>
+                    </div>
+                    
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Smoking</label>
+                        <select name="habits.smoking" value={formData.habits.smoking} onChange={handleChange}>
+                          <option value="">Select preference</option>
+                          <option value="Daily">Daily</option>
+                          <option value="Occasionally">Occasionally</option>
+                          <option value="Never">Never</option>
+                        </select>
+                      </div>
+                      
+                      <div className="form-group">
+                        <label>Alcohol</label>
+                        <select name="habits.alcohol" value={formData.habits.alcohol} onChange={handleChange}>
+                          <option value="">Select preference</option>
+                          <option value="Daily">Daily</option>
+                          <option value="Occasionally">Occasionally</option>
+                          <option value="Never">Never</option>
+                        </select>
+                      </div>
+                    </div>
+                    
+                    <div className="form-row">
+                      <div className="form-group">
+                        <label>Partying</label>
+                        <select name="habits.partying" value={formData.habits.partying} onChange={handleChange}>
+                          <option value="">Select preference</option>
+                          <option value="Weekends">Weekends</option>
+                          <option value="Occasionally">Occasionally</option>
+                          <option value="Never">Never</option>
+                        </select>
+                      </div>
+                      
+                      <div className="form-group">
+                        <label>Guests</label>
+                        <select name="habits.guests" value={formData.habits.guests} onChange={handleChange}>
+                          <option value="">Select preference</option>
+                          <option value="Daily">Frequently</option>
+                          <option value="Rare">Rarely</option>
+                          <option value="Never">Never</option>
+                        </select>
+                      </div>
+                    </div>
+                    
+                    <div className="form-group">
+                      <label>Pets</label>
+                      <select name="habits.pets" value={formData.habits.pets} onChange={handleChange}>
+                        <option value="">Select preference</option>
+                        <option value="Yes">Have pets</option>
+                        <option value="May Have">May have pets</option>
+                        <option value="No">No pets</option>
+                      </select>
+                    </div>
+                    
+                    <div className="form-group">
+                      <label>Interests</label>
+                      <Select
+                        isMulti
+                        name="interests"
+                        options={interestOptions}
+                        styles={customStyles}
+                        value={interestOptions.filter(option => formData.interests.includes(option.value))}
+                        onChange={(selectedOptions) =>
+                          setFormData({
+                            ...formData,
+                            interests: selectedOptions.map(option => option.value)
+                          })
+                        }
+                        placeholder="Select your interests..."
+                        className="select-input"
+                      />
+                    </div>
+                    
+                    <div className="form-group">
+                      <label>Personality Traits</label>
+                      <input 
+                        type="text" 
+                        name="traits" 
+                        placeholder="e.g., Calm, Friendly, Organized" 
+                        value={formData.traits} 
+                        onChange={handleChange} 
+                      />
+                    </div>
+                    
+                    <div className="form-actions">
+                      <button type="button" className="secondary-button" onClick={prevStep}>
+                        Back
+                      </button>
+                      <button type="button" className="primary-button" onClick={nextStep}>
+                        Continue
+                      </button>
+                    </div>
+                  </div>
+                )}
 
-          <fieldset>
-            <legend>Personality Traits</legend>
-            <input type="text" name="traits" placeholder="e.g., Calm, Friendly" value={formData.traits} onChange={handleChange} />
-          </fieldset>
-
-          <button type="submit">Submit</button>
-        </form>
+                {currentStep === 4 && (
+                  <div className="form-step">
+                    <h2>Review Your Information</h2>
+                    
+                    <div className="review-section">
+                      <h3>Account Information</h3>
+                      <div className="review-item">
+                        <span>User Type:</span>
+                        <span>{formData.userType || 'Not specified'}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="review-section">
+                      <h3>Personal Details</h3>
+                      <div className="review-item">
+                        <span>Full Name:</span>
+                        <span>{formData.fullName || 'Not specified'}</span>
+                      </div>
+                      <div className="review-item">
+                        <span>Gender:</span>
+                        <span>{formData.gender || 'Not specified'}</span>
+                      </div>
+                      <div className="review-item">
+                        <span>Date of Birth:</span>
+                        <span>{formData.dob || 'Not specified'}</span>
+                      </div>
+                      <div className="review-item">
+                        <span>Location:</span>
+                        <span>{formData.location || 'Not specified'}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="review-section">
+                      <h3>Living Preferences</h3>
+                      <div className="review-item">
+                        <span>Profession:</span>
+                        <span>{formData.profession === 'Others' ? formData.customProfession : formData.profession || 'Not specified'}</span>
+                      </div>
+                      <div className="review-item">
+                        <span>Food Preference:</span>
+                        <span>{formData.habits.foodChoice || 'Not specified'}</span>
+                      </div>
+                      <div className="review-item">
+                        <span>Smoking:</span>
+                        <span>{formData.habits.smoking || 'Not specified'}</span>
+                      </div>
+                      <div className="review-item">
+                        <span>Alcohol:</span>
+                        <span>{formData.habits.alcohol || 'Not specified'}</span>
+                      </div>
+                      <div className="review-item">
+                        <span>Interests:</span>
+                        <span>{formData.interests.join(', ') || 'Not specified'}</span>
+                      </div>
+                    </div>
+                    
+                    <div className="form-actions">
+                      <button type="button" className="secondary-button" onClick={prevStep}>
+                        Back
+                      </button>
+                      <button type="submit" className="primary-button">
+                        Complete Registration
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </form>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );
