@@ -6,7 +6,7 @@ import axios from 'axios';
 import loadGoogleMaps from '../Utils/loadGoogleMaps';
 import MyListings from '../Listing/MyListings';
 import { AuthContext } from '../../context/AuthContext';
-
+import config from '../../config';
 function UpdatedHome() {
   // -----------------------
   // STATE
