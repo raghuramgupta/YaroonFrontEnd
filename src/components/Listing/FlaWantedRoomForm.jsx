@@ -185,7 +185,7 @@ const WantedRoomForm = () => {
         });
         alert('Room request updated successfully!');
       } else {
-        await axios.post('${config.apiBaseUrl}/api/wanted-listings/create', { ...formData, user: formData.userKey }, {
+        await axios.post(`${config.apiBaseUrl}/api/wanted-listings/create`, { ...formData, user: formData.userKey }, {
           headers: { 'Content-Type': 'application/json' }
         });
         alert('Your room request has been posted successfully!');
