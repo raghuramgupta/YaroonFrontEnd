@@ -150,7 +150,7 @@ const SearchResultsPage = () => {
     if (currentUserKey) setIsLoggedIn(true);
     fetchListings();
   }, [searchType]);
-
+  
   const fetchListings = async () => {
     const endpoint = searchType === 'roommates' 
       ? `${config.apiBaseUrl}/api/wanted-listings` 
