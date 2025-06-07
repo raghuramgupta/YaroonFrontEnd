@@ -16,7 +16,6 @@ import Dashboard from './components/Listing/Dashboard';
 import WantedRoomForm from './components/Listing/FlaWantedRoomForm';
 function App() {
   return (<AuthProvider>
-    <Router>
       <Routes>
         <Route path="/" element={<UpdatedHome />} />
         <Route path="/login" element={<Login />} />
@@ -33,9 +32,8 @@ function App() {
         <Route path="/Daeshboard" element={<Dashboard />} />
         <Route path="/need-place" element={<WantedRoomForm />} />
         <Route path="/edit-wanted-listing/:id" element={<WantedRoomForm />} />
-       
       </Routes>
-    </Router></AuthProvider>
+    </AuthProvider>
   );
 }
 
