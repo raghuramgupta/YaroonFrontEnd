@@ -2,7 +2,6 @@
   "name": "frontend",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://yaroon-front-end.vercel.app",
   "homepage": ".",
   "dependencies": {
     "@capacitor/android": "^7.2.0",
