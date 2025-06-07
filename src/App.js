@@ -15,7 +15,7 @@ import MessagesInbox from './components/UserProfile/MessagesInbox';
 import Dashboard from './components/Listing/Dashboard';
 import WantedRoomForm from './components/Listing/FlaWantedRoomForm';
 function App() {
-  return (<AuthProvider>
+  return (/*<AuthProvider>
     <Router>
       <Routes>
         <Route path="/" element={<UpdatedHome />} />
@@ -33,9 +33,9 @@ function App() {
         <Route path="/Daeshboard" element={<Dashboard />} />
         <Route path="/need-place" element={<WantedRoomForm />} />
         <Route path="/edit-wanted-listing/:id" element={<WantedRoomForm />} />
-        {/* You can add other routes as needed */}
+       
       </Routes>
-    </Router></AuthProvider>
+    </Router></AuthProvider>*/ <div>TEST (remove all routers temporarily)</div>
   );
 }
 
