@@ -190,13 +190,22 @@ const SearchResultsPage = () => {
         return;
     }
 
-    const cuisineMatches = profile ? listings.filter(listing => 
-        listing.foodchoices === profile.habits?.foodChoice
-    ) : [];
+    const cuisineMatches = profile ? listings.filter(listing => {
+    const userFoodChoice = profile.habits?.foodChoice;
+    if (userFoodChoice === "Veg") {
+        return listing.foodchoices === "Veg";
+    }
+    return listing.foodchoices === userFoodChoice;
+}) : [];
+
    
-    const genderMatches = profile ? listings.filter(listing => 
-        listing.gender === profile.gender
-    ) : [];
+    const genderMatches = profile ? listings.filter(listing => {
+    if (profile.gender === 'female') {
+        return listing.gender === 'female';
+    }
+    
+}) : [];
+
    
     const hobbyMatches = profile ? listings.filter(listing => 
         profile.hobbies?.some(hobby => 
