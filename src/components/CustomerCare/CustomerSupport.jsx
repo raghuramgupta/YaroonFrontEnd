@@ -132,33 +132,37 @@ const CustomerSupport = () => {
   };
 
   const handleDeleteTicket = async (ticketId) => {
-    if (!window.confirm('Are you sure you want to delete this ticket?')) {
-      return;
+  if (!window.confirm('Are you sure you want to delete this ticket?')) {
+    return;
+  }
+
+  try {
+    const currentUserString = localStorage.getItem('currentUser');
+    let userId;
+    
+    try {
+      const userObj = JSON.parse(currentUserString);
+      userId = userObj._id || userObj.id || currentUserString;
+    } catch {
+      userId = currentUserString;
     }
 
-    try {
-      await axios.delete(`${config.apiBaseUrl}/api/support/${ticketId}`);
-      setSuccessMessage('Ticket deleted successfully!');
-      
-      const currentUserString = localStorage.getItem('currentUser');
-      let userId;
-      try {
-        const userObj = JSON.parse(currentUserString);
-        userId = userObj._id || userObj.id || currentUserString;
-      } catch {
-        userId = currentUserString;
-      }
-      
-      await fetchTickets(userId);
-      
-      setTimeout(() => {
-        setSuccessMessage('');
-      }, 5000);
-    } catch (error) {
-      console.error('Error deleting ticket:', error);
-      alert('Failed to delete ticket');
-    }
-  };
+    // Updated delete request with params
+    await axios.delete(`${config.apiBaseUrl}/api/support/${ticketId}`, {
+      params: { userId }
+    });
+
+    setSuccessMessage('Ticket deleted successfully!');
+    await fetchTickets(userId);
+    
+    setTimeout(() => {
+      setSuccessMessage('');
+    }, 5000);
+  } catch (error) {
+    console.error('Delete error:', error.response?.data || error.message);
+    alert(`Failed to delete ticket: ${error.response?.data?.message || error.message}`);
+  }
+};
 
   const cancelEdit = () => {
     setEditingTicket(null);

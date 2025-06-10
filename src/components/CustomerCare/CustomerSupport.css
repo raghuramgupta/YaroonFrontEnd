@@ -1,17 +1,14 @@
 /* src/components/CustomerSupport.css */
 
 .customer-support {
-  margin: 2rem auto;
-  padding: 2rem;
-  background: #ffffff;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 /* Add these styles to your existing CustomerSupport.css */
 .support-tabs {
   display: flex;
+  max-width: 600px;
   margin-bottom: 20px;
+  margin-left: 320px;
   border-bottom: 1px solid #ddd;
 }
 
@@ -291,4 +288,135 @@ button[type="submit"]:active {
 
 .customer-support form {
   animation: fadeIn 0.4s ease-out;
+}/* src/components/CustomerSupport.css */
+
+.customer-support {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* Tabs styling */
+.support-tabs {
+  display: flex;
+  justify-content: center; /* Center tabs horizontally */
+  margin-bottom: 30px;
+  border-bottom: 1px solid #ddd;
+}
+
+.tab-button {
+  padding: 12px 24px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  color: #666;
+  border-bottom: 3px solid transparent;
+  transition: all 0.3s ease;
+}
+
+.tab-button.active {
+  color: #007bff;
+  border-bottom: 3px solid #007bff;
+  font-weight: 600;
+}
+
+.tab-button:hover:not(.active) {
+  color: #333;
+  background-color: #f8f9fa;
+}
+
+/* Content container */
+.tab-content {
+  display: flex;
+  justify-content: center; /* Center content horizontally */
+  padding: 20px 0;
+}
+
+/* Form and tickets container */
+.support-form,
+.existing-tickets {
+  width: 100%;
+  max-width: 800px; /* Set a max-width for better readability */
+  background: #fff;
+  padding: 30px;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+/* Form styling */
+.support-form h2 {
+  color: #2c3e50;
+  text-align: center;
+  margin-bottom: 25px;
+}
+
+/* Table styling */
+.tickets-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.tickets-table th, 
+.tickets-table td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid #eaeaea;
+}
+
+.tickets-table th {
+  background-color: #f8f9fa;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .support-tabs {
+    flex-wrap: wrap;
+  }
+  
+  .tab-button {
+    padding: 10px 15px;
+    font-size: 14px;
+  }
+  
+  .support-form,
+  .existing-tickets {
+    padding: 20px;
+  }
+  
+  .tickets-table {
+    display: block;
+    overflow-x: auto;
+  }
+}
+
+/* Keep all your existing status, button, and other styles below */
+/* ... (all your existing status styles, button styles, etc remain the same) ... */
+
+/* Center the success message */
+.success-message {
+  max-width: 800px;
+  margin: 0 auto 30px;
+  text-align: center;
+}
+
+/* Center-align form elements */
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  text-align: left;
+  display: block;
+}
+
+/* Center the submit button */
+.form-actions {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
 }
