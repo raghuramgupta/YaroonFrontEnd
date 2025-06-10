@@ -24,7 +24,10 @@ const normalizeListing = (listing) => {
     userKey: listing.userKey || '',
     availability: listing.availability || '',
     propertyType: listing.propertyType || '',
-    locality: listing.locality || ''
+    locality: listing.locality || '',
+    hobbies: Array.isArray(listing.hobbies) ? listing.hobbies : [],
+    // Added postedBy field for agent listings
+    postedBy: listing.postedBy || '', 
   };
 };
 
@@ -59,6 +62,14 @@ const SearchResultsPage = () => {
     propertyType: '',
     availability: '',
     amenities: []
+  });
+  const [filteredListings, setFilteredListings] = useState({
+    all: [],
+    cuisine: [],
+    gender: [],
+    hobbies: [],
+    // Added state for property agent listings
+    propertyAgent: [], 
   });
 
   useEffect(() => {
@@ -150,7 +161,7 @@ const SearchResultsPage = () => {
     if (currentUserKey) setIsLoggedIn(true);
     fetchListings();
   }, [searchType]);
-  
+ 
   const fetchListings = async () => {
     const endpoint = searchType === 'roommates' 
       ? `${config.apiBaseUrl}/api/wanted-listings` 
@@ -159,13 +170,57 @@ const SearchResultsPage = () => {
       const res = await axios.get(endpoint);
       const listings = Array.isArray(res.data) ? res.data.map(normalizeListing) : [];
       setMyListings(listings);
-      setSearchResults(listings);
+      updateFilteredListings(listings);
     } catch (err) {
       console.error("Error fetching listings:", err);
       setMyListings([]);
-      setSearchResults([]);
+      updateFilteredListings([]);
     }
   };
+
+  const updateFilteredListings = (listings) => {
+    if (!listings) {
+        setFilteredListings({
+            all: [],
+            cuisine: [],
+            gender: [],
+            hobbies: [],
+            propertyAgent: []
+        });
+        return;
+    }
+
+    const cuisineMatches = profile ? listings.filter(listing => 
+        listing.foodchoices === profile.habits?.foodChoice
+    ) : [];
+   
+    const genderMatches = profile ? listings.filter(listing => 
+        listing.gender === profile.gender
+    ) : [];
+   
+    const hobbyMatches = profile ? listings.filter(listing => 
+        profile.hobbies?.some(hobby => 
+            listing.hobbies?.includes(hobby)
+        )
+    ) : [];
+
+    // Filter for property agent listings
+    const propertyAgentMatches = listings.filter(listing => listing.postedBy === 'Agent');
+
+    setFilteredListings({
+        all: listings,
+        cuisine: cuisineMatches,
+        gender: genderMatches,
+        hobbies: hobbyMatches,
+        propertyAgent: propertyAgentMatches,
+    });
+  };
+
+  useEffect(() => {
+    if (profile && myListings.length > 0) {
+      updateFilteredListings(myListings);
+    }
+  }, [profile, myListings]);
 
   const handleSuggestionClick = (place) => {
     setSearchTerm(place);
@@ -193,7 +248,7 @@ const SearchResultsPage = () => {
       listing.userKey !== user &&
       (searchTerm === '' || listing.propertyAddress?.toLowerCase().includes(searchTerm.toLowerCase()))
     );
-    setSearchResults(results);
+    updateFilteredListings(results);
   };
 
   const toggleFilters = () => {
@@ -235,9 +290,9 @@ const SearchResultsPage = () => {
     });
   };
 
-  useEffect(() => {
-    let filtered = [...myListings];
-    
+  const applyFiltersToResults = (listings) => {
+    let filtered = [...listings];
+   
     // Apply sidebar filters
     filtered = filtered.filter(listing => 
       listing.rent >= sidebarFilters.budget.min && 
@@ -258,7 +313,6 @@ const SearchResultsPage = () => {
 
     if (sidebarFilters.amenities.length > 0) {
       filtered = filtered.filter(listing => {
-        // Defensive check for amenities array
         const listingAmenities = Array.isArray(listing.amenities) ? listing.amenities : [];
         return sidebarFilters.amenities.every(amenity => 
           listingAmenities.includes(amenity)
@@ -269,23 +323,41 @@ const SearchResultsPage = () => {
     if (user) {
       filtered = filtered.filter(listing => listing.userKey !== user);
     }
-    
-    // Apply tab filters
-    const tabFiltered = filtered.filter(listing => {
-      if (activeTab === 'Gated Community') {
-        return listing.propertyStructure === 'Gated Community';
-      }
-      if (activeTab === 'Female' && profile?.gender === 'Female') {
-        return listing.gender === 'Female';
-      }
-      if (activeTab === 'Veg' && profile?.habits.foodChoice === 'Veg') {
-        return listing.foodchoices === 'Veg';
-      }
-      return true; // All tab
-    });
 
-    setSearchResults(tabFiltered);
-  }, [sidebarFilters, appliedFilterValues, myListings, user, activeTab, profile]);
+    return filtered;
+  };
+
+  useEffect(() => {
+    let resultsToShow = [];
+   
+    switch (activeTab) {
+      case 'All':
+        resultsToShow = applyFiltersToResults(filteredListings.all);
+        break;
+      case 'Cuisine':
+        resultsToShow = applyFiltersToResults(filteredListings.cuisine);
+        break;
+      case 'Gender':
+        resultsToShow = applyFiltersToResults(filteredListings.gender);
+        break;
+      case 'Hobbies':
+        resultsToShow = applyFiltersToResults(filteredListings.hobbies);
+        break;
+      case 'Gated Community':
+        resultsToShow = applyFiltersToResults(filteredListings.all.filter(
+          listing => listing.propertyStructure === 'Gated community'
+        ));
+        break;
+      // Added case for Property Agent
+      case 'Property Agent':
+        resultsToShow = applyFiltersToResults(filteredListings.propertyAgent);
+        break;
+      default:
+        resultsToShow = applyFiltersToResults(filteredListings.all);
+    }
+
+    setSearchResults(resultsToShow);
+  }, [activeTab, sidebarFilters, filteredListings, user]);
 
   const openListingDetails = (listing) => {
     localStorage.setItem('selectedListing', JSON.stringify(listing));
@@ -293,10 +365,23 @@ const SearchResultsPage = () => {
     window.open(detailsUrl, '_blank');
   };
 
+  const TabButton = ({ tabName, displayName }) => {
+    const isActive = activeTab === tabName;
+   
+    return (
+      <button
+        className={`tab ${isActive ? 'active' : ''}`}
+        onClick={() => setActiveTab(tabName)}
+      >
+        {displayName}
+      </button>
+    );
+  };
+
   return (
     <div className="search-results-page">
       <Header isLoggedIn={isLoggedIn} />
-      
+     
       <div className="search-results-container">
         {/* Filters Sidebar */}
         <aside className="filters-sidebar">
@@ -335,7 +420,7 @@ const SearchResultsPage = () => {
               </div>
             </div>
           </div>
-          
+         
           <div className="filter-section">
             <h4>Property Type</h4>
             <div className="filter-options">
@@ -353,7 +438,7 @@ const SearchResultsPage = () => {
               ))}
             </div>
           </div>
-          
+         
           <div className="filter-section">
             <h4>Availability</h4>
             <div className="filter-options">
@@ -409,7 +494,7 @@ const SearchResultsPage = () => {
                 </svg>
               </button>
             </div>
-            
+           
             <div className="view-toggle">
               <button 
                 className={`view-option ${searchType === 'flats' ? 'active' : ''}`}
@@ -429,20 +514,46 @@ const SearchResultsPage = () => {
           {/* Quick Filters */}
           <div className="quick-filters">
             <div className="tabs">
-              {['All', 'Gated Community',
-                ...(profile?.gender === 'Female' ? ['Female'] : []),
-                ...(profile?.habits.foodChoice === 'Veg' ? ['Veg'] : [])
-              ].map(tab => (
-                <button
-                  key={tab}
-                  className={`tab ${activeTab === tab ? 'active' : ''}`}
-                  onClick={() => setActiveTab(tab)}
-                >
-                  {tab}
-                </button>
-              ))}
+              <TabButton tabName="All" displayName="All" />
+             
+              {/* Conditionally render Cuisine tab */}
+              {profile?.habits?.foodChoice && filteredListings.cuisine.length > 0 && (
+                <TabButton 
+                  tabName="Cuisine" 
+                  displayName={`${profile.habits.foodChoice}`} 
+                />
+              )}
+             
+              {/* Conditionally render Gender tab */}
+              {profile?.gender && filteredListings.gender.length > 0 &&(
+                <TabButton 
+                  tabName="Gender" 
+                  displayName={`${profile.gender}`} 
+                />
+              )}
+             
+              {/* Conditionally render Hobbies tab */}
+              {profile?.hobbies?.length > 0 && filteredListings.hobbies.length > 0 && (
+                <TabButton 
+                  tabName="Hobbies" 
+                  displayName="Hobbies" 
+                />
+              )}
+
+              {/* Conditionally render Property Agent tab */}
+              {filteredListings.propertyAgent.length > 0 && (
+                <TabButton
+                  tabName="Property Agent"
+                  displayName="Property Agent"
+                />
+              )}
+             
+              <TabButton 
+                tabName="Gated Community" 
+                displayName="Gated Community"
+              />
             </div>
-            
+           
             <button className="filter-toggle" onClick={toggleFilters}>
               <svg viewBox="0 0 24 24">
                 <path d="M4.25 5.61C6.27 8.2 10 13 10 13v6c0 .55.45 1 1 1h2c.55 0 1-.45 1-1v-6s3.72-4.8 5.74-7.39c.51-.66.04-1.61-.79-1.61H5.04c-.83 0-1.3.95-.79 1.61z"/>
@@ -469,10 +580,9 @@ const SearchResultsPage = () => {
           {searchResults.length > 0 ? (
             <div className="results-grid">
               {searchResults.map((listing, idx) => {
-                // Defensive check for amenities in render
                 const listingAmenities = Array.isArray(listing.amenities) ? listing.amenities : [];
                 const isFurnished = listingAmenities.includes('Furnished');
-                
+               
                 return (
                   <div key={idx} className="property-card">
                     <div className="property-image">
@@ -494,7 +604,7 @@ const SearchResultsPage = () => {
                       </button>
                       <div className="property-type">{listing.propertyStructure || 'Apartment'}</div>
                     </div>
-                    
+                   
                     <div className="property-details">
                       <h3 onClick={() => openListingDetails(listing)}>{listing.locality || 'Property'}</h3>
                       <p className="location">
@@ -503,7 +613,7 @@ const SearchResultsPage = () => {
                         </svg>
                         {listing.propertyAddress || 'Address not specified'}
                       </p>
-                      
+                     
                       <div className="property-features">
                         <span>
                           <svg viewBox="0 0 24 24">
@@ -518,7 +628,7 @@ const SearchResultsPage = () => {
                           {isFurnished ? 'Furnished' : 'Unfurnished'}
                         </span>
                       </div>
-                      
+                     
                       <div className="property-footer">
                         <div className="price">
                           ₹{listing.rent?.toLocaleString() || '0'}
