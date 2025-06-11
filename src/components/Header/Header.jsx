@@ -8,7 +8,7 @@ const Header = ({ isLoggedIn = false, onLogout = () => {} }) => {
   const navigate = useNavigate();
   const [showMenu, setShowMenu] = useState(false);
   const [user, setUser] = useState(null);
-  const [username, setUserName] = useState(null);
+  const [username, setUserName] = useState("Guest");
 
   const toggleMenu = () => setShowMenu(prev => !prev);
 
@@ -24,12 +24,12 @@ const Header = ({ isLoggedIn = false, onLogout = () => {} }) => {
       const userProfile = JSON.parse(localStorage.getItem(`userProfile_${currentUserKey}`));
       if (userProfile) setUser(userProfile);
     }
+
     axios.get(`${config.apiBaseUrl}/api/users/profile/${currentUserKey}`)
       .then(res => {
-        setUserName(res.data.fullName);
+        setUserName(res.data.fullName || "User");
       }).catch(err => {
         console.error('Failed to load profile:', err);
-        setUserName("Guest");
       });
   }, []);
 
@@ -41,35 +41,35 @@ const Header = ({ isLoggedIn = false, onLogout = () => {} }) => {
           <Link to="/" className="logo-link">
             <div className="logo-container">
               <span className="logo-text">YAAR🏠OM</span>
-              <div className="logo-underline"></div>
             </div>
           </Link>
-          {user && (
+          {username && (
             <div className="welcome-msg">
-              <span className="welcome-icon">👋</span>
-              Welcome back, <strong>{username || 'User'}</strong>
+              👋 Welcome back, <strong>{username}</strong>
             </div>
           )}
         </div>
 
-        {/* Navigation Buttons */}<div className="nav-buttons"></div>
-        <div className="nav-buttons">
-          <button 
-            className="nav-button"
-            onClick={() => navigate('/need-place')}
-          >
-            <span className="button-icon">🏠</span>
-            Need a Place
-          </button></div><div className="nav-buttons">
-          <button 
-            className="nav-button"
-            onClick={() => navigate('/room-in-shareholder')}
-          >
-            <span className="button-icon">👥</span>
-            Find Roommates
-          </button>
-        </div>
-
+      <nav className="nav-buttons">
+  <div className="nav-button-wrapper">
+    <button 
+      className="nav-button"
+      onClick={() => navigate('/need-place')}
+    >
+      <span className="button-icon">🏠</span>
+      Need a Place
+    </button>
+  </div>
+  
+</nav><nav><div className="nav-button-wrapper">
+    <button 
+      className="nav-button"
+      onClick={() => navigate('/room-in-shareholder')}
+    >
+      <span className="button-icon">👥</span>
+      Find Roommates
+    </button>
+  </div></nav>
         {/* User Menu */}
         <div className="user-section">
           {isLoggedIn ? (
@@ -117,7 +117,7 @@ const Header = ({ isLoggedIn = false, onLogout = () => {} }) => {
                     
                     <div className="dropdown-divider"></div>
                     
-                    <button onClick={handleLogout} className="dropdown-item logout-item">
+                    <button className="dropdown-item logout-item" onClick={handleLogout}>
                       <span className="dropdown-icon">🚪</span>
                       Log Out
                     </button>

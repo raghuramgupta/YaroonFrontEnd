@@ -12,12 +12,19 @@ import {
   Legend,
   CartesianGrid,
   ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell
 } from "recharts";
-import { FiHome, FiEye, FiUsers, FiTrendingUp, FiMapPin, FiLayers } from "react-icons/fi";
+import { FiHome, FiEye, FiUsers, FiTrendingUp, FiMapPin, FiLayers, FiMessageSquare } from "react-icons/fi";
 import { FaSpinner } from "react-icons/fa";
 
 const Dashboard = () => {
   const [stats, setStats] = useState([]);
+  const [messageStats, setMessageStats] = useState({
+    totalMessages: 0,
+    messagesPerProperty: []
+  });
   const [loading, setLoading] = useState(true);
   const [userKey] = useState(() => localStorage.getItem("currentUser") || "");
 
@@ -36,21 +43,32 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (!userKey) return;
-    (async () => {
+    
+    const fetchData = async () => {
       try {
-        const res = await fetch(
-          `${config.apiBaseUrl}/api/listings/stats/${encodeURIComponent(
-            userKey
-          )}`
+        setLoading(true);
+        
+        // Fetch listing stats
+        const statsRes = await fetch(
+          `${config.apiBaseUrl}/api/listings/stats/${encodeURIComponent(userKey)}`
         );
-        const data = await res.json();
-        setStats(data);
+        const statsData = await statsRes.json();
+        setStats(statsData);
+
+        // Fetch message stats
+        const messagesRes = await fetch(
+          `${config.apiBaseUrl}/api/messages/stats/${encodeURIComponent(userKey)}`
+        );
+        const messagesData = await messagesRes.json();
+        setMessageStats(messagesData);
       } catch (err) {
-        console.error("Error fetching stats:", err);
+        console.error("Error fetching data:", err);
       } finally {
         setLoading(false);
       }
-    })();
+    };
+
+    fetchData();
   }, [userKey]);
 
   const totalListings = stats.length;
@@ -100,6 +118,21 @@ const Dashboard = () => {
   }));
   const typeData = Object.entries(typeCounts).map(([type, count]) => ({ type, count }));
 
+  // Prepare message data for charts
+  const messageBarData = [
+    { name: 'Total Messages', count: messageStats.totalMessages },
+    ...messageStats.messagesPerProperty.map(item => ({
+      name: item.propertyName || 'Unknown',
+      count: item.count
+    }))
+  ];
+
+  const messagePieData = messageStats.messagesPerProperty.map((item, index) => ({
+    name: item.propertyName || 'Unknown',
+    value: item.count,
+    color: palette[index % palette.length]
+  }));
+
   const tiles = [
     {
       title: "Total Listings",
@@ -120,6 +153,13 @@ const Dashboard = () => {
       value: totalUniqueVisitors,
       icon: <FiUsers className="tile-icon" />,
       color: "bg-amber-100 text-amber-600",
+      trend: null,
+    },
+    {
+      title: "Total Messages",
+      value: messageStats.totalMessages,
+      icon: <FiMessageSquare className="tile-icon" />,
+      color: "bg-blue-100 text-blue-600",
       trend: null,
     },
   ];
@@ -176,6 +216,12 @@ const Dashboard = () => {
                         <span>Unique Visitors</span>
                       </div>
                     </th>
+                    <th>
+                      <div className="table-header-cell">
+                        <FiMessageSquare />
+                        <span>Messages</span>
+                      </div>
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -187,12 +233,16 @@ const Dashboard = () => {
                         .filter((v) => v.viewer && v.viewer !== userKey)
                         .map((v) => v.viewer)
                     ).size;
+                    const propertyMessages = messageStats.messagesPerProperty.find(
+                      item => item.propertyId === l._id
+                    )?.count || 0;
                     return (
                       <tr key={l._id}>
                         <td>{i + 1}</td>
                         <td className="address-cell">{l.propertyAddress}</td>
                         <td>{viewsExMe}</td>
                         <td>{uniq}</td>
+                        <td>{propertyMessages}</td>
                       </tr>
                     );
                   })}
@@ -243,6 +293,91 @@ const Dashboard = () => {
                           />
                         ))}
                       </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              )}
+
+              {messageBarData.length > 0 && (
+                <div className="chart-card">
+                  <div className="chart-header">
+                    <FiMessageSquare className="chart-icon" />
+                    <h3>Messages by Property</h3>
+                  </div>
+                  <div className="chart-container">
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={messageBarData}>
+                        <defs>
+                          <linearGradient id="gradMsg" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#3b82f6" />
+                            <stop offset="100%" stopColor="#93c5fd" />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+                        <XAxis 
+                          dataKey="name" 
+                          tick={{ fill: '#6b7280' }}
+                        />
+                        <YAxis 
+                          allowDecimals={false} 
+                          tick={{ fill: '#6b7280' }}
+                        />
+                        <Tooltip 
+                          contentStyle={{
+                            background: '#fff',
+                            borderRadius: '8px',
+                            boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                            border: 'none'
+                          }}
+                        />
+                        <Legend />
+                        <Bar
+                          dataKey="count"
+                          name="Messages"
+                          fill="url(#gradMsg)"
+                          radius={[4, 4, 0, 0]}
+                          barSize={30}
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              )}
+
+              {messagePieData.length > 0 && (
+                <div className="chart-card">
+                  <div className="chart-header">
+                    <FiMessageSquare className="chart-icon" />
+                    <h3>Message Distribution</h3>
+                  </div>
+                  <div className="chart-container">
+                    <ResponsiveContainer width="100%" height={300}>
+                      <PieChart>
+                        <Pie
+                          data={messagePieData}
+                          cx="50%"
+                          cy="50%"
+                          labelLine={false}
+                          outerRadius={80}
+                          fill="#8884d8"
+                          dataKey="value"
+                          nameKey="name"
+                          label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                        >
+                          {messagePieData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Tooltip 
+                          contentStyle={{
+                            background: '#fff',
+                            borderRadius: '8px',
+                            boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                            border: 'none'
+                          }}
+                        />
+                        <Legend />
+                      </PieChart>
                     </ResponsiveContainer>
                   </div>
                 </div>
