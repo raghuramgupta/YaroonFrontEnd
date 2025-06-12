@@ -187,36 +187,69 @@ useEffect(() => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!formData.propertyAddress?.trim()) { alert('Property address is required.'); return; }
-    console.log("checking whether address loaded or not")
-    const finalDeposit = formData.securityDepositOption === 'Other' 
-      ? formData.customSecurityDeposit 
-      : formData.securityDepositOption;
-    const listingData = {
-      ...formData,
-      securityDepositOption: finalDeposit,
-      userId: localStorage.getItem('currentUser'),
-      amenities: JSON.stringify(formData.amenities),
-      accommodationType: 'Room',
-      title: formData.title?.trim() || `Flatmate required in ${formData.locality || formData.city || 'your city'}`
-    };
+  e.preventDefault();
 
-    try {
-      const endpoint = listingId 
-        ? `${config.apiBaseUrl}/api/listings/${listingId}`
-        : `${config.apiBaseUrl}/api/listings/create`;
-      const method = listingId ? 'put' : 'post';
-      
-      await axios[method](endpoint, listingData, { headers: { 'Content-Type': 'application/json' } });
-      alert(`Listing successfully ${listingId ? 'updated' : 'created'}!`);
-      navigate('/listings');
-    } catch (error) {
-      console.error('Error saving listing:', error);
-      alert('Failed to save listing. Please try again.');
-    }
+  if (!formData.propertyAddress?.trim()) {
+    alert('Property address is required.');
+    return;
+  }
+
+  const finalDeposit = formData.securityDepositOption === 'Other'
+    ? formData.customSecurityDeposit
+    : formData.securityDepositOption;
+
+  const updatedFormData = {
+    ...formData,
+    securityDepositOption: finalDeposit,
+    userId: localStorage.getItem('currentUser'),
+    amenities: JSON.stringify(formData.amenities),
+    accommodationType: 'Room',
+    title: formData.title?.trim() || `Flatmate required in ${formData.locality || formData.city || 'your city'}`
   };
 
+  // Remove file arrays before creating FormData
+  const { images, videos, ...otherFields } = updatedFormData;
+
+  const formDataToSend = new FormData();
+
+  // Append all non-file fields
+  Object.keys(otherFields).forEach(key => {
+    formDataToSend.append(key, otherFields[key]);
+  });
+
+  // Append image files
+  if (images && images.length > 0) {
+    for (let i = 0; i < images.length; i++) {
+      formDataToSend.append('images', images[i]);
+    }
+  }
+
+  // Append video files
+  if (videos && videos.length > 0) {
+    for (let i = 0; i < videos.length; i++) {
+      formDataToSend.append('videos', videos[i]);
+    }
+  }
+
+  try {
+    const endpoint = listingId
+      ? `${config.apiBaseUrl}/api/listings/${listingId}`
+      : `${config.apiBaseUrl}/api/listings/create`;
+    const method = listingId ? 'put' : 'post';
+
+    await axios[method](endpoint, formDataToSend, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+
+    alert(`Listing successfully ${listingId ? 'updated' : 'created'}!`);
+    navigate('/listings');
+  } catch (error) {
+    console.error('Error saving listing:', error);
+    alert('Failed to save listing. Please try again.');
+  }
+};
   return (
     <div className="compact-form-container">
       <Header isLoggedIn={isLoggedIn} />
