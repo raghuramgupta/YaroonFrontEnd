@@ -155,9 +155,9 @@ const languageOptions = [
       confirmPassword: undefined,
       interests: Array.isArray(formData.interests) 
       ? formData.interests.join(', ') 
-      : formData.interests
+      : formData.interestshandleSubmit
     };
-    alert("Test")
+    
     try {
       const res = await fetch(`${config.apiBaseUrl}/api/users/signup`, {
         method: 'POST',
@@ -167,7 +167,7 @@ const languageOptions = [
 
       const result = await res.json();
       if (!res.ok) throw new Error(result.message);
-
+      alert('Verification email sent! Please check your inbox.');
       const userKey = formData.email || formData.mobile;
       localStorage.setItem('currentUser', userKey);
       localStorage.setItem('currentUserType', formData.userType);
