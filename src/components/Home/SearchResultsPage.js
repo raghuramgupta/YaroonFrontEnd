@@ -24,7 +24,7 @@ const normalizeListing = (listing) => {
     userKey: listing.userKey || '',
     availability: listing.availability || '',
     propertyType: listing.propertyType || '',
-    locality: listing.locality || '',
+    locality: listing.locality || '',pets: listing.pets || '',
     hobbies: Array.isArray(listing.hobbies) ? listing.hobbies : [],
     // Added postedBy field for agent listings
     postedBy: listing.postedBy || '', 
@@ -69,7 +69,7 @@ const SearchResultsPage = () => {
     gender: [],
     hobbies: [],
     // Added state for property agent listings
-    propertyAgent: [], 
+    propertyAgent: [], pets: [],
   });
 
   useEffect(() => {
@@ -185,11 +185,11 @@ const SearchResultsPage = () => {
             cuisine: [],
             gender: [],
             hobbies: [],
-            propertyAgent: []
+            propertyAgent: [],pets:[]
         });
         return;
     }
-
+    const petFriendlyMatches = listings.filter(listing => listing.pets);
     const cuisineMatches = profile ? listings.filter(listing => {
     const userFoodChoice = profile.habits?.foodChoice;
     if (userFoodChoice === "Veg") {
@@ -221,7 +221,7 @@ const SearchResultsPage = () => {
         cuisine: cuisineMatches,
         gender: genderMatches,
         hobbies: hobbyMatches,
-        propertyAgent: propertyAgentMatches,
+        propertyAgent: propertyAgentMatches,pets: petFriendlyMatches, 
     });
   };
 
@@ -356,7 +356,9 @@ const SearchResultsPage = () => {
         resultsToShow = applyFiltersToResults(filteredListings.all.filter(
           listing => listing.propertyStructure === 'Gated community'
         ));
-        break;
+        break; case 'Pets':
+    resultsToShow = applyFiltersToResults(filteredListings.pets);
+    break;
       // Added case for Property Agent
       case 'Property Agent':
         resultsToShow = applyFiltersToResults(filteredListings.propertyAgent);
@@ -532,7 +534,13 @@ const SearchResultsPage = () => {
                   displayName={`${profile.habits.foodChoice}`} 
                 />
               )}
-             
+             {/* Add Pets tab - only show if there are pet-friendly listings */}
+              {filteredListings.pets.length > 0 && (
+                <TabButton 
+                  tabName="Pets" 
+                  displayName="Pet Friendly" 
+                />
+              )}
               {/* Conditionally render Gender tab */}
               {profile?.gender && filteredListings.gender.length > 0 &&(
                 <TabButton 
