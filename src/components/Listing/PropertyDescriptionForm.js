@@ -22,7 +22,7 @@ const PropertyDescriptionForm = () => {
     roomSize: '', apartmentSize: '', rent: '', availableFrom: todayDate, openDate: '',
     securityDepositOption: '', customSecurityDeposit: '',userType:'',
     amenities: { TV: false, Fridge: false, WashingMachine: false, kitchen: false},
-    cookingType: '', images: [], videos: [], mapLocation: '',userinterests:'',gender:'',languages:'',foodchoices:''
+    cookingType: '', images: [], videos: [], mapLocation: '',userinterests:'',pets:'',gender:'',languages:'',foodchoices:''
   });
   const [selectedLatLng, setSelectedLatLng] = useState(null);
   const [showMap, setShowMap] = useState(true);
@@ -132,7 +132,7 @@ useEffect(() => {
         .then(res => {
           console.log('API Response:', res);
           setProfile(res.data);
-          setFormData(prev => ({ ...prev, userKey: currentUserKey,userType:res.data.userType,userinterests:res.data.interests,gender:res.data.gender,languages:res.data.languages,foodchoices:res.data.habits.foodChoice}));
+          setFormData(prev => ({ ...prev, userKey: currentUserKey,userType:res.data.userType,userinterests:res.data.interests,gender:res.data.gender,languages:res.data.languages,pets:res.data.habits.pets,foodchoices:res.data.habits.foodChoice}));
         })
         .catch(err => {setFormData(prev => ({ ...prev, userKey: currentUserKey}));
           console.error('Failed to load profile:', err);

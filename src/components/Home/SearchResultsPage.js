@@ -209,7 +209,7 @@ const SearchResultsPage = () => {
    
     const hobbyMatches = profile ? listings.filter(listing => 
         profile.hobbies?.some(hobby => 
-            listing.hobbies?.includes(hobby)
+            listing.hobbies?.includes("Football")
         )
     ) : [];
 
@@ -553,7 +553,7 @@ const SearchResultsPage = () => {
               {profile?.hobbies?.length > 0 && filteredListings.hobbies.length > 0 && (
                 <TabButton 
                   tabName="Hobbies" 
-                  displayName="Hobbies" 
+                  displayName="Gamers" 
                 />
               )}
 
