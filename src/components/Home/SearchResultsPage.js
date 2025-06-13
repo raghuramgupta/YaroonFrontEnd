@@ -603,10 +603,10 @@ const SearchResultsPage = () => {
                 return (
                   <div key={idx} className="property-card">
                     <div className="property-image">
-                      {listing.images?.[0] ? (
-                        <img src={listing.images[0]} alt={listing.title} />
+                      {listing.images && listing.images.length > 0 ? (
+                        <img src={`${config.apiBaseUrl}${listing.images[0]}`} alt="property" />
                       ) : (
-                        <div className="image-placeholder"></div>
+                        <div className="image-placeholder">No image</div>
                       )}
                       <button 
                         className={`favorite-button ${favorites.includes(listing._id) ? 'active' : ''}`}

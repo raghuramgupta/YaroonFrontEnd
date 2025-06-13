@@ -9,13 +9,32 @@
   background-color: white; /* Or whatever your header background color is */
   box-shadow: 0 2px 5px rgba(0,0,0,0.1); /* Optional: add shadow for better visibility */
 }
-.listing-content {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 30px;
+/* For tablets and small laptops */
+@media (max-width: 992px) {
+  .property-meta {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* For phones */
+@media (max-width: 768px) {
+  .listing-content {
+    padding: 15px;
+  }
+
+  .property-header {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .price-badge {
+    font-size: 16px;
+    padding: 6px 12px;
+  }
+
+  .property-meta {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Loading State */
@@ -44,7 +63,7 @@
 }
 
 .main-image-container {
-  background-color: #f0f4f8; /* Light blue-gray background for image container */
+  background-color: #f0f4f8;
   border-radius: 12px;
   overflow: hidden;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
@@ -82,7 +101,16 @@
 .prev {
   left: 15px;
 }
-
+.image-placeholder {
+  width: 100%;
+  height: 300px;
+  background-color: #f0f0f0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: #aaa;
+  font-style: italic;
+}
 .next {
   right: 15px;
 }
@@ -373,23 +401,8 @@
 .login-link:hover {
   background-color: #2980b9;
 }
-@media (max-width: 768px) {
-  .listing-content {
-    background-color: #ffffff; /* White background on mobile */
-    padding: 15px;
-  }
-}
-/* Responsive Design */
-@media (max-width: 992px) {
-  .listing-content {
-    grid-template-columns: 1fr;
-  }
-  
-  .contact-section {
-    grid-column: 1;
-    position: static;
-  }
-}
+
+
 /* Add these new color variables for consistency */
 :root {
   --bg-primary: #f9fafc;

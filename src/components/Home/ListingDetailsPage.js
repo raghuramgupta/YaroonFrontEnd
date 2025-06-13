@@ -121,11 +121,13 @@ const ListingDetailsPage = () => {
         {listing.images.length > 0 && (
           <div className="image-gallery">
             <div className="main-image-container">
-              <img 
-                src={listing.images[activeImageIndex]} 
-                alt={`Property view ${activeImageIndex + 1}`}
-                className="main-image"
-              />
+              {listing.images.length > 0 && (
+                <img 
+                  src={`${config.apiBaseUrl}${listing.images[activeImageIndex]}`} 
+                  alt="property" 
+                  className="main-image"
+                />
+              )}
               {listing.images.length > 1 && (
                 <>
                   <button className="nav-button prev" onClick={handlePrevImage}>
