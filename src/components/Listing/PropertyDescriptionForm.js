@@ -196,19 +196,17 @@
     };
 
     const handleDeleteImage = (index) => {
-      setFormData(prev => {
-        const updatedImages = [...prev.images];
-        updatedImages.splice(index, 1);
-        return { ...prev, images: updatedImages };
-      });
+      setFormData(prev => ({
+        ...prev,
+        images: prev.images.filter((_, i) => i !== index)
+      }));
     };
 
     const handleDeleteVideo = (index) => {
-      setFormData(prev => {
-        const updatedVideos = [...prev.videos];
-        updatedVideos.splice(index, 1);
-        return { ...prev, videos: updatedVideos };
-      });
+      setFormData(prev => ({
+        ...prev,
+        videos: prev.videos.filter((_, i) => i !== index)
+      }));
     };
 
     const handleSubmit = async (e) => {
@@ -243,12 +241,12 @@
   });
 
   // Only append new image files
-  if (images && Array.isArray(images)) {
-    images.forEach(img => {
-      if (img instanceof File) {
-        formDataToSend.append('images', img);
+  if (images && images.length > 0) {
+    for (let i = 0; i < images.length; i++) {
+      if (images[i] instanceof File) {
+        formDataToSend.append('images', images[i]);
       }
-    });
+    }
   }
 
   // Only append new video files
@@ -473,34 +471,36 @@
                   {/* Show preview of existing images */}
                   {formData.images && formData.images.length > 0 && (
                     <div className="image-preview">
-                      {formData.images.map((imgPath, index) => (
-                        <div key={index} style={{ position: 'relative', display: 'inline-block', margin: '5px' }}>
+                    {formData.images.map((imgPath, index) => (
+                      <div key={index} style={{ position: 'relative', display: 'inline-block' }}>
+                        {typeof imgPath === 'string' ? (
                           <img
                             src={`http://localhost:5000${imgPath}`}
                             alt="preview"
                             style={{ width: '100px', height: '100px', objectFit: 'cover' }}
                           />
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteImage(index)}
-                            style={{
-                              position: 'absolute',
-                              top: 0,
-                              right: 0,
-                              background: '#ff4d4d', 
-                              color: 'white',
-                              border: 'none',
-                              borderRadius: '50%',
-                              cursor: 'pointer',
-                              fontSize: '12px',
-                              padding: '4px 6px'
-                            }}
-                          >
-                            <FaTrash />
-                          </button>
-                        </div>
-                      ))}
-                    </div>
+                        ) : (
+                          <span>📷</span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteImage(index)}
+                          style={{
+                            position: 'absolute',
+                            top: 0,
+                            right: 0,
+                            background: '#ff4d4d',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '50%',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          ✖
+                        </button>
+                      </div>
+                    ))}
+                  </div>
                   )}
                 </div>
 
