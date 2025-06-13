@@ -232,7 +232,9 @@
     title: formData.title?.trim() || `Flatmate required in ${formData.locality || formData.city || 'your city'}`
   };
 
-  const { images, videos, ...otherFields } = updatedFormData;
+  // Remove problematic fields
+  const { images, videos, viewsLog, viewsCount, ...otherFields } = updatedFormData;
+
   const formDataToSend = new FormData();
 
   // Append non-file fields
@@ -240,16 +242,8 @@
     formDataToSend.append(key, otherFields[key]);
   });
 
-  // Filter out any non-string values from existing media lists
-  const filteredImages = images.filter(img => typeof img === 'string');
-  const filteredVideos = videos.filter(vid => typeof vid === 'string');
-
-  // Append updated media arrays as JSON
-  formDataToSend.append('updatedImages', JSON.stringify(filteredImages));
-  formDataToSend.append('updatedVideos', JSON.stringify(filteredVideos));
-
-  // Append new uploads only
-  if (images && images.length > 0) {
+  // Only append new image files
+  if (images && Array.isArray(images)) {
     images.forEach(img => {
       if (img instanceof File) {
         formDataToSend.append('images', img);
@@ -257,13 +251,22 @@
     });
   }
 
-  if (videos && videos.length > 0) {
+  // Only append new video files
+  if (videos && Array.isArray(videos)) {
     videos.forEach(vid => {
       if (vid instanceof File) {
         formDataToSend.append('videos', vid);
       }
     });
   }
+
+  // Send filtered media lists
+  formDataToSend.append('updatedImages', JSON.stringify(
+    images.filter(img => typeof img === 'string')
+  ));
+  formDataToSend.append('updatedVideos', JSON.stringify(
+    videos.filter(vid => typeof vid === 'string')
+  ));
 
   try {
     const endpoint = listingId
