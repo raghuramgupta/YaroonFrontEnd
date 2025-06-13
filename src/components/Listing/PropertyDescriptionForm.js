@@ -210,81 +210,82 @@
     };
 
     const handleSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  if (!formData.propertyAddress?.trim()) {
-    alert('Property address is required.');
-    return;
-  }
-
-  const finalDeposit = formData.securityDepositOption === 'Other'
-    ? formData.customSecurityDeposit
-    : formData.securityDepositOption;
-
-  const updatedFormData = {
-    ...formData,
-    securityDepositOption: finalDeposit,
-    userId: localStorage.getItem('currentUser'),
-    amenities: JSON.stringify(formData.amenities),
-    accommodationType: 'Room',
-    title: formData.title?.trim() || `Flatmate required in ${formData.locality || formData.city || 'your city'}`
-  };
-
-  // Remove problematic fields
-  const { images, videos, viewsLog, viewsCount, ...otherFields } = updatedFormData;
-
-  const formDataToSend = new FormData();
-
-  // Append non-file fields
-  Object.keys(otherFields).forEach(key => {
-    formDataToSend.append(key, otherFields[key]);
-  });
-
-  // Only append new image files
-  if (images && images.length > 0) {
-    for (let i = 0; i < images.length; i++) {
-      if (images[i] instanceof File) {
-        formDataToSend.append('images', images[i]);
-      }
+    if (!formData.propertyAddress?.trim()) {
+      alert('Property address is required.');
+      return;
     }
-  }
 
-  // Only append new video files
-  if (videos && Array.isArray(videos)) {
-    videos.forEach(vid => {
-      if (vid instanceof File) {
-        formDataToSend.append('videos', vid);
-      }
+    const finalDeposit = formData.securityDepositOption === 'Other'
+      ? formData.customSecurityDeposit
+      : formData.securityDepositOption;
+
+    const updatedFormData = {
+      ...formData,
+      securityDepositOption: finalDeposit,
+      userId: localStorage.getItem('currentUser'),
+      amenities: JSON.stringify(formData.amenities),
+      accommodationType: 'Room',
+      title: formData.title?.trim() || `Flatmate required in ${formData.locality || formData.city || 'your city'}`
+    };
+
+    // Filter out non-string values from images/videos
+    const filteredImages = formData.images.filter(img => typeof img === 'string');
+    const filteredVideos = formData.videos.filter(vid => typeof vid === 'string');
+
+    updatedFormData.images = filteredImages;
+    updatedFormData.videos = filteredVideos;
+
+    const { images, videos, ...otherFields } = updatedFormData;
+
+    const formDataToSend = new FormData();
+
+    // Append non-file fields
+    Object.keys(otherFields).forEach(key => {
+      formDataToSend.append(key, otherFields[key]);
     });
-  }
 
-  // Send filtered media lists
-  formDataToSend.append('updatedImages', JSON.stringify(
-    images.filter(img => typeof img === 'string')
-  ));
-  formDataToSend.append('updatedVideos', JSON.stringify(
-    videos.filter(vid => typeof vid === 'string')
-  ));
+    // Only append new file objects
+    if (images && Array.isArray(images)) {
+      images.forEach(img => {
+        if (img instanceof File) {
+          formDataToSend.append('images', img);
+        }
+      });
+    }
 
-  try {
-    const endpoint = listingId
-      ? `${config.apiBaseUrl}/api/listings/${listingId}`
-      : `${config.apiBaseUrl}/api/listings/create`;
-    const method = listingId ? 'put' : 'post';
+    if (videos && Array.isArray(videos)) {
+      videos.forEach(vid => {
+        if (vid instanceof File) {
+          formDataToSend.append('videos', vid);
+        }
+      });
+    }
 
-    await axios[method](endpoint, formDataToSend, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
+    // Send updated media arrays
+    formDataToSend.append('updatedImages', JSON.stringify(filteredImages));
+    formDataToSend.append('updatedVideos', JSON.stringify(filteredVideos));
 
-    alert(`Listing successfully ${listingId ? 'updated' : 'created'}!`);
-    navigate('/listings');
-  } catch (error) {
-    console.error('Error saving listing:', error);
-    alert('Failed to save listing. Please try again.');
-  }
-};
+    try {
+      const endpoint = listingId
+        ? `${config.apiBaseUrl}/api/listings/${listingId}`
+        : `${config.apiBaseUrl}/api/listings/create`;
+      const method = listingId ? 'put' : 'post';
+
+      await axios[method](endpoint, formDataToSend, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      alert(`Listing successfully ${listingId ? 'updated' : 'created'}!`);
+      navigate('/listings');
+    } catch (error) {
+      console.error('Error saving listing:', error);
+      alert('Failed to save listing. Please try again.');
+    }
+  };
     return (
       <div className="compact-form-container">
         <Header isLoggedIn={isLoggedIn} />
@@ -410,7 +411,7 @@
                 </div>
                 <div className="price-group">
                   <label><FaCalendarAlt /> Open House</label>
-                  <input type="datetime-local" name="openDate" value={formData.openDate} onChange={handleChange} min={todayDateTime} />
+                  <input type="datetime-local" name="openDate" value={formData.openDate} onChange={handleChange} />
                 </div>
               </div>
             </div>
