@@ -221,24 +221,15 @@
       ? formData.customSecurityDeposit
       : formData.securityDepositOption;
 
-    const updatedFormData = {
+    const filteredFormData = {
       ...formData,
       securityDepositOption: finalDeposit,
-      userId: localStorage.getItem('currentUser'),
       amenities: JSON.stringify(formData.amenities),
       accommodationType: 'Room',
       title: formData.title?.trim() || `Flatmate required in ${formData.locality || formData.city || 'your city'}`
     };
 
-    // Filter out non-string values from images/videos
-    const filteredImages = formData.images.filter(img => typeof img === 'string');
-    const filteredVideos = formData.videos.filter(vid => typeof vid === 'string');
-
-    updatedFormData.images = filteredImages;
-    updatedFormData.videos = filteredVideos;
-
-    const { images, videos, ...otherFields } = updatedFormData;
-
+    const { images, videos, ...otherFields } = filteredFormData;
     const formDataToSend = new FormData();
 
     // Append non-file fields
@@ -246,7 +237,7 @@
       formDataToSend.append(key, otherFields[key]);
     });
 
-    // Only append new file objects
+    // Append new image files
     if (images && Array.isArray(images)) {
       images.forEach(img => {
         if (img instanceof File) {
@@ -255,6 +246,7 @@
       });
     }
 
+    // Append new video files
     if (videos && Array.isArray(videos)) {
       videos.forEach(vid => {
         if (vid instanceof File) {
@@ -263,9 +255,13 @@
       });
     }
 
-    // Send updated media arrays
-    formDataToSend.append('updatedImages', JSON.stringify(filteredImages));
-    formDataToSend.append('updatedVideos', JSON.stringify(filteredVideos));
+    // Send current image/video list (after deletions)
+    formDataToSend.append('updatedImages', JSON.stringify(
+      images.filter(img => typeof img === 'string')
+    ));
+    formDataToSend.append('updatedVideos', JSON.stringify(
+      videos.filter(vid => typeof vid === 'string')
+    ));
 
     try {
       const endpoint = listingId
