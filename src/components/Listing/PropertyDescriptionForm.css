@@ -3,7 +3,51 @@
   max-width: 100%;
   padding: 20px;
 }
+.image-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
 
+.image-preview img {
+  width: 100px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+.media-upload ul {
+  list-style-type: none;
+  padding-left: 0;
+  margin-top: 10px;
+}
+
+.media-upload li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f9f9f9;
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin-bottom: 5px;
+  font-size: 14px;
+}
+
+.media-upload li a {
+  text-decoration: none;
+  color: #007bff;
+}
+
+.delete-btn {
+  background-color: #ff4d4d;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  padding: 4px 6px;
+  font-size: 12px;
+}
 .compact-form-card {
   background: white;
   border-radius: 12px;
