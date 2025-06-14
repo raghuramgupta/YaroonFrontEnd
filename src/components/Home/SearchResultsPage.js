@@ -604,7 +604,16 @@ const SearchResultsPage = () => {
                   <div key={idx} className="property-card">
                     <div className="property-image">
                       {listing.images && listing.images.length > 0 ? (
-                        <img src={`${config.apiBaseUrl}${listing.images[0]}`} alt="property" />
+                        <>
+                          <img
+                            src={`${config.apiBaseUrl}${listing.images[0]}`}
+                            alt="property"
+                            style={{
+                              filter: listing.validPics ? 'none' : 'blur(5px)',
+              cursor: listing.validPics ? 'pointer' : 'not-allowed'
+                            }}
+                          />
+                        </>
                       ) : (
                         <div className="image-placeholder">No image</div>
                       )}

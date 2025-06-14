@@ -10,7 +10,7 @@
   import { GiWashingMachine } from 'react-icons/gi';
   import axios from 'axios';
   import config from '../../config';
-
+    
   const todayDate = new Date().toISOString().split('T')[0];
   const todayDateTime = new Date().toISOString().slice(0, 16);
   const metroCities = ['Hyderabad', 'Bengaluru', 'Chennai', 'Mumbai', 'Pune', 'Gurugram', 'Noida', 'New Delhi'];
@@ -37,7 +37,7 @@
     const [marker, setMarker] = useState(null);
     const [profile, setProfile] = useState(null);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
-
+    const [showImageWarning, setShowImageWarning] = useState(false);
     // Extract address parts from Google Place object
     const extractAddressParts = (components) => {
       const parts = { locality: '', city: '', state: '', country: '', pinCode: '' };
@@ -189,10 +189,13 @@
 
     const handleFileChange = (e) => {
       const { name, files } = e.target;
+      const validFiles = Array.from(files).filter(file => file instanceof File);
       setFormData(prev => ({
         ...prev,
         [name]: Array.from(files)
-      }));
+      }));if (validFiles.length > 0) {
+    setShowImageWarning(false);
+  }
     };
 
     const handleDeleteImage = (index) => {
@@ -495,6 +498,11 @@
                         >
                           ✖
                         </button>
+                        {!formData.validPics && (
+                          <div className="image-warning">
+                            ⚠️ Not clearly a property image, might impact your listing credibility
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
