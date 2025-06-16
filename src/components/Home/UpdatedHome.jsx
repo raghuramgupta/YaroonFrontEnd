@@ -396,50 +396,113 @@ function UpdatedHome() {
       </div>
 
       {/* SEARCH RESULTS / NO RESULTS */}
-      {searchResults.length > 0 ? (
-        <div className={`search-results ${isMobile ? 'mobile' : ''}`}>
-          <h2>Search Results:</h2>
-          <div className={`results-grid ${isMobile ? 'mobile' : ''}`}>
-            {searchResults.map((listing, idx) => (
-              <div key={idx} className={`listing-card ${isMobile ? 'mobile' : ''}`}>
-                <h3>{listing.title}</h3>
-                <p>
-                  <strong>Address:</strong> {listing.propertyAddress}
-                </p>
-                <p>
-                  <strong>Rent:</strong> ₹{listing.rent}
-                </p>
-                <p>
-                  <strong>Description:</strong> {listing.description}
-                </p>
-                {isMobile && (
+      
+    {searchResults.length > 0 ? (
+      <div className={`search-results ${isMobile ? 'mobile' : ''}`}>
+        <div className="results-header">
+          <h2>{searchResults.length} {searchResults.length === 1 ? 'Property' : 'Properties'} Found</h2>
+          <div className="sort-options">
+            <select className="sort-select">
+              <option>Sort by: Recommended</option>
+              <option>Price: Low to High</option>
+              <option>Price: High to Low</option>
+              <option>Newest First</option>
+            </select>
+          </div>
+        </div>
+
+        <div className={`results-grid ${isMobile ? 'mobile' : ''}`}>
+          {searchResults.map((listing, idx) => (
+            <div key={idx} className={`listing-card ${isMobile ? 'mobile' : ''}`}>
+              {/* Image Section */}
+              <div className="card-image">
+                {listing.images && listing.images.length > 0 ? (
+                  <img 
+                    src={`${config.apiBaseUrl}${listing.images[0]}`} 
+                    alt={listing.title}
+                    onClick={() => navigate('/listing-details', { state: { listing } })}
+                  />
+                ) : (
+                  <div className="image-placeholder">
+                    <svg viewBox="0 0 24 24">
+                      <path d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-4.86 8.86l-3 3.87L9 13.14 6 17h12l-3.86-5.14z"/>
+                    </svg>
+                  </div>
+                )}
+                <div className="card-badge">
+                  {listing.propertyType || 'Apartment'}
+                </div>
+                <button className="favorite-button">
+                  <svg viewBox="0 0 24 24">
+                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                  </svg>
+                </button>
+              </div>
+
+              {/* Content Section */}
+              <div className="card-content">
+                <div className="card-header">
+                  <h3 onClick={() => navigate('/listing-details', { state: { listing } })}>
+                    {listing.title}
+                  </h3>
+                  <div className="price">₹{listing.rent?.toLocaleString()}/month</div>
+                </div>
+
+                <div className="card-location">
+                  <svg viewBox="0 0 24 24">
+                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                  </svg>
+                  <span>{listing.locality || listing.propertyAddress}</span>
+                </div>
+
+                <div className="card-features">
+                  <div className="feature">
+                    <svg viewBox="0 0 24 24">
+                      <path d="M17 11V3H7v4H3v14h8v-4h2v4h8V11h-4zM7 19H5v-2h2v2zm0-4H5v-2h2v2zm0-4H5V9h2v2zm4 4H9v-2h2v2zm0-4H9V9h2v2zm0-4H9V5h2v2zm4 8h-2v-2h2v2zm0-4h-2V9h2v2zm0-4h-2V5h2v2zm4 12h-2v-2h2v2zm0-4h-2v-2h2v2z"/>
+                    </svg>
+                    <span>{listing.roomSize || '--'} sqft</span>
+                  </div>
+                  <div className="feature">
+                    <svg viewBox="0 0 24 24">
+                      <path d="M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99z"/>
+                    </svg>
+                    <span>{listing.furnished ? 'Furnished' : 'Unfurnished'}</span>
+                  </div>
+                </div>
+
+                <div className="card-footer">
                   <button 
-                    className="mobile-view-button"
+                    className="view-details-button"
                     onClick={() => navigate('/listing-details', { state: { listing } })}
                   >
                     View Details
                   </button>
-                )}
+                </div>
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
-      ) : (
-        <div className={`no-results ${isMobile ? 'mobile' : ''}`}>
-          <p>No matching listings found.</p>
-          {isMobile && (
-            <button 
-              className="mobile-retry-button"
-              onClick={() => {
-                setSearchTerm('');
-                setAppliedFilterValues({});
-              }}
-            >
-              Reset Search
-            </button>
-          )}
+      </div>
+    ) : (
+      <div className={`no-results ${isMobile ? 'mobile' : ''}`}>
+        <div className="no-results-content">
+          <svg viewBox="0 0 24 24">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+          </svg>
+          <h3>No properties found</h3>
+          <p>Try adjusting your search filters</p>
+          <button 
+            className="reset-filters-button"
+            onClick={() => {
+              setSearchTerm('');
+              setAppliedFilterValues({});
+            }}
+          >
+            Reset Filters
+          </button>
         </div>
-      )}
+      </div>
+    )}
     </div>
   );
 }
