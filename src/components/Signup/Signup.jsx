@@ -31,7 +31,17 @@ const initialFormState = {
     pets: ''
   },
   interests: '',
-  traits: ''
+  traits: '',
+  // Property Agent specific fields
+  companyName: '',
+  yearOfEstablishment: '',
+  citiesOfOperation: '',
+  areasOfOperation: '',
+  officeAddress: '',
+  companyUrl: '',
+  numberOfEmployees: '',
+  pointOfContact: '',
+  licenseNumber: ''
 };
 
 const interestOptions = [
@@ -48,6 +58,19 @@ const interestOptions = [
   { value: 'Volunteering', label: 'Volunteering' }
 ];
 
+const cityOptions = [
+  { value: 'Mumbai', label: 'Mumbai' },
+  { value: 'Delhi', label: 'Delhi' },
+  { value: 'Bangalore', label: 'Bangalore' },
+  { value: 'Hyderabad', label: 'Hyderabad' },
+  { value: 'Chennai', label: 'Chennai' },
+  { value: 'Kolkata', label: 'Kolkata' },
+  { value: 'Pune', label: 'Pune' },
+  { value: 'Ahmedabad', label: 'Ahmedabad' },
+  { value: 'Jaipur', label: 'Jaipur' },
+  { value: 'Surat', label: 'Surat' }
+];
+
 const Signup = () => {
   const [otpSent, setOtpSent] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
@@ -55,50 +78,51 @@ const Signup = () => {
   const [activeTab, setActiveTab] = useState('signup');
   const [loginData, setLoginData] = useState({ username: '', password: '' });
   const [formData, setFormData] = useState(initialFormState);
-  
   const [currentStep, setCurrentStep] = useState(1);
   const navigate = useNavigate();
-const languageOptions = [
-  { value: 'English', label: 'English' },
-  { value: 'Hindi', label: 'Hindi' },
-  { value: 'Bengali', label: 'Bengali' },
-  { value: 'Telugu', label: 'Telugu' },
-  { value: 'Marathi', label: 'Marathi' },
-  { value: 'Tamil', label: 'Tamil' },
-  { value: 'Urdu', label: 'Urdu' },
-  { value: 'Gujarati', label: 'Gujarati' },
-  { value: 'Kannada', label: 'Kannada' },
-  { value: 'Malayalam', label: 'Malayalam' },
-  { value: 'Punjabi', label: 'Punjabi' },
-  { value: 'Odia', label: 'Odia' },
-  { value: 'Assamese', label: 'Assamese' },
-  { value: 'Maithili', label: 'Maithili' },
-  { value: 'Sanskrit', label: 'Sanskrit' },
-  { value: 'French', label: 'French' },
-  { value: 'Spanish', label: 'Spanish' },
-  { value: 'German', label: 'German' },
-  { value: 'Italian', label: 'Italian' },
-  { value: 'Portuguese', label: 'Portuguese' },
-  { value: 'Russian', label: 'Russian' },
-  { value: 'Japanese', label: 'Japanese' },
-  { value: 'Chinese', label: 'Chinese' },
-  { value: 'Arabic', label: 'Arabic' },
-  { value: 'Korean', label: 'Korean' },
-  { value: 'Dutch', label: 'Dutch' },
-  { value: 'Swedish', label: 'Swedish' },
-  { value: 'Norwegian', label: 'Norwegian' },
-  { value: 'Danish', label: 'Danish' },
-  { value: 'Finnish', label: 'Finnish' },
-  { value: 'Polish', label: 'Polish' },
-  { value: 'Turkish', label: 'Turkish' },
-  { value: 'Hebrew', label: 'Hebrew' },
-  { value: 'Greek', label: 'Greek' },
-  { value: 'Thai', label: 'Thai' },
-  { value: 'Vietnamese', label: 'Vietnamese' },
-  { value: 'Indonesian', label: 'Indonesian' },
-  { value: 'Malay', label: 'Malay' },
-  { value: 'Tagalog', label: 'Tagalog' }
-];
+
+  const languageOptions = [
+    { value: 'English', label: 'English' },
+    { value: 'Hindi', label: 'Hindi' },
+    { value: 'Bengali', label: 'Bengali' },
+    { value: 'Telugu', label: 'Telugu' },
+    { value: 'Marathi', label: 'Marathi' },
+    { value: 'Tamil', label: 'Tamil' },
+    { value: 'Urdu', label: 'Urdu' },
+    { value: 'Gujarati', label: 'Gujarati' },
+    { value: 'Kannada', label: 'Kannada' },
+    { value: 'Malayalam', label: 'Malayalam' },
+    { value: 'Punjabi', label: 'Punjabi' },
+    { value: 'Odia', label: 'Odia' },
+    { value: 'Assamese', label: 'Assamese' },
+    { value: 'Maithili', label: 'Maithili' },
+    { value: 'Sanskrit', label: 'Sanskrit' },
+    { value: 'French', label: 'French' },
+    { value: 'Spanish', label: 'Spanish' },
+    { value: 'German', label: 'German' },
+    { value: 'Italian', label: 'Italian' },
+    { value: 'Portuguese', label: 'Portuguese' },
+    { value: 'Russian', label: 'Russian' },
+    { value: 'Japanese', label: 'Japanese' },
+    { value: 'Chinese', label: 'Chinese' },
+    { value: 'Arabic', label: 'Arabic' },
+    { value: 'Korean', label: 'Korean' },
+    { value: 'Dutch', label: 'Dutch' },
+    { value: 'Swedish', label: 'Swedish' },
+    { value: 'Norwegian', label: 'Norwegian' },
+    { value: 'Danish', label: 'Danish' },
+    { value: 'Finnish', label: 'Finnish' },
+    { value: 'Polish', label: 'Polish' },
+    { value: 'Turkish', label: 'Turkish' },
+    { value: 'Hebrew', label: 'Hebrew' },
+    { value: 'Greek', label: 'Greek' },
+    { value: 'Thai', label: 'Thai' },
+    { value: 'Vietnamese', label: 'Vietnamese' },
+    { value: 'Indonesian', label: 'Indonesian' },
+    { value: 'Malay', label: 'Malay' },
+    { value: 'Tagalog', label: 'Tagalog' }
+  ];
+
   useEffect(() => {
     const currentUser = localStorage.getItem('currentUser');
     if (currentUser) {
@@ -135,7 +159,7 @@ const languageOptions = [
     } else {
       if (formData.otp === '1234') {
         setIsVerified(true);
-        setCurrentStep(1); // Reset to step 1 (which will now show password setup)
+        setCurrentStep(1);
       } else {
         alert('Invalid OTP. Try again with 1234.');
       }
@@ -154,8 +178,8 @@ const languageOptions = [
       ...formData,
       confirmPassword: undefined,
       interests: Array.isArray(formData.interests) 
-      ? formData.interests.join(', ') 
-      : formData.interestshandleSubmit
+        ? formData.interests.join(', ') 
+        : formData.interests
     };
     
     try {
@@ -167,7 +191,7 @@ const languageOptions = [
 
       const result = await res.json();
       if (!res.ok) throw new Error(result.message);
-      alert('Verification email sent! Please check your inbox.');
+      
       const userKey = formData.email || formData.mobile;
       localStorage.setItem('currentUser', userKey);
       localStorage.setItem('currentUserType', formData.userType);
@@ -251,6 +275,8 @@ const languageOptions = [
       color: '#1a202c',
     }),
   };
+
+  const isPropertyAgent = formData.userType === 'Property Agent';
 
   return (
     <div className="auth-container">
@@ -371,11 +397,11 @@ const languageOptions = [
                   </div>
                   <div className={`progress-step ${currentStep >= 2 ? 'active' : ''}`}>
                     <span>2</span>
-                    <p>Personal</p>
+                    <p>{isPropertyAgent ? 'Company' : 'Personal'}</p>
                   </div>
                   <div className={`progress-step ${currentStep >= 3 ? 'active' : ''}`}>
                     <span>3</span>
-                    <p>Habits</p>
+                    <p>{isPropertyAgent ? 'Details' : 'Habits'}</p>
                   </div>
                   <div className={`progress-step ${currentStep >= 4 ? 'active' : ''}`}>
                     <span>4</span>
@@ -450,235 +476,380 @@ const languageOptions = [
                 )}
 
                 {currentStep === 2 && (
-  <div className="form-step">
-    <h2>Personal Details</h2>
-    
-        <div className="form-group">
-          <label>Full Name</label>
-          <input 
-            type="text" 
-            name="fullName" 
-            placeholder="Your full name" 
-            value={formData.fullName} 
-            onChange={handleChange} 
-          />
-        </div>
-        
-        <div className="form-row">
-          <div className="form-group">
-            <label>Gender</label>
-            <select name="gender" value={formData.gender} onChange={handleChange}>
-              <option value="">Select gender</option>
-              <option value="Male">Male</option>
-              <option value="Female">Female</option>
-              <option value="Others">Others</option>
-            </select>
-          </div>
-          
-          <div className="form-group">
-            <label>Date of Birth</label>
-            <input 
-              type="date" 
-              name="dob" 
-              value={formData.dob} 
-              onChange={handleChange} 
-            />
-          </div>
-        </div>
-        
-        <div className="form-group">
-          <label>Languages Known</label>
-          <Select
-            isMulti
-            name="languages"
-            options={languageOptions}
-            value={languageOptions.filter(option => 
-              formData.languages.split(',').map(lang => lang.trim()).includes(option.value))
-            }
-            onChange={(selectedOptions) => {
-              setFormData({
-                ...formData,
-                languages: selectedOptions.map(option => option.value).join(', ')
-              });
-            }}
-            placeholder="Select languages you know..."
-            className="select-input"
-            styles={customStyles}
-          />
-        </div>
-        
-        <div className="form-group">
-          <label>Current City</label>
-          <input 
-            type="text" 
-            name="location" 
-            placeholder="Where do you live?" 
-            value={formData.location} 
-            onChange={handleChange} 
-          />
-        </div>
-        
-        <div className="form-group">
-          <label>ID Verification</label>
-          <div className="form-row">
-            <select name="idType" value={formData.idType} onChange={handleChange} style={{flex: 1}}>
-              <option value="">Select ID type</option>
-              <option value="Aadhar">Aadhar</option>
-              <option value="Passport">Passport</option>
-            </select>
-            <input 
-              type="text" 
-              name="idNumber" 
-              placeholder="ID number" 
-              value={formData.idNumber} 
-              onChange={handleChange} 
-              style={{flex: 2, marginLeft: '10px'}}
-            />
-          </div>
-        </div>
-        
-        <div className="form-group">
-          <label>About You</label>
-          <textarea 
-            name="bio" 
-            placeholder="Tell us about yourself..." 
-            value={formData.bio} 
-            onChange={handleChange}
-            rows="3"
-          ></textarea>
-        </div>
-        
-        <div className="form-actions">
-          <button type="button" className="secondary-button" onClick={prevStep}>
-            Back
-          </button>
-          <button type="button" className="primary-button" onClick={nextStep}>
-            Continue
-          </button>
-        </div>
-      </div>
-    )}
-                {currentStep === 3 && (
                   <div className="form-step">
-                    <h2>Living Preferences</h2>
-                    
-                    <div className="form-group">
-                      <label>Profession</label>
-                      <select name="profession" value={formData.profession} onChange={handleChange}>
-                        <option value="">Select your profession</option>
-                        <option value="Working Professional">Working Professional</option>
-                        <option value="Job Seeker">Job Seeker</option>
-                        <option value="Student">Student</option>
-                        <option value="Others">Others</option>
-                      </select>
-                    </div>
-                    
-                    {formData.profession === 'Others' && (
-                      <div className="form-group">
-                        <label>Specify Profession</label>
-                        <input 
-                          type="text" 
-                          name="customProfession" 
-                          placeholder="Your profession" 
-                          value={formData.customProfession} 
-                          onChange={handleChange} 
-                        />
-                      </div>
+                    {isPropertyAgent ? (
+                      <>
+                        <h2>Company Information</h2>
+                        
+                        <div className="form-group">
+                          <label>Company Name</label>
+                          <input 
+                            type="text" 
+                            name="companyName" 
+                            placeholder="Your company name" 
+                            value={formData.companyName} 
+                            onChange={handleChange} 
+                            required
+                          />
+                        </div>
+                        
+                        <div className="form-row">
+                          <div className="form-group">
+                            <label>Year of Establishment</label>
+                            <input 
+                              type="number" 
+                              name="yearOfEstablishment" 
+                              placeholder="YYYY" 
+                              min="1900" 
+                              max={new Date().getFullYear()} 
+                              value={formData.yearOfEstablishment} 
+                              onChange={handleChange} 
+                            />
+                          </div>
+                          
+                          <div className="form-group">
+                            <label>Number of Employees</label>
+                            <input 
+                              type="number" 
+                              name="numberOfEmployees" 
+                              placeholder="Approximate number" 
+                              min="1" 
+                              value={formData.numberOfEmployees} 
+                              onChange={handleChange} 
+                            />
+                          </div>
+                        </div>
+                        
+                        <div className="form-group">
+                          <label>Cities of Operation</label>
+                          <Select
+                            isMulti
+                            name="citiesOfOperation"
+                            options={cityOptions}
+                            value={cityOptions.filter(option => 
+                              formData.citiesOfOperation.split(',').map(city => city.trim()).includes(option.value))
+                            }
+                            onChange={(selectedOptions) => {
+                              setFormData({
+                                ...formData,
+                                citiesOfOperation: selectedOptions.map(option => option.value).join(', ')
+                              });
+                            }}
+                            placeholder="Select cities where you operate..."
+                            className="select-input"
+                            styles={customStyles}
+                          />
+                        </div>
+                        
+                        <div className="form-group">
+                          <label>Areas of Operation</label>
+                          <textarea 
+                            name="areasOfOperation" 
+                            placeholder="List specific areas/locations where you operate" 
+                            value={formData.areasOfOperation} 
+                            onChange={handleChange}
+                            rows="3"
+                          ></textarea>
+                        </div>
+                        
+                        <div className="form-group">
+                          <label>Office Address</label>
+                          <textarea 
+                            name="officeAddress" 
+                            placeholder="Your company's office address" 
+                            value={formData.officeAddress} 
+                            onChange={handleChange}
+                            rows="3"
+                          ></textarea>
+                        </div>
+                        
+                        <div className="form-group">
+                          <label>Company Website URL</label>
+                          <input 
+                            type="url" 
+                            name="companyUrl" 
+                            placeholder="https://yourcompany.com" 
+                            value={formData.companyUrl} 
+                            onChange={handleChange} 
+                          />
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <h2>Personal Details</h2>
+                        
+                        <div className="form-group">
+                          <label>Full Name</label>
+                          <input 
+                            type="text" 
+                            name="fullName" 
+                            placeholder="Your full name" 
+                            value={formData.fullName} 
+                            onChange={handleChange} 
+                          />
+                        </div>
+                        
+                        <div className="form-row">
+                          <div className="form-group">
+                            <label>Gender</label>
+                            <select name="gender" value={formData.gender} onChange={handleChange}>
+                              <option value="">Select gender</option>
+                              <option value="Male">Male</option>
+                              <option value="Female">Female</option>
+                              <option value="Others">Others</option>
+                            </select>
+                          </div>
+                          
+                          <div className="form-group">
+                            <label>Date of Birth</label>
+                            <input 
+                              type="date" 
+                              name="dob" 
+                              value={formData.dob} 
+                              onChange={handleChange} 
+                            />
+                          </div>
+                        </div>
+                        
+                        <div className="form-group">
+                          <label>Languages Known</label>
+                          <Select
+                            isMulti
+                            name="languages"
+                            options={languageOptions}
+                            value={languageOptions.filter(option => 
+                              formData.languages.split(',').map(lang => lang.trim()).includes(option.value))
+                            }
+                            onChange={(selectedOptions) => {
+                              setFormData({
+                                ...formData,
+                                languages: selectedOptions.map(option => option.value).join(', ')
+                              });
+                            }}
+                            placeholder="Select languages you know..."
+                            className="select-input"
+                            styles={customStyles}
+                          />
+                        </div>
+                        
+                        <div className="form-group">
+                          <label>Current City</label>
+                          <input 
+                            type="text" 
+                            name="location" 
+                            placeholder="Where do you live?" 
+                            value={formData.location} 
+                            onChange={handleChange} 
+                          />
+                        </div>
+                        
+                        <div className="form-group">
+                          <label>ID Verification</label>
+                          <div className="form-row">
+                            <select name="idType" value={formData.idType} onChange={handleChange} style={{flex: 1}}>
+                              <option value="">Select ID type</option>
+                              <option value="Aadhar">Aadhar</option>
+                              <option value="Passport">Passport</option>
+                            </select>
+                            <input 
+                              type="text" 
+                              name="idNumber" 
+                              placeholder="ID number" 
+                              value={formData.idNumber} 
+                              onChange={handleChange} 
+                              style={{flex: 2, marginLeft: '10px'}}
+                            />
+                          </div>
+                        </div>
+                        
+                        <div className="form-group">
+                          <label>About You</label>
+                          <textarea 
+                            name="bio" 
+                            placeholder="Tell us about yourself..." 
+                            value={formData.bio} 
+                            onChange={handleChange}
+                            rows="3"
+                          ></textarea>
+                        </div>
+                      </>
                     )}
                     
-                    <div className="form-group">
-                      <label>Food Preference</label>
-                      <select name="habits.foodChoice" value={formData.habits.foodChoice} onChange={handleChange}>
-                        <option value="">Select food preference</option>
-                        <option value="Veg">Vegetarian</option>
-                        <option value="Non-Veg">Non-Vegetarian</option>
-                        <option value="Egg">Eggetarian</option>
-                      </select>
+                    <div className="form-actions">
+                      <button type="button" className="secondary-button" onClick={prevStep}>
+                        Back
+                      </button>
+                      <button type="button" className="primary-button" onClick={nextStep}>
+                        Continue
+                      </button>
                     </div>
-                    
-                    <div className="form-row">
-                      <div className="form-group">
-                        <label>Smoking</label>
-                        <select name="habits.smoking" value={formData.habits.smoking} onChange={handleChange}>
-                          <option value="">Select preference</option>
-                          <option value="Daily">Daily</option>
-                          <option value="Occasionally">Occasionally</option>
-                          <option value="Never">Never</option>
-                        </select>
-                      </div>
-                      
-                      <div className="form-group">
-                        <label>Alcohol</label>
-                        <select name="habits.alcohol" value={formData.habits.alcohol} onChange={handleChange}>
-                          <option value="">Select preference</option>
-                          <option value="Daily">Daily</option>
-                          <option value="Occasionally">Occasionally</option>
-                          <option value="Never">Never</option>
-                        </select>
-                      </div>
-                    </div>
-                    
-                    <div className="form-row">
-                      <div className="form-group">
-                        <label>Partying</label>
-                        <select name="habits.partying" value={formData.habits.partying} onChange={handleChange}>
-                          <option value="">Select preference</option>
-                          <option value="Weekends">Weekends</option>
-                          <option value="Occasionally">Occasionally</option>
-                          <option value="Never">Never</option>
-                        </select>
-                      </div>
-                      
-                      <div className="form-group">
-                        <label>Guests</label>
-                        <select name="habits.guests" value={formData.habits.guests} onChange={handleChange}>
-                          <option value="">Select preference</option>
-                          <option value="Daily">Frequently</option>
-                          <option value="Rare">Rarely</option>
-                          <option value="Never">Never</option>
-                        </select>
-                      </div>
-                    </div>
-                    
-                    <div className="form-group">
-                      <label>Pets</label>
-                      <select name="habits.pets" value={formData.habits.pets} onChange={handleChange}>
-                        <option value="">Select preference</option>
-                        <option value="Yes">Have pets</option>
-                        <option value="May Have">May have pets</option>
-                        <option value="No">No pets</option>
-                      </select>
-                    </div>
-                    
-                    <div className="form-group">
-                      <label>Interests</label>
-                      <Select
-                        isMulti
-                        name="interests"
-                        options={interestOptions}
-                        styles={customStyles}
-                        value={interestOptions.filter(option => formData.interests.includes(option.value))}
-                        onChange={(selectedOptions) =>
-                          setFormData({
-                            ...formData,
-                            interests: selectedOptions.map(option => option.value)
-                          })
-                        }
-                        placeholder="Select your interests..."
-                        className="select-input"
-                      />
-                    </div>
-                    
-                    <div className="form-group">
-                      <label>Personality Traits</label>
-                      <input 
-                        type="text" 
-                        name="traits" 
-                        placeholder="e.g., Calm, Friendly, Organized" 
-                        value={formData.traits} 
-                        onChange={handleChange} 
-                      />
-                    </div>
+                  </div>
+                )}
+
+                {currentStep === 3 && (
+                  <div className="form-step">
+                    {isPropertyAgent ? (
+                      <>
+                        <h2>Agent Details</h2>
+                        
+                        <div className="form-group">
+                          <label>Point of Contact</label>
+                          <input 
+                            type="text" 
+                            name="pointOfContact" 
+                            placeholder="Person to contact" 
+                            value={formData.pointOfContact} 
+                            onChange={handleChange} 
+                            required
+                          />
+                        </div>
+                        
+                        <div className="form-group">
+                          <label>License Number</label>
+                          <input 
+                            type="text" 
+                            name="licenseNumber" 
+                            placeholder="Your real estate license number" 
+                            value={formData.licenseNumber} 
+                            onChange={handleChange} 
+                            required
+                          />
+                        </div>
+                        
+                        <div className="form-group">
+                          <label>About Your Company</label>
+                          <textarea 
+                            name="bio" 
+                            placeholder="Tell us about your company and services..." 
+                            value={formData.bio} 
+                            onChange={handleChange}
+                            rows="3"
+                          ></textarea>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <h2>Living Preferences</h2>
+                        
+                        <div className="form-group">
+                          <label>Profession</label>
+                          <select name="profession" value={formData.profession} onChange={handleChange}>
+                            <option value="">Select your profession</option>
+                            <option value="Working Professional">Working Professional</option>
+                            <option value="Job Seeker">Job Seeker</option>
+                            <option value="Student">Student</option>
+                            <option value="Others">Others</option>
+                          </select>
+                        </div>
+                        
+                        {formData.profession === 'Others' && (
+                          <div className="form-group">
+                            <label>Specify Profession</label>
+                            <input 
+                              type="text" 
+                              name="customProfession" 
+                              placeholder="Your profession" 
+                              value={formData.customProfession} 
+                              onChange={handleChange} 
+                            />
+                          </div>
+                        )}
+                        
+                        <div className="form-group">
+                          <label>Food Preference</label>
+                          <select name="habits.foodChoice" value={formData.habits.foodChoice} onChange={handleChange}>
+                            <option value="">Select food preference</option>
+                            <option value="Veg">Vegetarian</option>
+                            <option value="Non-Veg">Non-Vegetarian</option>
+                            <option value="Egg">Eggetarian</option>
+                          </select>
+                        </div>
+                        
+                        <div className="form-row">
+                          <div className="form-group">
+                            <label>Smoking</label>
+                            <select name="habits.smoking" value={formData.habits.smoking} onChange={handleChange}>
+                              <option value="">Select preference</option>
+                              <option value="Daily">Daily</option>
+                              <option value="Occasionally">Occasionally</option>
+                              <option value="Never">Never</option>
+                            </select>
+                          </div>
+                          
+                          <div className="form-group">
+                            <label>Alcohol</label>
+                            <select name="habits.alcohol" value={formData.habits.alcohol} onChange={handleChange}>
+                              <option value="">Select preference</option>
+                              <option value="Daily">Daily</option>
+                              <option value="Occasionally">Occasionally</option>
+                              <option value="Never">Never</option>
+                            </select>
+                          </div>
+                        </div>
+                        
+                        <div className="form-row">
+                          <div className="form-group">
+                            <label>Partying</label>
+                            <select name="habits.partying" value={formData.habits.partying} onChange={handleChange}>
+                              <option value="">Select preference</option>
+                              <option value="Weekends">Weekends</option>
+                              <option value="Occasionally">Occasionally</option>
+                              <option value="Never">Never</option>
+                            </select>
+                          </div>
+                          
+                          <div className="form-group">
+                            <label>Guests</label>
+                            <select name="habits.guests" value={formData.habits.guests} onChange={handleChange}>
+                              <option value="">Select preference</option>
+                              <option value="Daily">Frequently</option>
+                              <option value="Rare">Rarely</option>
+                              <option value="Never">Never</option>
+                            </select>
+                          </div>
+                        </div>
+                        
+                        <div className="form-group">
+                          <label>Pets</label>
+                          <select name="habits.pets" value={formData.habits.pets} onChange={handleChange}>
+                            <option value="">Select preference</option>
+                            <option value="Yes">Have pets</option>
+                            <option value="May Have">May have pets</option>
+                            <option value="No">No pets</option>
+                          </select>
+                        </div>
+                        
+                        <div className="form-group">
+                          <label>Interests</label>
+                          <Select
+                            isMulti
+                            name="interests"
+                            options={interestOptions}
+                            styles={customStyles}
+                            value={interestOptions.filter(option => formData.interests.includes(option.value))}
+                            onChange={(selectedOptions) =>
+                              setFormData({
+                                ...formData,
+                                interests: selectedOptions.map(option => option.value)
+                              })
+                            }
+                            placeholder="Select your interests..."
+                            className="select-input"
+                          />
+                        </div>
+                        
+                        <div className="form-group">
+                          <label>Personality Traits</label>
+                          <input 
+                            type="text" 
+                            name="traits" 
+                            placeholder="e.g., Calm, Friendly, Organized" 
+                            value={formData.traits} 
+                            onChange={handleChange} 
+                          />
+                        </div>
+                      </>
+                    )}
                     
                     <div className="form-actions">
                       <button type="button" className="secondary-button" onClick={prevStep}>
@@ -703,49 +874,99 @@ const languageOptions = [
                       </div>
                     </div>
                     
-                    <div className="review-section">
-                      <h3>Personal Details</h3>
-                      <div className="review-item">
-                        <span>Full Name:</span>
-                        <span>{formData.fullName || 'Not specified'}</span>
-                      </div>
-                      <div className="review-item">
-                        <span>Gender:</span>
-                        <span>{formData.gender || 'Not specified'}</span>
-                      </div>
-                      <div className="review-item">
-                        <span>Date of Birth:</span>
-                        <span>{formData.dob || 'Not specified'}</span>
-                      </div>
-                      <div className="review-item">
-                        <span>Location:</span>
-                        <span>{formData.location || 'Not specified'}</span>
-                      </div>
-                    </div>
-                    
-                    <div className="review-section">
-                      <h3>Living Preferences</h3>
-                      <div className="review-item">
-                        <span>Profession:</span>
-                        <span>{formData.profession === 'Others' ? formData.customProfession : formData.profession || 'Not specified'}</span>
-                      </div>
-                      <div className="review-item">
-                        <span>Food Preference:</span>
-                        <span>{formData.habits.foodChoice || 'Not specified'}</span>
-                      </div>
-                      <div className="review-item">
-                        <span>Smoking:</span>
-                        <span>{formData.habits.smoking || 'Not specified'}</span>
-                      </div>
-                      <div className="review-item">
-                        <span>Alcohol:</span>
-                        <span>{formData.habits.alcohol || 'Not specified'}</span>
-                      </div>
-                      <div className="review-item">
-                        <span>Interests:</span>
-                        <span>{formData.interests.join(', ') || 'Not specified'}</span>
-                      </div>
-                    </div>
+                    {isPropertyAgent ? (
+                      <>
+                        <div className="review-section">
+                          <h3>Company Information</h3>
+                          <div className="review-item">
+                            <span>Company Name:</span>
+                            <span>{formData.companyName || 'Not specified'}</span>
+                          </div>
+                          <div className="review-item">
+                            <span>Year Established:</span>
+                            <span>{formData.yearOfEstablishment || 'Not specified'}</span>
+                          </div>
+                          <div className="review-item">
+                            <span>Employees:</span>
+                            <span>{formData.numberOfEmployees || 'Not specified'}</span>
+                          </div>
+                          <div className="review-item">
+                            <span>Cities of Operation:</span>
+                            <span>{formData.citiesOfOperation || 'Not specified'}</span>
+                          </div>
+                          <div className="review-item">
+                            <span>Office Address:</span>
+                            <span>{formData.officeAddress || 'Not specified'}</span>
+                          </div>
+                          <div className="review-item">
+                            <span>Website:</span>
+                            <span>{formData.companyUrl || 'Not specified'}</span>
+                          </div>
+                        </div>
+                        
+                        <div className="review-section">
+                          <h3>Agent Details</h3>
+                          <div className="review-item">
+                            <span>Point of Contact:</span>
+                            <span>{formData.pointOfContact || 'Not specified'}</span>
+                          </div>
+                          <div className="review-item">
+                            <span>License Number:</span>
+                            <span>{formData.licenseNumber || 'Not specified'}</span>
+                          </div>
+                          <div className="review-item">
+                            <span>About Company:</span>
+                            <span>{formData.bio || 'Not specified'}</span>
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="review-section">
+                          <h3>Personal Details</h3>
+                          <div className="review-item">
+                            <span>Full Name:</span>
+                            <span>{formData.fullName || 'Not specified'}</span>
+                          </div>
+                          <div className="review-item">
+                            <span>Gender:</span>
+                            <span>{formData.gender || 'Not specified'}</span>
+                          </div>
+                          <div className="review-item">
+                            <span>Date of Birth:</span>
+                            <span>{formData.dob || 'Not specified'}</span>
+                          </div>
+                          <div className="review-item">
+                            <span>Location:</span>
+                            <span>{formData.location || 'Not specified'}</span>
+                          </div>
+                        </div>
+                        
+                        <div className="review-section">
+                          <h3>Living Preferences</h3>
+                          <div className="review-item">
+                            <span>Profession:</span>
+                            <span>{formData.profession === 'Others' ? formData.customProfession : formData.profession || 'Not specified'}</span>
+                          </div>
+                          <div className="review-item">
+                            <span>Food Preference:</span>
+                            <span>{formData.habits.foodChoice || 'Not specified'}</span>
+                          </div>
+                          <div className="review-item">
+                            <span>Smoking:</span>
+                            <span>{formData.habits.smoking || 'Not specified'}</span>
+                          </div>
+                          <div className="review-item">
+                            <span>Alcohol:</span>
+                            <span>{formData.habits.alcohol || 'Not specified'}</span>
+                          </div>
+                          <div className="review-item">
+                            <span>Interests:</span>
+                            <span>{Array.isArray(formData.interests) ? formData.interests.join(', ') : formData.interests || 'Not specified'}</span>
+                          </div>
+                        </div>
+                      </>
+                    )}
                     
                     <div className="form-actions">
                       <button type="button" className="secondary-button" onClick={prevStep}>

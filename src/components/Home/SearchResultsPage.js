@@ -9,6 +9,12 @@ import config from '../../config';
 
 // Utility function to normalize listing data
 const normalizeListing = (listing) => {
+  let languages = [];
+  if (Array.isArray(listing.languages)) {
+    languages = listing.languages;
+  } else if (typeof listing.languages === 'string') {
+    languages = listing.languages.split(',').map(lang => lang.trim());
+  }
   return {
     ...listing,
     _id: listing._id || '',
@@ -22,23 +28,31 @@ const normalizeListing = (listing) => {
     gender: listing.gender || '',
     foodchoices: listing.foodchoices || '',
     userKey: listing.userKey || '',
-    availability: listing.availability || '',
-    propertyType: listing.propertyType || '',
-    locality: listing.locality || '',pets: listing.pets || '',
+    availability: listing.availableFrom || '',
+    propertyType: listing.propertyStructure || '',
+    locality: listing.locality || '',
+    pets: listing.pets || '',
     hobbies: Array.isArray(listing.hobbies) ? listing.hobbies : [],
-    // Added postedBy field for agent listings
     postedBy: listing.postedBy || '', 
+    languages: languages,
   };
 };
 
 const SearchResultsPage = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { results: initialResults = [] } = location.state || {};
+  const { 
+    results: initialResults = [], 
+    searchTerm: initialSearchTerm = '',
+    locationDetails: initialLocationDetails = {},
+    searchType: initialSearchType = 'flats',
+    appliedFilters: initialAppliedFilters = {}
+  } = location.state || {};
+
   const [autocomplete, setAutocomplete] = useState(null);
   const [user, setUser] = useState(null);
   const { profile, loadingProfile } = useContext(AuthContext);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(initialSearchTerm);
   const [filteredPlaces, setFilteredPlaces] = useState([]);
   const [activeIndex, setActiveIndex] = useState(-1);
   const [filtersVisible, setFiltersVisible] = useState(false);
@@ -53,10 +67,11 @@ const SearchResultsPage = () => {
   const [activeFilter, setActiveFilter] = useState(null);
   const [myListings, setMyListings] = useState([]);
   const [searchResults, setSearchResults] = useState(initialResults.map(normalizeListing));
-  const [appliedFilterValues, setAppliedFilterValues] = useState({});
+  const [appliedFilterValues, setAppliedFilterValues] = useState(initialAppliedFilters);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [searchType, setSearchType] = useState('flats');
+  const [searchType, setSearchType] = useState(initialSearchType);
   const [activeTab, setActiveTab] = useState('All');
+  const [locationDetails, setLocationDetails] = useState(initialLocationDetails);
   const [sidebarFilters, setSidebarFilters] = useState({
     budget: { min: 0, max: 50000 },
     propertyType: '',
@@ -68,8 +83,10 @@ const SearchResultsPage = () => {
     cuisine: [],
     gender: [],
     hobbies: [],
-    // Added state for property agent listings
-    propertyAgent: [], pets: [],
+    coding: [],
+    language: [],
+    propertyAgent: [], 
+    pets: [],
   });
 
   useEffect(() => {
@@ -159,9 +176,16 @@ const SearchResultsPage = () => {
     const currentUserKey = localStorage.getItem('currentUser');
     setUser(currentUserKey);
     if (currentUserKey) setIsLoggedIn(true);
-    fetchListings();
-  }, [searchType]);
- 
+    
+    // Only fetch listings if we didn't come from a search (no initial results)
+    if (initialResults.length === 0) {
+      fetchListings();
+    } else {
+      // If we have initial results, update filtered listings with them
+      updateFilteredListings(initialResults);
+    }
+  }, [searchType, initialResults.length]);
+
   const fetchListings = async () => {
     const endpoint = searchType === 'roommates' 
       ? `${config.apiBaseUrl}/api/wanted-listings` 
@@ -180,53 +204,112 @@ const SearchResultsPage = () => {
 
   const updateFilteredListings = (listings) => {
     if (!listings) {
-        setFilteredListings({
-            all: [],
-            cuisine: [],
-            gender: [],
-            hobbies: [],
-            propertyAgent: [],pets:[]
-        });
-        return;
+      setFilteredListings({
+        all: [],
+        cuisine: [],
+        gender: [],
+        hobbies: [],
+        coding: [],
+        language: [],
+        propertyAgent: [],
+        pets:[]
+      });
+      return;
     }
-    const petFriendlyMatches = listings.filter(listing => listing.pets);
-    const cuisineMatches = profile ? listings.filter(listing => {
-    const userFoodChoice = profile.habits?.foodChoice;
-    if (userFoodChoice === "Veg") {
-        return listing.foodchoices === "Veg";
-    }
-    return listing.foodchoices === userFoodChoice;
-}) : [];
 
+    // Apply initial filters first
+    let filtered = [...listings];
+    if (Object.keys(appliedFilterValues).length > 0) {
+      filtered = filtered.filter((listing) => {
+        return Object.entries(appliedFilterValues).every(([filter, value]) => {
+          const key = filter.toLowerCase().replace(/\s/g, '');
+          const listingValue = listing[key];
+          if (!listingValue) return false;
+          return Array.isArray(listingValue)
+            ? listingValue.includes(value)
+            : listingValue === value;
+        });
+      });
+    }
+
+    // Apply search term filter if it exists
+    if (searchTerm.trim()) {
+      const term = searchTerm.toLowerCase().trim();
+      filtered = filtered.filter(listing =>
+        listing.propertyAddress?.toLowerCase().includes(term) ||
+        listing.locality?.toLowerCase().includes(term) ||
+        listing.city?.toLowerCase().includes(term)
+      );
+    }
+
+    const petFriendlyMatches = filtered.filter(listing => listing.pets);
+    const cuisineMatches = profile ? filtered.filter(listing => {
+      const userFoodChoice = profile.habits?.foodChoice;
+      if (userFoodChoice === "Veg") {
+          return listing.foodchoices === "Veg";
+      }
+      return listing.foodchoices === userFoodChoice;
+    }) : [];
    
-    const genderMatches = profile ? listings.filter(listing => 
-  listing.gender === profile.gender
-) : [];
-    const femaleOnlyListings = listings.filter(listing => listing.gender === 'Female');
+    const genderMatches = profile ? filtered.filter(listing => 
+      listing.gender === profile.gender
+    ) : [];
+    const femaleOnlyListings = filtered.filter(listing => listing.gender === 'Female');
    
-    const hobbyMatches = profile ? listings.filter(listing => 
-        profile.hobbies?.some(hobby => 
-            listing.hobbies?.includes("Football")
-        )
+    const hobbyMatches = profile ? filtered.filter(listing => 
+      profile.hobbies?.some(hobby => 
+          listing.hobbies?.includes("Football")
+      )
     ) : [];
 
-    // Filter for property agent listings
-    const propertyAgentMatches = listings.filter(listing => listing.postedBy === 'Agent');
+    const codingMatches = profile ? filtered.filter(listing => 
+      listing.hobbies?.includes("Coding")
+    ) : [];
+    
+    const languageMatches = profile?.languages ? filtered.filter(listing => {
+  const userLanguages = typeof profile.languages === 'string' 
+    ? profile.languages.split(',').map(lang => lang.trim().toLowerCase())
+    : Array.isArray(profile.languages)
+      ? profile.languages.map(lang => 
+          typeof lang === 'string' ? lang.trim().toLowerCase() : String(lang).toLowerCase()
+        )
+      : [];
+
+  const listingLangs = Array.isArray(listing.languages) 
+    ? listing.languages.map(lang => 
+        typeof lang === 'string' ? lang.trim().toLowerCase() : String(lang).toLowerCase()
+      )
+    : typeof listing.languages === 'string' 
+      ? listing.languages.split(',').map(lang => lang.trim().toLowerCase())
+      : [];
+      
+  return userLanguages.length > 0 && listingLangs.some(lang => 
+    userLanguages.some(userLang => 
+      userLang.toLowerCase() === lang.toLowerCase() || 
+      userLang.includes(lang) || 
+      lang.includes(userLang)
+    )
+  );
+}) : [];
+    const propertyAgentMatches = filtered.filter(listing => listing.postedBy === 'Agent');
 
     setFilteredListings({
-        all: listings,
+        all: filtered,
         cuisine: cuisineMatches,
         gender: genderMatches,
         hobbies: hobbyMatches,
-        propertyAgent: propertyAgentMatches,pets: petFriendlyMatches, 
+        coding: codingMatches,
+        language: languageMatches,
+        propertyAgent: propertyAgentMatches,
+        pets: petFriendlyMatches, 
     });
   };
-
+  
   useEffect(() => {
-    if (profile && myListings.length > 0) {
-      updateFilteredListings(myListings);
+    if (profile && (myListings.length > 0 || initialResults.length > 0)) {
+      updateFilteredListings(initialResults.length > 0 ? initialResults : myListings);
     }
-  }, [profile, myListings]);
+  }, [profile, myListings, initialResults]);
 
   const handleSuggestionClick = (place) => {
     setSearchTerm(place);
@@ -250,9 +333,13 @@ const SearchResultsPage = () => {
       setUser("Dummy");
       return;
     }
-    const results = myListings.filter(listing =>
+    const listingsToSearch = initialResults.length > 0 ? initialResults : myListings;
+    const results = listingsToSearch.filter(listing =>
       listing.userKey !== user &&
-      (searchTerm === '' || listing.propertyAddress?.toLowerCase().includes(searchTerm.toLowerCase()))
+      (searchTerm === '' || 
+       listing.propertyAddress?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+       listing.locality?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+       listing.city?.toLowerCase().includes(searchTerm.toLowerCase()))
     );
     updateFilteredListings(results);
   };
@@ -270,21 +357,31 @@ const SearchResultsPage = () => {
       return newValues;
     });
     setActiveFilter(null);
+    updateFilteredListings(initialResults.length > 0 ? initialResults : myListings);
   };
 
   const applyFilter = (filterCategory, option) => {
-    setAppliedFilterValues(prev => ({
-      ...prev,
+    const newFilters = {
+      ...appliedFilterValues,
       [filterCategory]: option
-    }));
+    };
+    setAppliedFilterValues(newFilters);
     setActiveFilter(null);
+    
+    // Apply the new filters immediately
+    const listingsToFilter = initialResults.length > 0 ? initialResults : myListings;
+    updateFilteredListings(listingsToFilter);
   };
 
   const handleSidebarFilterChange = (filterName, value) => {
-    setSidebarFilters(prev => ({
-      ...prev,
-      [filterName]: value
-    }));
+    setSidebarFilters(prev => {
+      // For radio buttons, if clicking the same value that's already selected, unset it
+      if ((filterName === 'propertyType' || filterName === 'availability') && 
+          prev[filterName] === value) {
+        return { ...prev, [filterName]: '' };
+      }
+      return { ...prev, [filterName]: value };
+    });
   };
 
   const handleAmenityToggle = (amenity) => {
@@ -297,26 +394,46 @@ const SearchResultsPage = () => {
   };
 
   const applyFiltersToResults = (listings) => {
-  let filtered = [...listings];
+    let filtered = [...listings];
 
-  // Apply sidebar filters
+    // Apply budget filter
     filtered = filtered.filter(listing => 
       listing.rent >= sidebarFilters.budget.min && 
       listing.rent <= sidebarFilters.budget.max
     );
 
+    // Apply property type filter
     if (sidebarFilters.propertyType) {
       filtered = filtered.filter(listing => 
         listing.propertyType === sidebarFilters.propertyType
       );
     }
 
+    // Apply availability filter
     if (sidebarFilters.availability) {
-      filtered = filtered.filter(listing => 
-        listing.availability === sidebarFilters.availability
-      );
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      filtered = filtered.filter(listing => {
+        if (!listing.availability) return false;
+        
+        try {
+          const availableDate = new Date(listing.availability);
+          availableDate.setHours(0, 0, 0, 0);
+          
+          if (sidebarFilters.availability === 'Ready to Move') {
+            return availableDate <= today;
+          } else if (sidebarFilters.availability === 'Available Soon') {
+            return availableDate > today;
+          }
+          return true;
+        } catch (e) {
+          return false;
+        }
+      });
     }
 
+    // Apply amenities filter
     if (sidebarFilters.amenities.length > 0) {
       filtered = filtered.filter(listing => {
         const listingAmenities = Array.isArray(listing.amenities) ? listing.amenities : [];
@@ -326,23 +443,27 @@ const SearchResultsPage = () => {
       });
     }
 
+    // Exclude user's own listings
     if (user) {
       filtered = filtered.filter(listing => listing.userKey !== user);
     }
 
-    // Sort: Listings with images first
+    // Sort listings with valid images first
     filtered.sort((a, b) => {
-      const hasImageA = a.images && Array.isArray(a.images) && a.images.length > 0;
-      const hasImageB = b.images && Array.isArray(b.images) && b.images.length > 0;
+      const aHasValidPic = Array.isArray(a.validPics) && a.validPics.some(valid => valid === true);
+      const bHasValidPic = Array.isArray(b.validPics) && b.validPics.some(valid => valid === true);
 
-      // If both have or don't have images, maintain current order
-      if (hasImageA === hasImageB) return 0;
+      if (aHasValidPic && bHasValidPic) return 0;
+      if (aHasValidPic) return -1;
+      if (bHasValidPic) return 1;
 
-      // If only A has image, move it before B
-      if (hasImageA) return -1;
-
-      // If only B has image, move B before A
-      return 1;
+      const aHasImages = a.images?.length > 0;
+      const bHasImages = b.images?.length > 0;
+      
+      if (aHasImages && !bHasImages) return -1;
+      if (!aHasImages && bHasImages) return 1;
+      
+      return 0;
     });
 
     return filtered;
@@ -364,14 +485,20 @@ const SearchResultsPage = () => {
       case 'Hobbies':
         resultsToShow = applyFiltersToResults(filteredListings.hobbies);
         break;
+      case 'Coding':
+        resultsToShow = applyFiltersToResults(filteredListings.coding);
+        break;
+      case 'Language':
+        resultsToShow = applyFiltersToResults(filteredListings.language);
+        break;
       case 'Gated Community':
         resultsToShow = applyFiltersToResults(filteredListings.all.filter(
           listing => listing.propertyStructure === 'Gated community'
         ));
-        break; case 'Pets':
-    resultsToShow = applyFiltersToResults(filteredListings.pets);
-    break;
-      // Added case for Property Agent
+        break;
+      case 'Pets':
+        resultsToShow = applyFiltersToResults(filteredListings.pets);
+        break;
       case 'Property Agent':
         resultsToShow = applyFiltersToResults(filteredListings.propertyAgent);
         break;
@@ -418,10 +545,31 @@ const SearchResultsPage = () => {
                 amenities: []
               });
               setAppliedFilterValues({});
+              updateFilteredListings(initialResults.length > 0 ? initialResults : myListings);
             }}>
               Clear all
             </button>
           </div>
+
+          {/* Display applied filters from home page */}
+          {Object.keys(appliedFilterValues).length > 0 && (
+            <div className="filter-section">
+              <h4>Applied Filters</h4>
+              <div className="applied-filters">
+                {Object.entries(appliedFilterValues).map(([filter, value]) => (
+                  <div key={filter} className="applied-filter">
+                    <span>{filter}: {value}</span>
+                    <button 
+                      className="remove-filter"
+                      onClick={() => removeFilter(filter)}
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           <div className="filter-section">
             <h4>Budget Range (₹)</h4>
@@ -447,13 +595,19 @@ const SearchResultsPage = () => {
           <div className="filter-section">
             <h4>Property Type</h4>
             <div className="filter-options">
-              {['Standalone apartment', 'Building', 'Gated community'].map(type => (
+              {['Standalone apartment', 'Standalone building', 'Gated community'].map(type => (
                 <label key={type} className="filter-option">
                   <input
                     type="radio"
                     name="propertyType"
                     checked={sidebarFilters.propertyType === type}
-                    onChange={() => handleSidebarFilterChange('propertyType', type)}
+                    onChange={() => {
+                      if (sidebarFilters.propertyType === type) {
+                        handleSidebarFilterChange('propertyType', '');
+                      } else {
+                        handleSidebarFilterChange('propertyType', type);
+                      }
+                    }}
                   />
                   <span className="checkmark"></span>
                   {type}
@@ -465,18 +619,43 @@ const SearchResultsPage = () => {
           <div className="filter-section">
             <h4>Availability</h4>
             <div className="filter-options">
-              {['Ready to Move', 'Available Soon'].map(option => (
-                <label key={option} className="filter-option">
-                  <input
-                    type="radio"
-                    name="availability"
-                    checked={sidebarFilters.availability === option}
-                    onChange={() => handleSidebarFilterChange('availability', option)}
-                  />
-                  <span className="checkmark"></span>
-                  {option}
-                </label>
-              ))}
+              {['Ready to Move', 'Available Soon'].map(option => {
+                const count = myListings.filter(listing => {
+                  if (!listing.availability) return false;
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+                  try {
+                    const availableDate = new Date(listing.availability);
+                    availableDate.setHours(0, 0, 0, 0);
+                    if (option === 'Ready to Move') {
+                      return availableDate <= today;
+                    } else {
+                      return availableDate > today;
+                    }
+                  } catch (e) {
+                    return false;
+                  }
+                }).length;
+
+                return (
+                  <label key={option} className="filter-option">
+                    <input
+                      type="radio"
+                      name="availability"
+                      checked={sidebarFilters.availability === option}
+                      onChange={() => {
+                        if (sidebarFilters.availability === option) {
+                          handleSidebarFilterChange('availability', '');
+                        } else {
+                          handleSidebarFilterChange('availability', option);
+                        }
+                      }}
+                    />
+                    <span className="checkmark"></span>
+                    {option} 
+                  </label>
+                );
+              })}
             </div>
           </div>
          
@@ -539,29 +718,38 @@ const SearchResultsPage = () => {
             <div className="tabs">
               <TabButton tabName="All" displayName="All" />
              
-              {/* Conditionally render Cuisine tab */}
-              {profile?.habits?.foodChoice && filteredListings.cuisine.length > 0 && (
+              {/* Conditionally render tabs based on initial filters and profile */}
+              {appliedFilterValues['Food Options'] ? (
+                <TabButton 
+                  tabName="Cuisine" 
+                  displayName={appliedFilterValues['Food Options']} 
+                />
+              ) : profile?.habits?.foodChoice && filteredListings.cuisine.length > 0 && (
                 <TabButton 
                   tabName="Cuisine" 
                   displayName={`${profile.habits.foodChoice}`} 
                 />
               )}
-             {/* Add Pets tab - only show if there are pet-friendly listings */}
+              
               {filteredListings.pets.length > 0 && (
                 <TabButton 
                   tabName="Pets" 
                   displayName="Pet Friendly" 
                 />
               )}
-              {/* Conditionally render Gender tab */}
-              {profile?.gender && filteredListings.gender.length > 0 &&profile.gender === 'Female'&&(
+              
+              {appliedFilterValues.Profession ? (
+                <TabButton 
+                  tabName="Profession" 
+                  displayName={appliedFilterValues.Profession} 
+                />
+              ) : profile?.gender && filteredListings.gender.length > 0 && profile.gender === 'Female' && (
                 <TabButton 
                   tabName="Gender" 
                   displayName={`${profile.gender}`} 
                 />
               )}
              
-              {/* Conditionally render Hobbies tab */}
               {profile?.hobbies?.length > 0 && filteredListings.hobbies.length > 0 && (
                 <TabButton 
                   tabName="Hobbies" 
@@ -569,7 +757,25 @@ const SearchResultsPage = () => {
                 />
               )}
 
-              {/* Conditionally render Property Agent tab */}
+              {filteredListings.coding.length > 0 && (
+                <TabButton 
+                  tabName="Coding" 
+                  displayName="Coders" 
+                />
+              )}
+
+              {appliedFilterValues.Language ? (
+                <TabButton 
+                  tabName="Language" 
+                  displayName={appliedFilterValues.Language} 
+                />
+              ) : profile?.languages?.length > 0 && filteredListings.language.length > 0 && (
+                <TabButton 
+                  tabName="Language" 
+                  displayName="Language Match" 
+                />
+              )}
+
               {filteredListings.propertyAgent.length > 0 && (
                 <TabButton
                   tabName="Property Agent"
@@ -615,34 +821,45 @@ const SearchResultsPage = () => {
                 return (
                   <div key={idx} className="property-card">
                     <div className="property-image">
-                    {listing.images && listing.images.length > 0 ? (
-                      (() => {
-                        // Find the first valid image index
-                        const validIndex = listing.validPics
-                          ? listing.validPics.findIndex(valid => valid === true)
-                          : -1;
+                      {listing.images && listing.images.length > 0 ? (
+                        (() => {
+                          // Find the first valid image index
+                          const validIndex = listing.validPics
+                            ? listing.validPics.findIndex(valid => valid === true)
+                            : -1;
 
-                        // If there is a valid image, use it; otherwise, use the first image (blurred)
-                        const imageSrc = validIndex !== -1
-                          ? `${config.apiBaseUrl}${listing.images[validIndex]}`
-                          : `${config.apiBaseUrl}${listing.images[0]}`;
+                          // If there is a valid image, use it; otherwise, use the first image (blurred)
+                          const imageSrc = validIndex !== -1
+                            ? `${config.apiBaseUrl}${listing.images[validIndex]}`
+                            : `${config.apiBaseUrl}${listing.images[0]}`;
 
-                        return (
-                          <img
-                            src={imageSrc}
-                            alt="property"
-                            style={{
-                              filter: validIndex !== -1 ? 'none' : 'blur(5px)',
-                              cursor: validIndex !== -1 ? 'pointer' : 'not-allowed'
-                            }}
-                          />
-                        );
-                      })()
-                    ) : (
-                      <div className="image-placeholder">No image</div>
-                    )}
-                    {/* Favorite button and property type remain unchanged */}
-                  </div>
+                          return (
+                            <img
+                              src={imageSrc}
+                              alt="property"
+                              style={{
+                                filter: validIndex !== -1 ? 'none' : 'blur(5px)',
+                                cursor: validIndex !== -1 ? 'pointer' : 'not-allowed'
+                              }}
+                              onClick={() => validIndex !== -1 && openListingDetails(listing)}
+                            />
+                          );
+                        })()
+                      ) : (
+                        <div className="image-placeholder">No image</div>
+                      )}
+                      <button 
+                        className={`favorite-button ${favorites.includes(listing._id) ? 'active' : ''}`}
+                        onClick={() => toggleFavorite(listing._id)}
+                      >
+                        <svg viewBox="0 0 24 24">
+                          <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                        </svg>
+                      </button>
+                      <div className="property-badge">
+                        {listing.propertyType || 'Property'}
+                      </div>
+                    </div>
                    
                     <div className="property-details">
                       <h3 onClick={() => openListingDetails(listing)}>{listing.locality || 'Property'}</h3>

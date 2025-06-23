@@ -7,6 +7,7 @@ import loadGoogleMaps from '../Utils/loadGoogleMaps';
 import MyListings from '../Listing/MyListings';
 import { AuthContext } from '../../context/AuthContext';
 import config from '../../config';
+
 function UpdatedHome() {
   // -----------------------
   // STATE
@@ -14,7 +15,7 @@ function UpdatedHome() {
   const [user, setUser] = useState(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [searchType, setSearchType] = useState('flats'); // flats | roommates
+  const [searchType, setSearchType] = useState('flats');
   const { profile, loadingProfile } = useContext(AuthContext);
   const [myListings, setMyListings] = useState([]);
   const [searchResults, setSearchResults] = useState([]);
@@ -35,6 +36,11 @@ function UpdatedHome() {
   const [activeFilter, setActiveFilter] = useState(null);
   const [appliedFilterValues, setAppliedFilterValues] = useState({});
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [locationDetails, setLocationDetails] = useState({
+    city: '',
+    locality: '',
+    landmark: ''
+  });
 
   // hero background rotation
   const heroImages = [
@@ -104,7 +110,59 @@ function UpdatedHome() {
   }, []);
 
   // -----------------------
-  // GOOGLE MAPS AUTOCOMPLETE
+  // IMPROVED CITY SEARCH LOGIC
+  // -----------------------
+  const normalizeCityName = (city) => {
+    if (!city) return '';
+    
+    // Common city name variations in India
+    const cityVariations = {
+      'mumbai': ['bombay'],
+      'bangalore': ['bengaluru'],
+      'delhi': ['new delhi', 'ncr'],
+      'hyderabad': ['secunderabad'],
+      'chennai': ['madras'],
+      'kolkata': ['calcutta'],
+      'pune': ['poona']
+    };
+    
+    const lowerCity = city.toLowerCase().trim();
+    
+    // Check if this is a variation of a known city
+    for (const [mainCity, aliases] of Object.entries(cityVariations)) {
+      if (aliases.includes(lowerCity) || lowerCity.includes(mainCity)) {
+        return mainCity;
+      }
+    }
+    
+    // Remove special characters and return
+    return lowerCity.replace(/[^a-z]/g, '');
+  };
+
+  const extractCityFromSearch = () => {
+    // If we have location details from Google Places, use that city
+    if (locationDetails.city) return normalizeCityName(locationDetails.city);
+    
+    // Common Indian cities to check for
+    const indianCities = ['mumbai', 'delhi', 'bangalore', 'hyderabad', 
+                         'chennai', 'kolkata', 'pune', 'ahmedabad'];
+    
+    const searchText = searchTerm.toLowerCase();
+    
+    // Check if search term contains any known city name
+    for (const city of indianCities) {
+      if (searchText.includes(city)) {
+        return city;
+      }
+    }
+    
+    // Fallback: extract first part before comma
+    const cityMatch = searchText.match(/([^,]+)/);
+    return cityMatch ? normalizeCityName(cityMatch[0]) : normalizeCityName(searchText);
+  };
+
+  // -----------------------
+  // GOOGLE MAPS AUTOCOMPLETE (IMPROVED)
   // -----------------------
   useEffect(() => {
     let autocompleteInstance = null;
@@ -121,7 +179,7 @@ function UpdatedHome() {
         await new Promise((r) => setTimeout(r, 100));
 
         autocompleteInstance = new google.maps.places.Autocomplete(input, {
-          types: ['geocode'],
+          types: ['geocode', 'establishment'],
           componentRestrictions: { country: 'in' },
           fields: ['formatted_address', 'geometry', 'name', 'address_components'],
         });
@@ -129,15 +187,30 @@ function UpdatedHome() {
         autocompleteInstance.addListener('place_changed', () => {
           const place = autocompleteInstance.getPlace();
           if (!place) return;
-          let address = '';
-          if (place.formatted_address) address = place.formatted_address;
-          else if (place.name) address = place.name;
-          else if (place.address_components) {
-            address = place.address_components
-              .map((c) => c.long_name)
-              .join(', ');
-          }
-          setSearchTerm(address);
+          
+          // Extract address components
+          const addressComponents = place.address_components || [];
+          const locationInfo = {
+            city: '',
+            locality: '',
+            landmark: place.name || '',
+            fullAddress: place.formatted_address || ''
+          };
+
+          addressComponents.forEach(component => {
+            if (component.types.includes('locality')) {
+              locationInfo.locality = component.long_name;
+            }
+            if (component.types.includes('administrative_area_level_2')) {
+              locationInfo.city = component.long_name;
+            }
+            if (component.types.includes('sublocality')) {
+              locationInfo.locality = component.long_name;
+            }
+          });
+
+          setLocationDetails(locationInfo);
+          setSearchTerm(locationInfo.fullAddress);
         });
 
         // Android-friendly input handling
@@ -172,10 +245,18 @@ function UpdatedHome() {
   }, []);
 
   // -----------------------
-  // HANDLERS
+  // IMPROVED SEARCH HANDLERS
   // -----------------------
   const handleInputChange = (e) => {
     setSearchTerm(e.target.value);
+    // Clear location details when user manually types
+    if (e.target.value === '') {
+      setLocationDetails({
+        city: '',
+        locality: '',
+        landmark: ''
+      });
+    }
   };
 
   const handleKeyDown = (e) => {
@@ -190,22 +271,70 @@ function UpdatedHome() {
       setUser('Anonymous');
     }
 
-    const results = myListings.filter((listing) => {
+    const searchCity = extractCityFromSearch();
+    console.log('Searching for city:', searchCity); // Debug log
+
+    // First filter by search term and location
+    let filtered = myListings.filter((listing) => {
+      // Skip user's own listings
       if (user && listing.userKey === user) return false;
-      if (!searchTerm) return true;
       
-      const term = searchTerm.toLowerCase();
-      return (
-        listing.propertyAddress?.toLowerCase().includes(term) ||
-        listing.title?.toLowerCase().includes(term) ||
-        listing.description?.toLowerCase().includes(term)
-      );
+      // If no search term, return all (will be filtered by other filters)
+      if (!searchTerm.trim()) return true;
+      
+      // Normalize listing location data
+      const listingCity = normalizeCityName(listing.city);
+      const listingLocality = normalizeCityName(listing.locality);
+      const listingLandmark = normalizeCityName(listing.landmark);
+      const listingAddress = (listing.propertyAddress || '').toLowerCase();
+      
+      // Check if any part of the listing matches the search city
+      const isCityMatch = 
+        listingCity.includes(searchCity) ||
+        listingLocality.includes(searchCity) ||
+        listingLandmark.includes(searchCity) ||
+        listingAddress.includes(searchCity);
+      
+      // Also check if the search term matches any part of the listing
+      const isTermMatch = 
+        (listing.title || '').toLowerCase().includes(searchCity) ||
+        (listing.description || '').toLowerCase().includes(searchCity);
+      
+      return isCityMatch || isTermMatch;
     });
 
-    navigate('/search-results', { state: { results } });
+    // Then apply compatibility filters
+    filtered = filtered.filter((listing) => {
+      return Object.entries(appliedFilterValues).every(([filter, value]) => {
+        const key = filter.toLowerCase().replace(/\s/g, '');
+        const listingValue = listing[key];
+        if (!listingValue) return false;
+        return Array.isArray(listingValue)
+          ? listingValue.includes(value)
+          : listingValue === value;
+      });
+    });
+
+    console.log('Filtered results:', filtered); // Debug log
+    setSearchResults(filtered);
+    
+    navigate('/search-results', { 
+      state: { 
+        results: filtered,
+        searchTerm,
+        locationDetails: {
+          ...locationDetails,
+          city: searchCity
+        },
+        searchType,
+        appliedFilters: appliedFilterValues
+      } 
+    });
   };
 
-  // Toggle and manage custom compatibility filters
+  // -----------------------
+  // FILTER HANDLERS
+  // -----------------------
   const toggleFilters = () => {
     setFiltersVisible((prev) => !prev);
     setActiveFilter(null);
@@ -233,40 +362,27 @@ function UpdatedHome() {
     setActiveFilter(null);
   };
 
-  // Re‑filter locally when appliedFilterValues change or listings loaded
+  // IMPROVED SEARCH FILTERING
   useEffect(() => {
-    let filtered = [...myListings];
-
-    // search term
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(
-        (l) =>
-          l.propertyAddress?.toLowerCase().includes(term) ||
-          l.title?.toLowerCase().includes(term) ||
-          l.description?.toLowerCase().includes(term)
-      );
+    if (!searchTerm.trim()) {
+      // If no search term, just show all listings (excluding user's own) with current filters
+      const filtered = myListings.filter((l) => !user || l.userKey !== user)
+        .filter((listing) => {
+          return Object.entries(appliedFilterValues).every(([filter, value]) => {
+            const key = filter.toLowerCase().replace(/\s/g, '');
+            const listingValue = listing[key];
+            if (!listingValue) return false;
+            return Array.isArray(listingValue)
+              ? listingValue.includes(value)
+              : listingValue === value;
+          });
+        });
+      setSearchResults(filtered);
     }
-
-    // compatibility chips
-    Object.entries(appliedFilterValues).forEach(([filter, value]) => {
-      const key = filter.toLowerCase().replace(/\s/g, '');
-      filtered = filtered.filter((listing) => {
-        const listingValue = listing[key];
-        if (!listingValue) return false;
-        return Array.isArray(listingValue)
-          ? listingValue.includes(value)
-          : listingValue === value;
-      });
-    });
-
-    if (user) filtered = filtered.filter((l) => l.userKey !== user);
-
-    setSearchResults(filtered);
-  }, [appliedFilterValues, myListings, user, searchTerm]);
+  }, [appliedFilterValues, myListings, user, searchTerm, locationDetails]);
 
   // -----------------------
-  // RENDER
+  // RENDER (unchanged from your original)
   // -----------------------
   return (
     <div className="home-wrapper">
@@ -310,7 +426,7 @@ function UpdatedHome() {
                 <input
                   id="searchInput"
                   type="text"
-                  placeholder="Search Places..."
+                  placeholder="Search by city, locality or landmark..."
                   value={searchTerm}
                   onChange={handleInputChange}
                   onKeyDown={handleKeyDown}
@@ -397,112 +513,117 @@ function UpdatedHome() {
 
       {/* SEARCH RESULTS / NO RESULTS */}
       
-    {searchResults.length > 0 ? (
-      <div className={`search-results ${isMobile ? 'mobile' : ''}`}>
-        <div className="results-header">
-          <h2>{searchResults.length} {searchResults.length === 1 ? 'Property' : 'Properties'} Found</h2>
-          <div className="sort-options">
-            <select className="sort-select">
-              <option>Sort by: Recommended</option>
-              <option>Price: Low to High</option>
-              <option>Price: High to Low</option>
-              <option>Newest First</option>
-            </select>
+      {searchResults.length > 0 ? (
+        <div className={`search-results ${isMobile ? 'mobile' : ''}`}>
+          <div className="results-header">
+            <h2>{searchResults.length} {searchResults.length === 1 ? 'Property' : 'Properties'} Found</h2>
+            <div className="sort-options">
+              <select className="sort-select">
+                <option>Sort by: Recommended</option>
+                <option>Price: Low to High</option>
+                <option>Price: High to Low</option>
+                <option>Newest First</option>
+              </select>
+            </div>
           </div>
-        </div>
 
-        <div className={`results-grid ${isMobile ? 'mobile' : ''}`}>
-          {searchResults.map((listing, idx) => (
-            <div key={idx} className={`listing-card ${isMobile ? 'mobile' : ''}`}>
-              {/* Image Section */}
-              <div className="card-image">
-                {listing.images && listing.images.length > 0 ? (
-                  <img 
-                    src={`${config.apiBaseUrl}${listing.images[0]}`} 
-                    alt={listing.title}
-                    onClick={() => navigate('/listing-details', { state: { listing } })}
-                  />
-                ) : (
-                  <div className="image-placeholder">
-                    <svg viewBox="0 0 24 24">
-                      <path d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-4.86 8.86l-3 3.87L9 13.14 6 17h12l-3.86-5.14z"/>
-                    </svg>
+          <div className={`results-grid ${isMobile ? 'mobile' : ''}`}>
+            {searchResults.map((listing, idx) => (
+              <div key={idx} className={`listing-card ${isMobile ? 'mobile' : ''}`}>
+                {/* Image Section */}
+                <div className="card-image">
+                  {listing.images && listing.images.length > 0 ? (
+                    <img 
+                      src={`${config.apiBaseUrl}${listing.images[0]}`} 
+                      alt={listing.title}
+                      onClick={() => navigate('/listing-details', { state: { listing } })}
+                    />
+                  ) : (
+                    <div className="image-placeholder">
+                      <svg viewBox="0 0 24 24">
+                        <path d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-4.86 8.86l-3 3.87L9 13.14 6 17h12l-3.86-5.14z"/>
+                      </svg>
+                    </div>
+                  )}
+                  <div className="card-badge">
+                    {listing.propertyType || 'Apartment'}
                   </div>
-                )}
-                <div className="card-badge">
-                  {listing.propertyType || 'Apartment'}
-                </div>
-                <button className="favorite-button">
-                  <svg viewBox="0 0 24 24">
-                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-                  </svg>
-                </button>
-              </div>
-
-              {/* Content Section */}
-              <div className="card-content">
-                <div className="card-header">
-                  <h3 onClick={() => navigate('/listing-details', { state: { listing } })}>
-                    {listing.title}
-                  </h3>
-                  <div className="price">₹{listing.rent?.toLocaleString()}/month</div>
-                </div>
-
-                <div className="card-location">
-                  <svg viewBox="0 0 24 24">
-                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
-                  </svg>
-                  <span>{listing.locality || listing.propertyAddress}</span>
-                </div>
-
-                <div className="card-features">
-                  <div className="feature">
+                  <button className="favorite-button">
                     <svg viewBox="0 0 24 24">
-                      <path d="M17 11V3H7v4H3v14h8v-4h2v4h8V11h-4zM7 19H5v-2h2v2zm0-4H5v-2h2v2zm0-4H5V9h2v2zm4 4H9v-2h2v2zm0-4H9V9h2v2zm0-4H9V5h2v2zm4 8h-2v-2h2v2zm0-4h-2V9h2v2zm0-4h-2V5h2v2zm4 12h-2v-2h2v2zm0-4h-2v-2h2v2z"/>
+                      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
                     </svg>
-                    <span>{listing.roomSize || '--'} sqft</span>
-                  </div>
-                  <div className="feature">
-                    <svg viewBox="0 0 24 24">
-                      <path d="M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99z"/>
-                    </svg>
-                    <span>{listing.furnished ? 'Furnished' : 'Unfurnished'}</span>
-                  </div>
-                </div>
-
-                <div className="card-footer">
-                  <button 
-                    className="view-details-button"
-                    onClick={() => navigate('/listing-details', { state: { listing } })}
-                  >
-                    View Details
                   </button>
                 </div>
+
+                {/* Content Section */}
+                <div className="card-content">
+                  <div className="card-header">
+                    <h3 onClick={() => navigate('/listing-details', { state: { listing } })}>
+                      {listing.title}
+                    </h3>
+                    <div className="price">₹{listing.rent?.toLocaleString()}/month</div>
+                  </div>
+
+                  <div className="card-location">
+                    <svg viewBox="0 0 24 24">
+                      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+                    </svg>
+                    <span>{listing.locality || listing.propertyAddress}</span>
+                  </div>
+
+                  <div className="card-features">
+                    <div className="feature">
+                      <svg viewBox="0 0 24 24">
+                        <path d="M17 11V3H7v4H3v14h8v-4h2v4h8V11h-4zM7 19H5v-2h2v2zm0-4H5v-2h2v2zm0-4H5V9h2v2zm4 4H9v-2h2v2zm0-4H9V9h2v2zm0-4H9V5h2v2zm4 8h-2v-2h2v2zm0-4h-2V9h2v2zm0-4h-2V5h2v2zm4 12h-2v-2h2v2zm0-4h-2v-2h2v2z"/>
+                      </svg>
+                      <span>{listing.roomSize || '--'} sqft</span>
+                    </div>
+                    <div className="feature">
+                      <svg viewBox="0 0 24 24">
+                        <path d="M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99z"/>
+                      </svg>
+                      <span>{listing.furnished ? 'Furnished' : 'Unfurnished'}</span>
+                    </div>
+                  </div>
+
+                  <div className="card-footer">
+                    <button 
+                      className="view-details-button"
+                      onClick={() => navigate('/listing-details', { state: { listing } })}
+                    >
+                      View Details
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
-    ) : (
-      <div className={`no-results ${isMobile ? 'mobile' : ''}`}>
-        <div className="no-results-content">
-          <svg viewBox="0 0 24 24">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
-          </svg>
-          <h3>No properties found</h3>
-          <p>Try adjusting your search filters</p>
-          <button 
-            className="reset-filters-button"
-            onClick={() => {
-              setSearchTerm('');
-              setAppliedFilterValues({});
-            }}
-          >
-            Reset Filters
-          </button>
+      ) : (
+        <div className={`no-results ${isMobile ? 'mobile' : ''}`}>
+          <div className="no-results-content">
+            <svg viewBox="0 0 24 24">
+              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+            </svg>
+            <h3>No properties found</h3>
+            <p>Try adjusting your search filters</p>
+            <button 
+              className="reset-filters-button"
+              onClick={() => {
+                setSearchTerm('');
+                setAppliedFilterValues({});
+                setLocationDetails({
+                  city: '',
+                  locality: '',
+                  landmark: ''
+                });
+              }}
+            >
+              Reset Filters
+            </button>
+          </div>
         </div>
-      </div>
-    )}
+      )}
     </div>
   );
 }

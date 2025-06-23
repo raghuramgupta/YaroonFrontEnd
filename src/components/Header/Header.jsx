@@ -26,11 +26,15 @@ const Header = ({ isLoggedIn = false, onLogout = () => {} }) => {
     }
 
     axios.get(`${config.apiBaseUrl}/api/users/profile/${currentUserKey}`)
-      .then(res => {
-        setUserName(res.data.fullName || "User");
-      }).catch(err => {
-        console.error('Failed to load profile:', err);
-      });
+  .then(res => {
+    const displayName = res.data.userType === 'Property Agent' 
+      ? res.data.companyName 
+      : res.data.fullName || "User";
+    setUserName(displayName);
+  })
+  .catch(err => {
+    console.error('Failed to load profile:', err);
+  });
   }, []);
 
   return (

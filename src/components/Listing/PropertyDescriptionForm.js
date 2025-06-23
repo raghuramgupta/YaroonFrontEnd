@@ -5,7 +5,7 @@ import Header from '../Header/Header';
 import {
   FaHome, FaBed, FaBath, FaMap, FaParking, FaRulerCombined,
   FaMoneyBillWave, FaCalendarAlt, FaLock, FaTv, FaBlender,
-  FaUtensils, FaMapMarkerAlt, FaCamera, FaVideo, FaCar, FaMotorcycle, FaTrash
+  FaUtensils, FaMapMarkerAlt, FaCamera, FaCode,FaVideo, FaCar, FaMotorcycle, FaDumbbell,FaRegSnowflake,FaSwimmer,FaTrash
 } from 'react-icons/fa';
 import { GiWashingMachine } from 'react-icons/gi';
 import axios from 'axios';
@@ -22,7 +22,7 @@ const PropertyDescriptionForm = () => {
     propertyStructure: '', roomType: '', washroomType: '', parkingType: '',
     roomSize: '', apartmentSize: '', rent: '', availableFrom: todayDate, openDate: '',
     securityDepositOption: '', customSecurityDeposit: '', userType: '',
-    amenities: { TV: false, Fridge: false, WashingMachine: false, kitchen: false },
+    amenities: { TV: false, Fridge: false, WashingMachine: false, kitchen: false,AirConditioner:false, Gym:false,SwimmingPool:false},
     cookingType: '', images: [], videos: [], mapLocation: '', userinterests:'', pets:'',
     gender:'', languages:'', foodchoices:'', validPics: [], AIGenpics: []
   });
@@ -476,6 +476,18 @@ const PropertyDescriptionForm = () => {
               <label className="amenity-option">
                 <input type="checkbox" name="kitchen" checked={formData.amenities.kitchen} onChange={handleChange} />
                 <FaUtensils /> Kitchen
+              </label>
+              <label className="amenity-option">
+                <input type="checkbox" name="AirConditioner" checked={formData.amenities.AirConditioner} onChange={handleChange} />
+                <FaRegSnowflake /> AirConditioner
+              </label>
+              <label className="amenity-option">
+                <input type="checkbox" name="Gym" checked={formData.amenities.Gym} onChange={handleChange} />
+                <FaDumbbell /> Gym
+              </label>
+              <label className="amenity-option">
+                <input type="checkbox" name="SwimmingPool" checked={formData.amenities.SwimmingPool} onChange={handleChange} />
+                <FaSwimmer /> SwimmingPool
               </label>
             </div>
             <div className="cooking-preference">
