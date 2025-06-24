@@ -118,11 +118,11 @@ function UpdatedHome() {
     // Common city name variations in India
     const cityVariations = {
       'mumbai': ['bombay'],
-      'bangalore': ['bengaluru'],
+      'bangalore': ['bengaluru'],'bengaluru': ['bengaluru'],
       'delhi': ['new delhi', 'ncr'],
       'hyderabad': ['secunderabad'],
       'chennai': ['madras'],
-      'kolkata': ['calcutta'],
+      'kolkata': ['calcutta'],'Noida': ['Noida'],'Gurugram': ['Gurugram'],
       'pune': ['poona']
     };
     
@@ -140,27 +140,33 @@ function UpdatedHome() {
   };
 
   const extractCityFromSearch = () => {
-    // If we have location details from Google Places, use that city
-    if (locationDetails.city) return normalizeCityName(locationDetails.city);
-    
-    // Common Indian cities to check for
-    const indianCities = ['mumbai', 'delhi', 'bangalore', 'hyderabad', 
-                         'chennai', 'kolkata', 'pune', 'ahmedabad'];
-    
-    const searchText = searchTerm.toLowerCase();
-    
-    // Check if search term contains any known city name
-    for (const city of indianCities) {
-      if (searchText.includes(city)) {
-        return city;
-      }
+  // If we have location details from Google Places, use that city
+  if (locationDetails.city) return normalizeCityName(locationDetails.city);
+  
+  // Common Indian cities to check for (add more as needed)
+  const indianCities = ['mumbai', 'delhi', 'bangalore', 'hyderabad', 
+                       'chennai', 'kolkata', 'pune', 'ahmedabad', 'noida', 'gurugram'];
+  
+  const searchText = searchTerm.toLowerCase();
+  
+  // First try to find exact city matches in the search text
+  for (const city of indianCities) {
+    // Check if the city name appears as a whole word
+    if (new RegExp(`\\b${city}\\b`).test(searchText)) {
+      return city;
     }
-    
-    // Fallback: extract first part before comma
-    const cityMatch = searchText.match(/([^,]+)/);
-    return cityMatch ? normalizeCityName(cityMatch[0]) : normalizeCityName(searchText);
-  };
-
+  }
+  
+  // If no exact match found, try to extract city before first comma
+  const parts = searchText.split(',');
+  if (parts.length > 1) {
+    const possibleCity = normalizeCityName(parts[0].trim());
+    if (possibleCity) return possibleCity;
+  }
+  
+  // Fallback: normalize the entire search term
+  return normalizeCityName(searchText);
+};
   // -----------------------
   // GOOGLE MAPS AUTOCOMPLETE (IMPROVED)
   // -----------------------
@@ -267,70 +273,71 @@ function UpdatedHome() {
   };
 
   const handleSearchClick = () => {
-    if (!user) {
-      setUser('Anonymous');
-    }
+  if (!user) {
+    setUser('Anonymous');
+  }
 
-    const searchCity = extractCityFromSearch();
-    console.log('Searching for city:', searchCity); // Debug log
+  const searchCity = extractCityFromSearch();
+  console.log('Searching for city:', searchCity);
 
-    // First filter by search term and location
-    let filtered = myListings.filter((listing) => {
-      // Skip user's own listings
-      if (user && listing.userKey === user) return false;
-      
-      // If no search term, return all (will be filtered by other filters)
-      if (!searchTerm.trim()) return true;
-      
-      // Normalize listing location data
-      const listingCity = normalizeCityName(listing.city);
-      const listingLocality = normalizeCityName(listing.locality);
-      const listingLandmark = normalizeCityName(listing.landmark);
-      const listingAddress = (listing.propertyAddress || '').toLowerCase();
-      
-      // Check if any part of the listing matches the search city
-      const isCityMatch = 
-        listingCity.includes(searchCity) ||
-        listingLocality.includes(searchCity) ||
-        listingLandmark.includes(searchCity) ||
-        listingAddress.includes(searchCity);
-      
-      // Also check if the search term matches any part of the listing
-      const isTermMatch = 
-        (listing.title || '').toLowerCase().includes(searchCity) ||
-        (listing.description || '').toLowerCase().includes(searchCity);
-      
-      return isCityMatch || isTermMatch;
-    });
-
-    // Then apply compatibility filters
-    filtered = filtered.filter((listing) => {
-      return Object.entries(appliedFilterValues).every(([filter, value]) => {
-        const key = filter.toLowerCase().replace(/\s/g, '');
-        const listingValue = listing[key];
-        if (!listingValue) return false;
-        return Array.isArray(listingValue)
-          ? listingValue.includes(value)
-          : listingValue === value;
-      });
-    });
-
-    console.log('Filtered results:', filtered); // Debug log
-    setSearchResults(filtered);
+  // First filter by search term and location
+  let filtered = myListings.filter((listing) => {
+    // Skip user's own listings
+    if (user && listing.userKey === user) return false;
     
-    navigate('/search-results', { 
-      state: { 
-        results: filtered,
-        searchTerm,
-        locationDetails: {
-          ...locationDetails,
-          city: searchCity
-        },
-        searchType,
-        appliedFilters: appliedFilterValues
-      } 
+    // If no search term, return all (will be filtered by other filters)
+    if (!searchTerm.trim()) return true;
+    
+    // Normalize listing location data
+    const listingCity = normalizeCityName(listing.city);
+    const listingLocality = normalizeCityName(listing.locality);
+    const listingLandmark = normalizeCityName(listing.landmark);
+    const listingAddress = (listing.propertyAddress || '').toLowerCase();
+    
+    // Check if any part of the listing matches the search city
+    const isCityMatch = 
+      listingCity.includes(searchCity) ||
+      listingLocality.includes(searchCity) ||
+      listingLandmark.includes(searchCity) ||
+      listingAddress.includes(searchCity) ||
+      searchCity.includes(listingCity); // Also check if search term includes listing city
+    
+    // Also check if the search term matches any part of the listing
+    const isTermMatch = 
+      (listing.title || '').toLowerCase().includes(searchCity) ||
+      (listing.description || '').toLowerCase().includes(searchCity);
+    
+    return isCityMatch || isTermMatch;
+  });
+
+  // Rest of your filter logic remains the same...
+  filtered = filtered.filter((listing) => {
+    return Object.entries(appliedFilterValues).every(([filter, value]) => {
+      const key = filter.toLowerCase().replace(/\s/g, '');
+      const listingValue = listing[key];
+      if (!listingValue) return false;
+      return Array.isArray(listingValue)
+        ? listingValue.includes(value)
+        : listingValue === value;
     });
-  };
+  });
+
+  console.log('Filtered results:', filtered);
+  setSearchResults(filtered);
+  
+  navigate('/search-results', { 
+    state: { 
+      results: filtered,
+      searchTerm,
+      locationDetails: {
+        ...locationDetails,
+        city: searchCity
+      },
+      searchType,
+      appliedFilters: appliedFilterValues
+    } 
+  });
+};  
 
   // -----------------------
   // FILTER HANDLERS

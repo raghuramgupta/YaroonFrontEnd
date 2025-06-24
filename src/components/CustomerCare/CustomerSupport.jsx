@@ -1,4 +1,3 @@
-// src/components/CustomerSupport.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -13,11 +12,13 @@ const CustomerSupport = () => {
   const [description, setDescription] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [activeTab, setActiveTab] = useState('new'); // 'new' or 'existing'
+  const [activeTab, setActiveTab] = useState('new');
   const [tickets, setTickets] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [editingTicket, setEditingTicket] = useState(null);
+  const [userListings, setUserListings] = useState([]);
+  const [isFetchingListings, setIsFetchingListings] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -29,6 +30,34 @@ const CustomerSupport = () => {
       fetchTickets(currentUserKey);
     }
   }, []);
+
+  useEffect(() => {
+    const fetchUserListings = async () => {
+      if (issueType === 'Problem with a listing' && user) {
+        try {
+          setIsFetchingListings(true);
+          let parsedUserId;
+          try {
+            const userObj = JSON.parse(user);
+            parsedUserId = userObj._id || userObj.id || user;
+          } catch {
+            parsedUserId = user;
+          }
+
+          const response = await axios.get(`${config.apiBaseUrl}/api/listings/user/${encodeURIComponent(parsedUserId)}`);
+          
+          setUserListings(response.data);
+        } catch (error) {
+          console.error('Error fetching user listings:', error);
+          alert('Failed to load your listings');
+        } finally {
+          setIsFetchingListings(false);
+        }
+      }
+    };
+
+    fetchUserListings();
+  }, [issueType, user]);
 
   const fetchTickets = async (userId) => {
     try {
@@ -79,7 +108,6 @@ const CustomerSupport = () => {
       }
 
       if (editingTicket) {
-        // Update existing ticket
         const response = await axios.put(`${config.apiBaseUrl}/api/support/${editingTicket._id}`, {
           issueType,
           listingId: issueType === 'Problem with a listing' ? listingId : undefined,
@@ -90,7 +118,6 @@ const CustomerSupport = () => {
         setSuccessMessage('Support ticket updated successfully!');
         setEditingTicket(null);
       } else {
-        // Create new ticket
         const response = await axios.post(`${config.apiBaseUrl}/api/support`, {
           issueType,
           listingId: issueType === 'Problem with a listing' ? listingId : undefined,
@@ -104,8 +131,6 @@ const CustomerSupport = () => {
       setIssueType('');
       setListingId('');
       setDescription('');
-      
-      // Refresh tickets list
       await fetchTickets(userId);
       setActiveTab('existing');
       
@@ -132,37 +157,36 @@ const CustomerSupport = () => {
   };
 
   const handleDeleteTicket = async (ticketId) => {
-  if (!window.confirm('Are you sure you want to delete this ticket?')) {
-    return;
-  }
-
-  try {
-    const currentUserString = localStorage.getItem('currentUser');
-    let userId;
-    
-    try {
-      const userObj = JSON.parse(currentUserString);
-      userId = userObj._id || userObj.id || currentUserString;
-    } catch {
-      userId = currentUserString;
+    if (!window.confirm('Are you sure you want to delete this ticket?')) {
+      return;
     }
 
-    // Updated delete request with params
-    await axios.delete(`${config.apiBaseUrl}/api/support/${ticketId}`, {
-      params: { userId }
-    });
+    try {
+      const currentUserString = localStorage.getItem('currentUser');
+      let userId;
+      
+      try {
+        const userObj = JSON.parse(currentUserString);
+        userId = userObj._id || userObj.id || currentUserString;
+      } catch {
+        userId = currentUserString;
+      }
 
-    setSuccessMessage('Ticket deleted successfully!');
-    await fetchTickets(userId);
-    
-    setTimeout(() => {
-      setSuccessMessage('');
-    }, 5000);
-  } catch (error) {
-    console.error('Delete error:', error.response?.data || error.message);
-    alert(`Failed to delete ticket: ${error.response?.data?.message || error.message}`);
-  }
-};
+      await axios.delete(`${config.apiBaseUrl}/api/support/${ticketId}`, {
+        params: { userId }
+      });
+
+      setSuccessMessage('Ticket deleted successfully!');
+      await fetchTickets(userId);
+      
+      setTimeout(() => {
+        setSuccessMessage('');
+      }, 5000);
+    } catch (error) {
+      console.error('Delete error:', error.response?.data || error.message);
+      alert(`Failed to delete ticket: ${error.response?.data?.message || error.message}`);
+    }
+  };
 
   const cancelEdit = () => {
     setEditingTicket(null);
@@ -191,13 +215,34 @@ const CustomerSupport = () => {
 
         {issueType === 'Problem with a listing' && (
           <div className="form-group">
-            <label>Listing ID (if known)</label>
-            <input
-              type="text"
-              value={listingId}
-              onChange={(e) => setListingId(e.target.value)}
-              placeholder="Enter listing ID or address"
-            />
+            <label>Select Listing</label>
+            {isFetchingListings ? (
+              <p>Loading your listings...</p>
+            ) : userListings.length > 0 ? (
+              <select
+                value={listingId}
+                onChange={(e) => setListingId(e.target.value)}
+                required
+              >
+                <option value="">Select a listing</option>
+                {userListings.map((listing) => (
+                  <option key={listing._id} value={listing._id}>
+                    {listing.title} - {listing.propertyAddress} (${listing.rent})
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <div className="no-listings-message">
+                <p>You don't have any listings yet.</p>
+                <input
+                  type="text"
+                  value={listingId}
+                  onChange={(e) => setListingId(e.target.value)}
+                  placeholder="Enter listing ID manually"
+                  required
+                />
+              </div>
+            )}
           </div>
         )}
 
