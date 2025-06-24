@@ -113,31 +113,31 @@ function UpdatedHome() {
   // IMPROVED CITY SEARCH LOGIC
   // -----------------------
   const normalizeCityName = (city) => {
-    if (!city) return '';
-    
-    // Common city name variations in India
-    const cityVariations = {
-      'mumbai': ['bombay'],
-      'bangalore': ['bengaluru'],'bengaluru': ['bengaluru'],
-      'delhi': ['new delhi', 'ncr'],
-      'hyderabad': ['secunderabad'],
-      'chennai': ['madras'],
-      'kolkata': ['calcutta'],'Noida': ['Noida'],'Gurugram': ['Gurugram'],
-      'pune': ['poona']
-    };
-    
-    const lowerCity = city.toLowerCase().trim();
-    
-    // Check if this is a variation of a known city
-    for (const [mainCity, aliases] of Object.entries(cityVariations)) {
-      if (aliases.includes(lowerCity) || lowerCity.includes(mainCity)) {
-        return mainCity;
-      }
-    }
-    
-    // Remove special characters and return
-    return lowerCity.replace(/[^a-z]/g, '');
+  if (!city) return '';
+  
+  // Common city name variations in India
+  const cityVariations = {
+    'mumbai': ['bombay'],
+    'bangalore': ['bengaluru'],
+    'delhi': ['new delhi', 'ncr'],
+    'hyderabad': ['secunderabad'],
+    'chennai': ['madras'],
+    'kolkata': ['calcutta'],
+    'pune': ['poona']
   };
+  
+  const lowerCity = city.toLowerCase().trim();
+  
+  // Check if this is a variation of a known city
+  for (const [mainCity, aliases] of Object.entries(cityVariations)) {
+    if (aliases.includes(lowerCity) || lowerCity.includes(mainCity)) {
+      return mainCity;
+    }
+  }
+  
+  // Remove special characters and return
+  return lowerCity.replace(/[^a-z]/g, '');
+};
 
   const extractCityFromSearch = () => {
   // If we have location details from Google Places, use that city
@@ -157,11 +157,28 @@ function UpdatedHome() {
     }
   }
   
-  // If no exact match found, try to extract city before first comma
+  // If no exact match found, try to extract city from address components
+  // Handle different address formats:
+  // 1. "Hyderabad, Telangana, India"
+  // 2. "Madhapur, Hyderabad, Telangana"
+  // 3. "Hyderabad"
   const parts = searchText.split(',');
-  if (parts.length > 1) {
-    const possibleCity = normalizeCityName(parts[0].trim());
-    if (possibleCity) return possibleCity;
+  
+  // Check each part for a city match
+  for (const part of parts) {
+    const trimmedPart = part.trim();
+    // Check if this part matches a known city
+    for (const city of indianCities) {
+      if (new RegExp(`\\b${city}\\b`).test(trimmedPart)) {
+        return city;
+      }
+    }
+    
+    // Check if this part is a variation of a known city
+    const normalizedPart = normalizeCityName(trimmedPart);
+    if (indianCities.includes(normalizedPart)) {
+      return normalizedPart;
+    }
   }
   
   // Fallback: normalize the entire search term
@@ -279,8 +296,9 @@ function UpdatedHome() {
 
   const searchCity = extractCityFromSearch();
   console.log('Searching for city:', searchCity);
-
+  
   // First filter by search term and location
+  
   let filtered = myListings.filter((listing) => {
     // Skip user's own listings
     if (user && listing.userKey === user) return false;
@@ -309,7 +327,7 @@ function UpdatedHome() {
     
     return isCityMatch || isTermMatch;
   });
-
+  
   // Rest of your filter logic remains the same...
   filtered = filtered.filter((listing) => {
     return Object.entries(appliedFilterValues).every(([filter, value]) => {

@@ -49,7 +49,7 @@ const SearchResultsPage = () => {
     appliedFilters: initialAppliedFilters = {}
   } = location.state || {};
 
-  const [autocomplete, setAutocomplete] = useState(null);
+  const [autocompleteInstance, setAutocompleteInstance] = useState(null);
   const [user, setUser] = useState(null);
   const { profile, loadingProfile } = useContext(AuthContext);
   const [searchTerm, setSearchTerm] = useState(initialSearchTerm);
@@ -88,57 +88,121 @@ const SearchResultsPage = () => {
     propertyAgent: [], 
     pets: [],
   });
+const normalizeCityName = (city) => {
+  if (!city) return '';
+  
+  const cityVariations = {
+    'mumbai': ['bombay'],
+    'bangalore': ['bengaluru'],
+    'delhi': ['new delhi', 'ncr'],
+    'hyderabad': ['secunderabad'],
+    'chennai': ['madras'],
+    'kolkata': ['calcutta'],
+    'pune': ['poona']
+  };
+  
+  const lowerCity = city.toLowerCase().trim();
+  
+  for (const [mainCity, aliases] of Object.entries(cityVariations)) {
+    if (aliases.includes(lowerCity) || lowerCity.includes(mainCity)) {
+      return mainCity;
+    }
+  }
+  
+  return lowerCity.replace(/[^a-z]/g, '');
+};
 
+const extractCityFromSearch = (searchText) => {
+  // Common Indian cities
+  const indianCities = ['mumbai', 'delhi', 'bangalore', 'hyderabad', 
+                       'chennai', 'kolkata', 'pune', 'ahmedabad', 'noida', 'gurugram'];
+  
+  const lowerSearch = searchText.toLowerCase();
+  
+  // Check each part of comma-separated address
+  const parts = lowerSearch.split(',');
+  for (const part of parts) {
+    const trimmed = part.trim();
+    // Check exact matches first
+    for (const city of indianCities) {
+      if (new RegExp(`\\b${city}\\b`).test(trimmed)) {
+        return city;
+      }
+    }
+    // Then check normalized versions
+    const normalized = normalizeCityName(trimmed);
+    if (indianCities.includes(normalized)) {
+      return normalized;
+    }
+  }
+  
+  // Fallback to normalized full search
+  return normalizeCityName(lowerSearch);
+};
   useEffect(() => {
-    let autocompleteInstance = null;
-    let isMounted = true;
+  let isMounted = true;
+  let instance = null;
 
-    const initAutocomplete = async () => {
-      try {
-        const google = await loadGoogleMaps('AIzaSyB6MA27FGtx8g83oF57MAxLAOdcs1rsu7c');
-        if (!isMounted) return;
+  const initAutocomplete = async () => {
+    try {
+      const google = await loadGoogleMaps('AIzaSyB6MA27FGtx8g83oF57MAxLAOdcs1rsu7c');
+      if (!isMounted) return;
 
-        const input = document.getElementById('searchInput');
-        if (!input) return;
+      const input = document.getElementById('searchInput');
+      if (!input) return;
 
-        await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 100));
 
-        autocompleteInstance = new google.maps.places.Autocomplete(input, {
-          types: ['geocode'],
-          componentRestrictions: { country: 'in' },
-          fields: ['address_components', 'formatted_address', 'geometry', 'name']
-        });
+      instance = new google.maps.places.Autocomplete(input, {
+        types: ['geocode'],
+        componentRestrictions: { country: 'in' },
+        fields: ['address_components', 'formatted_address', 'geometry', 'name']
+      });
 
-        autocompleteInstance.addListener('place_changed', () => {
-          const place = autocompleteInstance.getPlace();
-          if (!place) return;
+      // Add the listener here - ONLY ONCE
+      instance.addListener('place_changed', () => {
+        const place = instance.getPlace();
+        if (!place) return;
 
-          let address = place.formatted_address || place.name || 
-            place.address_components.map(component => component.long_name).join(', ');
-          setSearchTerm(address);
-        });
+        const locationInfo = {
+          city: '',
+          locality: '',
+          landmark: place.name || '',
+          fullAddress: place.formatted_address || ''
+        };
 
-        input.addEventListener('focus', () => {
-          if (input.value) {
-            const event = new Event('input', { bubbles: true });
-            input.dispatchEvent(event);
+        place.address_components?.forEach(component => {
+          if (component.types.includes('locality')) {
+            locationInfo.locality = component.long_name;
+          }
+          if (component.types.includes('administrative_area_level_2')) {
+            locationInfo.city = component.long_name;
+          }
+          if (component.types.includes('sublocality')) {
+            locationInfo.locality = component.long_name;
           }
         });
 
-      } catch (error) {
-        console.error('Error initializing Google Maps Autocomplete:', error);
-      }
-    };
+        setLocationDetails(locationInfo);
+        setSearchTerm(locationInfo.fullAddress);
+      });
 
-    initAutocomplete();
+      setAutocompleteInstance(instance);
 
-    return () => {
-      isMounted = false;
-      if (autocompleteInstance && window.google?.maps?.event) {
-        window.google.maps.event.clearInstanceListeners(autocompleteInstance);
-      }
-    };
-  }, []);
+    } catch (error) {
+      console.error('Error initializing Google Maps Autocomplete:', error);
+    }
+  };
+
+  initAutocomplete();
+
+  return () => {
+    isMounted = false;
+    if (instance && window.google?.maps?.event) {
+      window.google.maps.event.clearInstanceListeners(instance);
+    }
+  };
+}, []);
 
   useEffect(() => {
     const fetchFavorites = async () => {
@@ -233,13 +297,21 @@ const SearchResultsPage = () => {
     }
 
     // Apply search term filter if it exists
+    // Apply search term filter if it exists
     if (searchTerm.trim()) {
-      const term = searchTerm.toLowerCase().trim();
-      filtered = filtered.filter(listing =>
-        listing.propertyAddress?.toLowerCase().includes(term) ||
-        listing.locality?.toLowerCase().includes(term) ||
-        listing.city?.toLowerCase().includes(term)
-      );
+      const searchCity = extractCityFromSearch(searchTerm);
+      filtered = filtered.filter(listing => {
+        const listingCity = normalizeCityName(listing.city);
+        const listingLocality = normalizeCityName(listing.locality);
+        const listingAddress = (listing.propertyAddress || '').toLowerCase();
+        
+        return (
+          listingCity.includes(searchCity) ||
+          listingLocality.includes(searchCity) ||
+          listingAddress.includes(searchCity) ||
+          searchCity.includes(listingCity)
+        );
+      });
     }
 
     const petFriendlyMatches = filtered.filter(listing => listing.pets);
@@ -327,22 +399,43 @@ const SearchResultsPage = () => {
       handleSearchClick();
     }
   };
-
+  
   const handleSearchClick = () => {
-    if (!user) {
-      setUser("Dummy");
-      return;
-    }
-    const listingsToSearch = initialResults.length > 0 ? initialResults : myListings;
-    const results = listingsToSearch.filter(listing =>
-      listing.userKey !== user &&
-      (searchTerm === '' || 
-       listing.propertyAddress?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-       listing.locality?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-       listing.city?.toLowerCase().includes(searchTerm.toLowerCase()))
+  if (!user) {
+    setUser("Dummy");
+    return;
+  }
+
+  const searchCity = extractCityFromSearch(searchTerm);
+  console.log('Searching for city:', searchCity);
+
+  const listingsToSearch = initialResults.length > 0 ? initialResults : myListings;
+  
+  const results = listingsToSearch.filter(listing => {
+    // Skip user's own listings
+    if (listing.userKey === user) return false;
+    
+    // If no search term, return all (will be filtered by other filters)
+    if (!searchTerm.trim()) return true;
+    
+    // Normalize listing location data
+    const listingCity = normalizeCityName(listing.city);
+    const listingLocality = normalizeCityName(listing.locality);
+    const listingLandmark = normalizeCityName(listing.landmark);
+    const listingAddress = (listing.propertyAddress || '').toLowerCase();
+    
+    // Check if any part of the listing matches the search city
+    return (
+      listingCity.includes(searchCity) ||
+      listingLocality.includes(searchCity) ||
+      listingLandmark.includes(searchCity) ||
+      listingAddress.includes(searchCity) ||
+      searchCity.includes(listingCity)
     );
-    updateFilteredListings(results);
-  };
+  });
+
+  updateFilteredListings(results);
+};
 
   const toggleFilters = () => {
     setFiltersVisible(prev => !prev);
