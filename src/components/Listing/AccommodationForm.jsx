@@ -265,31 +265,37 @@ const AccommodationForm = () => {
   e.preventDefault();
   setIsSubmitting(true);
 
-  // Validate required fields first
-  if (!formData.address.coordinates || formData.address.coordinates[0] === 0) {
-    alert('Please select a location on the map');
-    setIsSubmitting(false);
-    return;
-  }
-
   try {
+    // Validate required fields
+    if (!formData.address.coordinates || formData.address.coordinates[0] === 0) {
+      throw new Error('Please select a location on the map');
+    }
+
     const currentUser = localStorage.getItem('currentUser');
-    // Safely prepare the data
+
+    // Prepare the submission data with proper structure
     const submissionData = {
-      ...formData,
-      owner: currentUser,
-      totalFloors: String(formData.totalFloors),
+      title: formData.title,
+      description: formData.description,
+      type: formData.type,
       address: {
-        street: formData.address.street || '',
-        locality: formData.address.locality || '',
-        city: formData.address.city || '',
-        state: formData.address.state || '',
-        pincode: formData.address.pincode || '',
+        street: formData.address.street,
+        locality: formData.address.locality,
+        city: formData.address.city,
+        state: formData.address.state,
+        pincode: formData.address.pincode,
         coordinates: {
           type: "Point",
-          coordinates: formData.address.coordinates || [0, 0]
+          coordinates: formData.address.coordinates
         }
-      }
+      },
+      totalFloors: String(formData.totalFloors),
+      roomTypes: formData.roomTypes,
+      commonFacilities: formData.commonFacilities,
+      meals: formData.meals,
+      rules: formData.rules,
+      contactNumber: formData.contactNumber,
+      owner: currentUser
     };
 
     const formDataToSend = new FormData();
@@ -311,8 +317,8 @@ const AccommodationForm = () => {
 
     navigate(`/accommodations/${response.data._id}`);
   } catch (error) {
-    console.error('Full error:', error);
-    alert(`Submission failed: ${error.response?.data?.message || error.message}`);
+    console.error('Submission error:', error);
+    alert(`Submission failed: ${error.message}`);
   } finally {
     setIsSubmitting(false);
   }
