@@ -35,7 +35,9 @@ function App() {
         <Route path="/need-place" element={<WantedRoomForm />} />
         <Route path="/AccommodationForm" element={<AccommodationForm />} />
         <Route path="/edit-wanted-listing/:id" element={<WantedRoomForm />} />
-        <Route path="/support" element={<CustomerSupport />} />
+        // Change the route to use AccommodationForm instead
+        <Route path="/edit-pg-listing/:id" element={<AccommodationForm editMode={true} />} />
+        <Route path="/support" element={<CustomerSupport />} /><Route path="/accommodation-form" element={<AccommodationForm />} />
       </Routes>
     </AuthProvider>
   );

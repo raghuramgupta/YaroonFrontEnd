@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { GoogleMap, LoadScript, Autocomplete, Marker } from '@react-google-maps/api';
 import { FaPlus, FaMinus, FaUpload, FaMapMarkerAlt } from 'react-icons/fa';
 import axios from 'axios';
 import './AccommodationForm.css';
-import Header from '../Header/Header';import config from "../../config";
-const AccommodationForm = () => {
+import Header from '../Header/Header';
+import config from "../../config";
+
+const AccommodationForm = ({ editMode = false }) => {
   const navigate = useNavigate();
+  const { id } = useParams();
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -63,16 +66,54 @@ const AccommodationForm = () => {
   ]);
   const [mediaFiles, setMediaFiles] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [existingImages, setExistingImages] = useState([]);
+
   useEffect(() => {
-      const currentUserKey =localStorage.getItem('currentUser');
-      if (currentUserKey) {
-        setIsLoggedIn(true);
-      } else {
-        alert('Please log in to access this feature');
-        navigate('/login');
+    const currentUserKey = localStorage.getItem('currentUser');
+    if (currentUserKey) {
+      setIsLoggedIn(true);
+      if (editMode && id) {
+        fetchExistingListing();
       }
-    }, []);
-  // Handle Google Maps place selection
+    } else {
+      alert('Please log in to access this feature');
+      navigate('/login');
+    }
+  }, [editMode, id]);
+
+  const fetchExistingListing = async () => {
+    try {
+      const response = await axios.get(`${config.apiBaseUrl}/api/accommodations/${id}`);
+      const data = response.data;
+      setFormData({
+        title: data.title,
+        description: data.description,
+        type: data.type,
+        address: {
+          street: data.address.street,
+          locality: data.address.locality,
+          city: data.address.city,
+          state: data.address.state,
+          pincode: data.address.pincode,
+          coordinates: data.address.coordinates.coordinates || [0, 0]
+        },
+        totalFloors: data.totalFloors,
+        roomTypes: data.roomTypes,
+        commonFacilities: data.commonFacilities,
+        meals: data.meals,
+        rules: data.rules,
+        contactNumber: data.contactNumber,
+        images: data.images,
+        videos: data.videos
+      });
+      setSelectedCity(data.address.city);
+      setExistingImages(data.images || []);
+    } catch (error) {
+      console.error('Error fetching listing:', error);
+      alert('Failed to load listing data');
+    }
+  };
+
   const onPlaceChanged = () => {
     if (autocomplete !== null) {
       const place = autocomplete.getPlace();
@@ -101,7 +142,6 @@ const AccommodationForm = () => {
     return component ? component.long_name : '';
   };
 
-  // Handle form input changes
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     
@@ -122,7 +162,6 @@ const AccommodationForm = () => {
     }
   };
 
-  // Handle room type changes
   const handleRoomTypeChange = (index, field, value) => {
     const updatedRoomTypes = [...formData.roomTypes];
     updatedRoomTypes[index][field] = value;
@@ -132,7 +171,6 @@ const AccommodationForm = () => {
     }));
   };
 
-  // Handle room facility toggle
   const toggleRoomFacility = (roomIndex, facilityIndex) => {
     const updatedRoomTypes = [...formData.roomTypes];
     updatedRoomTypes[roomIndex].facilities[facilityIndex].available = 
@@ -143,7 +181,6 @@ const AccommodationForm = () => {
     }));
   };
 
-  // Handle common facility toggle
   const toggleCommonFacility = (index) => {
     const updatedFacilities = [...formData.commonFacilities];
     updatedFacilities[index].available = !updatedFacilities[index].available;
@@ -153,7 +190,6 @@ const AccommodationForm = () => {
     }));
   };
 
-  // Add new common facility
   const addCommonFacility = () => {
     if (newFacility.trim()) {
       setFormData(prev => ({
@@ -167,7 +203,6 @@ const AccommodationForm = () => {
     }
   };
 
-  // Remove common facility
   const removeCommonFacility = (index) => {
     const updatedFacilities = [...formData.commonFacilities];
     updatedFacilities.splice(index, 1);
@@ -177,7 +212,6 @@ const AccommodationForm = () => {
     }));
   };
 
-  // Add new rule
   const addRule = () => {
     if (newRule.trim()) {
       setFormData(prev => ({
@@ -188,7 +222,6 @@ const AccommodationForm = () => {
     }
   };
 
-  // Remove rule
   const removeRule = (index) => {
     const updatedRules = [...formData.rules];
     updatedRules.splice(index, 1);
@@ -198,7 +231,6 @@ const AccommodationForm = () => {
     }));
   };
 
-  // Handle cuisine selection
   const handleCuisineChange = (cuisine) => {
     const updatedCuisines = formData.meals.cuisines.includes(cuisine)
       ? formData.meals.cuisines.filter(c => c !== cuisine)
@@ -213,20 +245,23 @@ const AccommodationForm = () => {
     }));
   };
 
-  // Handle media upload
   const handleMediaUpload = (e) => {
     const files = Array.from(e.target.files);
     setMediaFiles(prev => [...prev, ...files]);
   };
 
-  // Remove media file
   const removeMediaFile = (index) => {
     const updatedFiles = [...mediaFiles];
     updatedFiles.splice(index, 1);
     setMediaFiles(updatedFiles);
   };
 
-  // Add new room type
+  const removeExistingImage = (index) => {
+    const updatedImages = [...existingImages];
+    updatedImages.splice(index, 1);
+    setExistingImages(updatedImages);
+  };
+
   const addRoomType = () => {
     setFormData(prev => ({
       ...prev,
@@ -248,7 +283,6 @@ const AccommodationForm = () => {
     }));
   };
 
-  // Remove room type
   const removeRoomType = (index) => {
     if (formData.roomTypes.length > 1) {
       const updatedRoomTypes = [...formData.roomTypes];
@@ -260,558 +294,588 @@ const AccommodationForm = () => {
     }
   };
 
-  // Handle form submission
   const handleSubmit = async (e) => {
-  e.preventDefault();
-  setIsSubmitting(true);
+    e.preventDefault();
+    setIsSubmitting(true);
 
-  try {
-    // Validate required fields
-    if (!formData.address.coordinates || formData.address.coordinates[0] === 0) {
-      throw new Error('Please select a location on the map');
-    }
-
-    const currentUser = localStorage.getItem('currentUser');
-
-    // Prepare the submission data with proper structure
-    const submissionData = {
-      title: formData.title,
-      description: formData.description,
-      type: formData.type,
-      address: {
-        street: formData.address.street,
-        locality: formData.address.locality,
-        city: formData.address.city,
-        state: formData.address.state,
-        pincode: formData.address.pincode,
-        coordinates: {
-          type: "Point",
-          coordinates: formData.address.coordinates
-        }
-      },
-      totalFloors: String(formData.totalFloors),
-      roomTypes: formData.roomTypes,
-      commonFacilities: formData.commonFacilities,
-      meals: formData.meals,
-      rules: formData.rules,
-      contactNumber: formData.contactNumber,
-      owner: currentUser
-    };
-
-    const formDataToSend = new FormData();
-    formDataToSend.append('data', JSON.stringify(submissionData));
-    
-    mediaFiles.forEach(file => {
-      formDataToSend.append('media', file);
-    });
-
-    const response = await axios.post(
-      `${config.apiBaseUrl}/api/accommodations`,
-      formDataToSend,
-      {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
+    try {
+      if (!formData.address.coordinates || formData.address.coordinates[0] === 0) {
+        throw new Error('Please select a location on the map');
       }
-    );
 
-    navigate(`/accommodations/${response.data._id}`);
-  } catch (error) {
-    console.error('Submission error:', error);
-    alert(`Submission failed: ${error.message}`);
-  } finally {
-    setIsSubmitting(false);
-  }
-};
-  return (
-    <div className="accommodation-form-container"><Header isLoggedIn={isLoggedIn} />
-      <h1 className="form-title">List Your PG / Co-living Space</h1>
+      const currentUser = localStorage.getItem('currentUser');
+
+      const submissionData = {
+        title: formData.title,
+        description: formData.description,
+        type: formData.type,
+        address: {
+          street: formData.address.street,
+          locality: formData.address.locality,
+          city: formData.address.city,
+          state: formData.address.state,
+          pincode: formData.address.pincode,
+          coordinates: {
+            type: "Point",
+            coordinates: formData.address.coordinates
+          }
+        },
+        totalFloors: String(formData.totalFloors),
+        roomTypes: formData.roomTypes,
+        commonFacilities: formData.commonFacilities,
+        meals: formData.meals,
+        rules: formData.rules,
+        contactNumber: formData.contactNumber,
+        owner: currentUser,
+        ...(editMode && { existingImages: existingImages })
+      };
+
+      const formDataToSend = new FormData();
+      formDataToSend.append('data', JSON.stringify({
+        ...submissionData,
+        // For edit mode, include the ID
+        ...(editMode && { _id: id })
+      }));
       
-      <form onSubmit={handleSubmit} className="accommodation-form">
-        {/* Basic Information Section */}
-        <section className="form-section">
-          <h2>Basic Information</h2>
-          <div className="form-group">
-            <label>Title*</label>
-            <input
-              type="text"
-              name="title"
-              value={formData.title}
-              onChange={handleChange}
-              required
-              placeholder="e.g., Premium Co-living Space in Bangalore"
-            />
-          </div>
-          
-          <div className="form-group">
-            <label>Description*</label>
-            <textarea
-              name="description"
-              value={formData.description}
-              onChange={handleChange}
-              required
-              rows={4}
-              placeholder="Describe your accommodation in detail..."
-            />
-          </div>
-          
-          <div className="form-group">
-            <label>Accommodation Type*</label>
-            <select
-              name="type"
-              value={formData.type}
-              onChange={handleChange}
-              required
-            >
-              <option value="PG">PG Accommodation</option>
-              <option value="Co-Living">Co-Living Space</option>
-            </select>
-          </div>
-        </section>
+      mediaFiles.forEach(file => {
+        formDataToSend.append('media', file);
+      });
 
-        {/* Location Section */}
-        <section className="form-section">
-          <h2>Location Details</h2>
-          
-          <div className="form-group">
-            <label>Search Location on Map*</label>
-            <LoadScript googleMapsApiKey="AIzaSyB6MA27FGtx8g83oF57MAxLAOdcs1rsu7c" libraries={['places']}>
-              <Autocomplete
-                onLoad={autocomplete => setAutocomplete(autocomplete)}
-                onPlaceChanged={onPlaceChanged}
-              >
-                <input
-                  type="text"
-                  placeholder="Enter complete address"
-                  className="map-search-input"
-                />
-              </Autocomplete>
-            </LoadScript>
-          </div>
-          
-          <div className="form-group">
-            <label>City*</label>
-            <select
-              name="address.city"
-              value={selectedCity}
-              onChange={(e) => {
-                setSelectedCity(e.target.value);
-                handleChange(e);
-              }}
-              required
-            >
-              <option value="">Select City</option>
-              {indianCities.map(city => (
-                <option key={city} value={city}>{city}</option>
-              ))}
-            </select>
-          </div>
-          
-          <div className="form-group">
-            <label>Street Address*</label>
-            <input
-              type="text"
-              name="address.street"
-              value={formData.address.street}
-              onChange={handleChange}
-              required
-            />
-          </div>
-          
-          <div className="form-group">
-            <label>Locality/Area*</label>
-            <input
-              type="text"
-              name="address.locality"
-              value={formData.address.locality}
-              onChange={handleChange}
-              required
-            />
-          </div>
-          
-          <div className="form-row">
+      let response;
+      if (editMode) {
+        response = await axios.put(
+          `${config.apiBaseUrl}/api/accommodations/${id}`,
+          formDataToSend,
+          {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+          }
+        );
+      } else {
+        response = await axios.post(
+          `${config.apiBaseUrl}/api/accommodations`,
+          formDataToSend,
+          {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+          }
+        );
+      }
+
+      navigate(`/listing-details/${response.data._id}`);
+    } catch (error) {
+      console.error('Submission error:', error);
+      alert(`Submission failed: ${error.response?.data?.message || error.message}`);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="accommodation-form-container">
+      <Header isLoggedIn={isLoggedIn} />
+      <div className="form-content">
+        <h1 className="form-title">
+          {editMode ? 'Edit Your PG Listing' : 'List Your PG / Co-living Space'}
+        </h1>
+        
+        <form onSubmit={handleSubmit} className="accommodation-form">
+          {/* Basic Information Section */}
+          <section className="form-section">
+            <h2>Basic Information</h2>
             <div className="form-group">
-              <label>State*</label>
+              <label>Title*</label>
               <input
                 type="text"
-                name="address.state"
-                value={formData.address.state}
+                name="title"
+                value={formData.title}
+                onChange={handleChange}
+                required
+                placeholder="e.g., Premium Co-living Space in Bangalore"
+              />
+            </div>
+            
+            <div className="form-group">
+              <label>Description*</label>
+              <textarea
+                name="description"
+                value={formData.description}
+                onChange={handleChange}
+                required
+                rows={3}
+                placeholder="Describe your accommodation in detail..."
+              />
+            </div>
+            
+            <div className="form-row">
+              <div className="form-group">
+                <label>Type*</label>
+                <select
+                  name="type"
+                  value={formData.type}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="PG">PG Accommodation</option>
+                  <option value="Co-Living">Co-Living Space</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label>Total Floors*</label>
+                <input
+                  type="number"
+                  name="totalFloors"
+                  value={formData.totalFloors}
+                  onChange={handleChange}
+                  min="1"
+                  required
+                />
+              </div>
+            </div>
+          </section>
+
+          {/* Location Section */}
+          <section className="form-section">
+            <h2>Location Details</h2>
+            
+            <div className="form-group">
+              <label>Search Location on Map*</label>
+              <LoadScript googleMapsApiKey="AIzaSyB6MA27FGtx8g83oF57MAxLAOdcs1rsu7c" libraries={['places']}>
+                <Autocomplete
+                  onLoad={autocomplete => setAutocomplete(autocomplete)}
+                  onPlaceChanged={onPlaceChanged}
+                >
+                  <input
+                    type="text"
+                    placeholder="Enter complete address"
+                    className="map-search-input"
+                  />
+                </Autocomplete>
+              </LoadScript>
+            </div>
+            
+            <div className="form-row">
+              <div className="form-group">
+                <label>City*</label>
+                <select
+                  name="address.city"
+                  value={selectedCity}
+                  onChange={(e) => {
+                    setSelectedCity(e.target.value);
+                    handleChange(e);
+                  }}
+                  required
+                >
+                  <option value="">Select City</option>
+                  {indianCities.map(city => (
+                    <option key={city} value={city}>{city}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="form-group">
+                <label>State*</label>
+                <input
+                  type="text"
+                  name="address.state"
+                  value={formData.address.state}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+            </div>
+            
+            <div className="form-group">
+              <label>Street Address*</label>
+              <input
+                type="text"
+                name="address.street"
+                value={formData.address.street}
                 onChange={handleChange}
                 required
               />
             </div>
             
-            <div className="form-group">
-              <label>Pincode</label>
+            <div className="form-row">
+              <div className="form-group">
+                <label>Locality/Area*</label>
+                <input
+                  type="text"
+                  name="address.locality"
+                  value={formData.address.locality}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
+              <div className="form-group">
+                <label>Pincode</label>
+                <input
+                  type="text"
+                  name="address.pincode"
+                  value={formData.address.pincode}
+                  onChange={handleChange}
+                />
+              </div>
+            </div>
+            
+            {formData.address.coordinates[0] !== 0 && (
+              <div className="map-preview">
+                <LoadScript googleMapsApiKey="AIzaSyB6MA27FGtx8g83oF57MAxLAOdcs1rsu7c">
+                  <GoogleMap
+                    mapContainerStyle={{ height: '250px', width: '100%' }}
+                    center={{ 
+                      lat: formData.address.coordinates[1], 
+                      lng: formData.address.coordinates[0] 
+                    }}
+                    zoom={15}
+                  >
+                    <Marker position={{ 
+                      lat: formData.address.coordinates[1], 
+                      lng: formData.address.coordinates[0] 
+                    }} />
+                  </GoogleMap>
+                </LoadScript>
+              </div>
+            )}
+          </section>
+
+          {/* Room Types Section */}
+          <section className="form-section">
+            <h2>Room Types & Pricing</h2>
+            
+            {formData.roomTypes.map((roomType, roomIndex) => (
+              <div key={roomIndex} className="room-type-card">
+                <div className="room-type-header">
+                  <h3>Room Type #{roomIndex + 1}</h3>
+                  <button 
+                    type="button" 
+                    className="remove-button"
+                    onClick={() => removeRoomType(roomIndex)}
+                    disabled={formData.roomTypes.length <= 1}
+                  >
+                    <FaMinus />
+                  </button>
+                </div>
+                
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Type*</label>
+                    <select
+                      value={roomType.type}
+                      onChange={(e) => handleRoomTypeChange(roomIndex, 'type', e.target.value)}
+                      required
+                    >
+                      <option value="Single">Single</option>
+                      <option value="Double Sharing">Double Sharing</option>
+                      <option value="Multi Sharing">Multi Sharing</option>
+                      <option value="Studio">Studio</option>
+                    </select>
+                  </div>
+                  
+                  <div className="form-group">
+                    <label>Total Rooms*</label>
+                    <input
+                      type="number"
+                      value={roomType.totalRooms}
+                      onChange={(e) => handleRoomTypeChange(roomIndex, 'totalRooms', parseInt(e.target.value))}
+                      min="1"
+                      required
+                    />
+                  </div>
+                </div>
+                
+                <div className="form-row">
+                  <div className="form-group">
+                    <label>Vacant Rooms*</label>
+                    <input
+                      type="number"
+                      value={roomType.vacantRooms}
+                      onChange={(e) => handleRoomTypeChange(roomIndex, 'vacantRooms', parseInt(e.target.value))}
+                      min="0"
+                      max={roomType.totalRooms}
+                      required
+                    />
+                  </div>
+                  
+                  <div className="form-group">
+                    <label>Price (₹)*</label>
+                    <input
+                      type="number"
+                      value={roomType.price}
+                      onChange={(e) => handleRoomTypeChange(roomIndex, 'price', parseInt(e.target.value))}
+                      min="0"
+                      required
+                    />
+                  </div>
+                </div>
+                
+                <div className="form-group">
+                  <label>Room Facilities</label>
+                  <div className="facilities-grid">
+                    {roomType.facilities.map((facility, facilityIndex) => (
+                      <div key={facilityIndex} className="facility-item">
+                        <input
+                          type="checkbox"
+                          id={`room-${roomIndex}-facility-${facilityIndex}`}
+                          checked={facility.available}
+                          onChange={() => toggleRoomFacility(roomIndex, facilityIndex)}
+                        />
+                        <label htmlFor={`room-${roomIndex}-facility-${facilityIndex}`}>
+                          {facility.name}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ))}
+            
+            <button 
+              type="button" 
+              className="add-button"
+              onClick={addRoomType}
+            >
+              <FaPlus /> Add Room Type
+            </button>
+          </section>
+
+          {/* Common Facilities Section */}
+          <section className="form-section">
+            <h2>Common Facilities</h2>
+            
+            <div className="facilities-grid">
+              {formData.commonFacilities.map((facility, index) => (
+                <div key={index} className="facility-item">
+                  <input
+                    type="checkbox"
+                    id={`common-facility-${index}`}
+                    checked={facility.available}
+                    onChange={() => toggleCommonFacility(index)}
+                  />
+                  <label htmlFor={`common-facility-${index}`}>
+                    {facility.name}
+                  </label>
+                  <button 
+                    type="button" 
+                    className="remove-icon-button"
+                    onClick={() => removeCommonFacility(index)}
+                  >
+                    <FaMinus />
+                  </button>
+                </div>
+              ))}
+            </div>
+            
+            <div className="add-facility-container">
               <input
                 type="text"
-                name="address.pincode"
-                value={formData.address.pincode}
-                onChange={handleChange}
+                value={newFacility}
+                onChange={(e) => setNewFacility(e.target.value)}
+                placeholder="Enter new facility"
               />
+              <button 
+                type="button" 
+                className="add-button"
+                onClick={addCommonFacility}
+              >
+                <FaPlus />
+              </button>
             </div>
-          </div>
-          
-          <div className="form-group">
-            <label>Total Floors*</label>
-            <input
-              type="number"
-              name="totalFloors"
-              value={formData.totalFloors}
-              onChange={handleChange}
-              min="1"
-              required
-            />
-          </div>
-          
-          {formData.address.coordinates[0] !== 0 && (
-            <div className="map-preview">
-              <LoadScript googleMapsApiKey="YOUR_GOOGLE_MAPS_API_KEY">
-                <GoogleMap
-                  mapContainerStyle={{ height: '300px', width: '100%' }}
-                  center={{ 
-                    lat: formData.address.coordinates[1], 
-                    lng: formData.address.coordinates[0] 
-                  }}
-                  zoom={15}
-                >
-                  <Marker position={{ 
-                    lat: formData.address.coordinates[1], 
-                    lng: formData.address.coordinates[0] 
-                  }} />
-                </GoogleMap>
-              </LoadScript>
-            </div>
-          )}
-        </section>
+          </section>
 
-        {/* Room Types Section */}
-        <section className="form-section">
-          <h2>Room Types & Pricing</h2>
-          
-          {formData.roomTypes.map((roomType, roomIndex) => (
-            <div key={roomIndex} className="room-type-card">
-              <div className="room-type-header">
-                <h3>Room Type #{roomIndex + 1}</h3>
-                <button 
-                  type="button" 
-                  className="remove-button"
-                  onClick={() => removeRoomType(roomIndex)}
-                  disabled={formData.roomTypes.length <= 1}
-                >
-                  <FaMinus /> Remove
-                </button>
+          {/* Meals Section */}
+          <section className="form-section">
+            <h2>Meal Options</h2>
+            
+            <div className="form-group">
+              <label>Meals Provided</label>
+              <div className="checkbox-group">
+                <label>
+                  <input
+                    type="checkbox"
+                    name="meals.breakfast"
+                    checked={formData.meals.breakfast}
+                    onChange={handleChange}
+                  />
+                  Breakfast
+                </label>
+                
+                <label>
+                  <input
+                    type="checkbox"
+                    name="meals.lunch"
+                    checked={formData.meals.lunch}
+                    onChange={handleChange}
+                  />
+                  Lunch
+                </label>
+                
+                <label>
+                  <input
+                    type="checkbox"
+                    name="meals.dinner"
+                    checked={formData.meals.dinner}
+                    onChange={handleChange}
+                  />
+                  Dinner
+                </label>
               </div>
-              
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Room Type*</label>
-                  <select
-                    value={roomType.type}
-                    onChange={(e) => handleRoomTypeChange(roomIndex, 'type', e.target.value)}
-                    required
+            </div>
+            
+            <div className="form-group">
+              <label>Cuisines</label>
+              <div className="checkbox-group">
+                {['South Indian', 'North Indian', 'Continental', 'Chinese', 'Veg', 'Non-Veg'].map(cuisine => (
+                  <label key={cuisine}>
+                    <input
+                      type="checkbox"
+                      checked={formData.meals.cuisines.includes(cuisine)}
+                      onChange={() => handleCuisineChange(cuisine)}
+                    />
+                    {cuisine}
+                  </label>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          {/* House Rules Section */}
+          <section className="form-section">
+            <h2>House Rules</h2>
+            
+            <ul className="rules-list">
+              {formData.rules.map((rule, index) => (
+                <li key={index}>
+                  {rule}
+                  <button 
+                    type="button" 
+                    className="remove-icon-button"
+                    onClick={() => removeRule(index)}
                   >
-                    <option value="Single">Single</option>
-                    <option value="Double Sharing">Double Sharing</option>
-                    <option value="Multi Sharing">Multi Sharing (3+ beds)</option>
-                    <option value="Studio">Studio Apartment</option>
-                  </select>
-                </div>
-                
-                <div className="form-group">
-                  <label>Total Rooms*</label>
+                    <FaMinus />
+                  </button>
+                </li>
+              ))}
+            </ul>
+            
+            <div className="add-rule-container">
+              <input
+                type="text"
+                value={newRule}
+                onChange={(e) => setNewRule(e.target.value)}
+                placeholder="Enter new rule"
+              />
+              <button 
+                type="button" 
+                className="add-button"
+                onClick={addRule}
+              >
+                <FaPlus />
+              </button>
+            </div>
+          </section>
+
+          {/* Media Upload Section */}
+          <section className="form-section">
+            <h2>Photos & Videos</h2>
+            
+            <div className="form-group">
+              <label>Upload Media* (Min 3 photos)</label>
+              <div className="file-upload-container">
+                <label className="file-upload-button">
+                  <FaUpload /> Choose Files
                   <input
-                    type="number"
-                    value={roomType.totalRooms}
-                    onChange={(e) => handleRoomTypeChange(roomIndex, 'totalRooms', parseInt(e.target.value))}
-                    min="1"
-                    required
+                    type="file"
+                    accept="image/*,video/*"
+                    multiple
+                    onChange={handleMediaUpload}
+                    style={{ display: 'none' }}
                   />
-                </div>
-                
-                <div className="form-group">
-                  <label>Vacant Rooms*</label>
-                  <input
-                    type="number"
-                    value={roomType.vacantRooms}
-                    onChange={(e) => handleRoomTypeChange(roomIndex, 'vacantRooms', parseInt(e.target.value))}
-                    min="0"
-                    max={roomType.totalRooms}
-                    required
-                  />
-                </div>
-                
-                <div className="form-group">
-                  <label>Monthly Price (₹)*</label>
-                  <input
-                    type="number"
-                    value={roomType.price}
-                    onChange={(e) => handleRoomTypeChange(roomIndex, 'price', parseInt(e.target.value))}
-                    min="0"
-                    required
-                  />
-                </div>
+                </label>
+                <span>{mediaFiles.length + existingImages.length} files selected</span>
               </div>
               
-              <div className="form-group">
-                <label>Room Facilities</label>
-                <div className="facilities-grid">
-                  {roomType.facilities.map((facility, facilityIndex) => (
-                    <div key={facilityIndex} className="facility-item">
-                      <input
-                        type="checkbox"
-                        id={`room-${roomIndex}-facility-${facilityIndex}`}
-                        checked={facility.available}
-                        onChange={() => toggleRoomFacility(roomIndex, facilityIndex)}
+              {(mediaFiles.length > 0 || existingImages.length > 0) && (
+                <div className="media-preview">
+                  {existingImages.map((image, index) => (
+                    <div key={`existing-${index}`} className="media-thumbnail">
+                      <img 
+                        src={`${config.apiBaseUrl}/${image.path}`}
+                        alt={`Existing ${index}`} 
                       />
-                      <label htmlFor={`room-${roomIndex}-facility-${facilityIndex}`}>
-                        {facility.name}
-                      </label>
+                      <button 
+                        type="button" 
+                        className="remove-media-button"
+                        onClick={() => removeExistingImage(index)}
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                  
+                  {mediaFiles.map((file, index) => (
+                    <div key={`new-${index}`} className="media-thumbnail">
+                      {file.type.startsWith('image/') ? (
+                        <img 
+                          src={URL.createObjectURL(file)} 
+                          alt={`Preview ${index}`} 
+                        />
+                      ) : (
+                        <video>
+                          <source src={URL.createObjectURL(file)} type={file.type} />
+                        </video>
+                      )}
+                      <button 
+                        type="button" 
+                        className="remove-media-button"
+                        onClick={() => removeMediaFile(index)}
+                      >
+                        ×
+                      </button>
                     </div>
                   ))}
                 </div>
-              </div>
+              )}
             </div>
-          ))}
-          
-          <button 
-            type="button" 
-            className="add-button"
-            onClick={addRoomType}
-          >
-            <FaPlus /> Add Another Room Type
-          </button>
-        </section>
+          </section>
 
-        {/* Common Facilities Section */}
-        <section className="form-section">
-          <h2>Common Facilities</h2>
-          
-          <div className="facilities-grid">
-            {formData.commonFacilities.map((facility, index) => (
-              <div key={index} className="facility-item">
-                <input
-                  type="checkbox"
-                  id={`common-facility-${index}`}
-                  checked={facility.available}
-                  onChange={() => toggleCommonFacility(index)}
-                />
-                <label htmlFor={`common-facility-${index}`}>
-                  {facility.name}
-                </label>
-                <button 
-                  type="button" 
-                  className="remove-icon-button"
-                  onClick={() => removeCommonFacility(index)}
-                >
-                  <FaMinus />
-                </button>
-              </div>
-            ))}
-          </div>
-          
-          <div className="add-facility-container">
-            <input
-              type="text"
-              value={newFacility}
-              onChange={(e) => setNewFacility(e.target.value)}
-              placeholder="Enter new facility name"
-            />
-            <button 
-              type="button" 
-              className="add-button"
-              onClick={addCommonFacility}
-            >
-              <FaPlus /> Add Facility
-            </button>
-          </div>
-        </section>
-
-        {/* Meals Section */}
-        <section className="form-section">
-          <h2>Meal Options</h2>
-          
-          <div className="form-group">
-            <label>Meals Provided</label>
-            <div className="checkbox-group">
-              <label>
-                <input
-                  type="checkbox"
-                  name="meals.breakfast"
-                  checked={formData.meals.breakfast}
-                  onChange={handleChange}
-                />
-                Breakfast
-              </label>
-              
-              <label>
-                <input
-                  type="checkbox"
-                  name="meals.lunch"
-                  checked={formData.meals.lunch}
-                  onChange={handleChange}
-                />
-                Lunch
-              </label>
-              
-              <label>
-                <input
-                  type="checkbox"
-                  name="meals.dinner"
-                  checked={formData.meals.dinner}
-                  onChange={handleChange}
-                />
-                Dinner
-              </label>
-              
-              <label>
-                <input
-                  type="checkbox"
-                  name="meals.packedLunch"
-                  checked={formData.meals.packedLunch}
-                  onChange={handleChange}
-                />
-                Packed Lunch Box
-              </label>
-            </div>
-          </div>
-          
-          <div className="form-group">
-            <label>Cuisines Offered</label>
-            <div className="checkbox-group">
-              {['South Indian', 'North Indian', 'Continental', 'Chinese', 'Veg', 'Non-Veg'].map(cuisine => (
-                <label key={cuisine}>
-                  <input
-                    type="checkbox"
-                    checked={formData.meals.cuisines.includes(cuisine)}
-                    onChange={() => handleCuisineChange(cuisine)}
-                  />
-                  {cuisine}
-                </label>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* House Rules Section */}
-        <section className="form-section">
-          <h2>House Rules</h2>
-          
-          <ul className="rules-list">
-            {formData.rules.map((rule, index) => (
-              <li key={index}>
-                {rule}
-                <button 
-                  type="button" 
-                  className="remove-icon-button"
-                  onClick={() => removeRule(index)}
-                >
-                  <FaMinus />
-                </button>
-              </li>
-            ))}
-          </ul>
-          
-          <div className="add-rule-container">
-            <input
-              type="text"
-              value={newRule}
-              onChange={(e) => setNewRule(e.target.value)}
-              placeholder="Enter new rule"
-            />
-            <button 
-              type="button" 
-              className="add-button"
-              onClick={addRule}
-            >
-              <FaPlus /> Add Rule
-            </button>
-          </div>
-        </section>
-
-        {/* Media Upload Section */}
-        <section className="form-section">
-          <h2>Photos & Videos</h2>
-          
-          <div className="form-group">
-            <label>Upload Photos/Videos* (Min 3 photos)</label>
-            <div className="file-upload-container">
-              <label className="file-upload-button">
-                <FaUpload /> Choose Files
-                <input
-                  type="file"
-                  accept="image/*,video/*"
-                  multiple
-                  onChange={handleMediaUpload}
-                  style={{ display: 'none' }}
-                />
-              </label>
-              <span>{mediaFiles.length} files selected</span>
-            </div>
+          {/* Contact Information */}
+          <section className="form-section">
+            <h2>Contact Information</h2>
             
-            {mediaFiles.length > 0 && (
-              <div className="media-preview">
-                {mediaFiles.map((file, index) => (
-                  <div key={index} className="media-thumbnail">
-                    {file.type.startsWith('image/') ? (
-                      <img 
-                        src={URL.createObjectURL(file)} 
-                        alt={`Preview ${index}`} 
-                      />
-                    ) : (
-                      <video>
-                        <source src={URL.createObjectURL(file)} type={file.type} />
-                      </video>
-                    )}
-                    <button 
-                      type="button" 
-                      className="remove-media-button"
-                      onClick={() => removeMediaFile(index)}
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </section>
+            <div className="form-group">
+              <label>Contact Number*</label>
+              <input
+                type="tel"
+                name="contactNumber"
+                value={formData.contactNumber}
+                onChange={handleChange}
+                required
+                placeholder="+91 XXXXXXXXXX"
+              />
+            </div>
+          </section>
 
-        {/* Contact Information */}
-        <section className="form-section">
-          <h2>Contact Information</h2>
-          
-          <div className="form-group">
-            <label>Contact Number*</label>
-            <input
-              type="tel"
-              name="contactNumber"
-              value={formData.contactNumber}
-              onChange={handleChange}
-              required
-              placeholder="+91 XXXXXXXXXX"
-            />
+          {/* Form Submission */}
+          <div className="form-actions">
+            <button 
+              type="button" 
+              className="secondary-button"
+              onClick={() => navigate(-1)}
+            >
+              Cancel
+            </button>
+            <button 
+              type="submit" 
+              className="primary-button"
+              disabled={isSubmitting || (mediaFiles.length + existingImages.length) < 3}
+            >
+              {isSubmitting ? 'Submitting...' : (editMode ? 'Update Listing' : 'Submit Listing')}
+            </button>
           </div>
-        </section>
-
-        {/* Form Submission */}
-        <div className="form-actions">
-          <button 
-            type="button" 
-            className="secondary-button"
-            onClick={() => navigate(-1)}
-          >
-            Cancel
-          </button>
-          <button 
-            type="submit" 
-            className="primary-button"
-            disabled={isSubmitting || mediaFiles.length < 3}
-          >
-            {isSubmitting ? 'Submitting...' : 'Submit Listing'}
-          </button>
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
   );
 };

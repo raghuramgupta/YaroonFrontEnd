@@ -442,6 +442,15 @@ function UpdatedHome() {
                   onChange={() => setSearchType('roommates')}
                 />
                 <span>Roommates</span>
+              </label><label className={`radio-option ${isMobile ? 'mobile' : ''}`}>
+                <input
+                  type="radio"
+                  name="searchType"
+                  value="PG/Co-Living"
+                  checked={searchType === 'PGAccomodation'}
+                  onChange={() => setSearchType('PGAccomodation')}
+                />
+                <span>PG/Co-Living</span>
               </label>
             </div>
             

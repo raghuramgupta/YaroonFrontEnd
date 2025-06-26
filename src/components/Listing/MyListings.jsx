@@ -8,21 +8,28 @@ import { faFacebookF, faTwitter, faInstagram } from '@fortawesome/free-brands-sv
 import config from '../../config';
 
 /**
- * MyListings – shows two tabbed views:
+ * MyListings – shows three tabbed views:
  * 1. "Roommate Needed" – the current user's active listings
- * 2. "Rooms Needed" – wanted‑room listings posted by any user
+ * 2. "Rooms Needed" – wanted-room listings posted by any user
+ * 3. "PG Listings" – PG accommodations posted by the current user
  */
 const MyListings = () => {
   const navigate = useNavigate();
-const [wantedFilters, setWantedFilters] = useState({
-  preferredLocation: '',
-  budget: '',
-  postedOn: ''
-});
+  const [wantedFilters, setWantedFilters] = useState({
+    preferredLocation: '',
+    budget: '',
+    postedOn: ''
+  });
+  const [pgFilters, setPgFilters] = useState({
+    propertyAddress: '',
+    rent: '',
+    availableFrom: ''
+  });
   // state
   const [listings, setListings] = useState([]);            // active property listings that belong to the current user
   const [wantedListings, setWantedListings] = useState([]); // people looking for rooms
-  const [activeTab, setActiveTab] = useState('roommate');   // "roommate" | "rooms"
+  const [pgListings, setPgListings] = useState([]);        // PG accommodations
+  const [activeTab, setActiveTab] = useState('roommate');   // "roommate" | "rooms" | "pg"
   const [filters, setFilters] = useState({
     propertyAddress: '',
     rent: '',
@@ -35,12 +42,14 @@ const [wantedFilters, setWantedFilters] = useState({
   const [showFilters, setShowFilters] = useState(false);
   const currentUserId = localStorage.getItem('currentUser');
   const [showWantedFilters, setShowWantedFilters] = useState(false);
+  const [showPgFilters, setShowPgFilters] = useState(false);
+
   /* ---------------------------------------------------------------------- */
   /* Fetch data once on mount                                               */
   /* ---------------------------------------------------------------------- */
   useEffect(() => {
     const fetchData = async () => {
-      await Promise.all([fetchUserListings(), fetchWantedListings()]);
+      await Promise.all([fetchUserListings(), fetchWantedListings(), fetchPgListings()]);
     };
     fetchData();
   }, []);
@@ -67,7 +76,7 @@ const [wantedFilters, setWantedFilters] = useState({
     }
   };
   
-  // fetch wanted‑room listings (rooms needed)
+  // fetch wanted-room listings (rooms needed)
   const fetchWantedListings = async () => {
     const currentUserKey = localStorage.getItem('currentUser');
     if (!currentUserKey) return;
@@ -87,11 +96,48 @@ const [wantedFilters, setWantedFilters] = useState({
     }
   };
 
+  const fetchPgListings = async () => {
+  const currentUserKey = localStorage.getItem('currentUser');
+  if (!currentUserKey) return;
+
+  try {
+    const res = await fetch(`${config.apiBaseUrl}/api/accommodations/user/${encodeURIComponent(currentUserKey)}`);
+    
+    if (!res.ok) {
+      console.error('Server error:', await res.text());
+      return;
+    }
+
+    const data = await res.json();
+    console.log('PG Listings data:', data); // Add this for debugging
+    
+    if (Array.isArray(data)) {
+      // Transform the data to match your table structure
+      const transformedData = data.map(item => ({
+        _id: item._id,
+        propertyAddress: item.address ? `${item.address.street || ''}, ${item.address.city || ''}` : 'N/A',
+        rent: item.roomTypes?.[0]?.price || 'N/A',
+        availableFrom: item.availableFrom || 'N/A',
+        // Add other fields you need
+      }));
+      setPgListings(transformedData);
+    }
+  } catch (err) {
+    console.error('Error fetching PG listings:', err);
+  }
+};
   /* ---------------------------------------------------------------------- */
   /* Sorting and Filtering                                                  */
   /* ---------------------------------------------------------------------- */
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({
+      ...prev,
+      [key]: value
+    }));
+  };
+
+  const handlePgFilterChange = (key, value) => {
+    setPgFilters(prev => ({
       ...prev,
       [key]: value
     }));
@@ -149,6 +195,34 @@ const [wantedFilters, setWantedFilters] = useState({
     return filteredListings;
   };
 
+  const filteredAndSortedWantedListings = () => {
+    return [...wantedListings].filter(listing => {
+      const matchesLocation = (listing.preferredLocation || '')
+        .toLowerCase()
+        .includes(wantedFilters.preferredLocation.toLowerCase());
+        
+      const matchesBudget = (listing.budget || '')
+        .toString()
+        .includes(wantedFilters.budget);
+        
+      const matchesDate = new Date(listing.createdAt)
+        .toLocaleDateString()
+        .includes(wantedFilters.postedOn);
+        
+      return matchesLocation && matchesBudget && matchesDate;
+    });
+  };
+
+  const filteredAndSortedPgListings = () => {
+    return [...pgListings].filter(listing => {
+      return (
+        (listing.propertyAddress || '').toLowerCase().includes(pgFilters.propertyAddress.toLowerCase()) &&
+        (listing.rent || '').toString().includes(pgFilters.rent) &&
+        (listing.availableFrom || '').toLowerCase().includes(pgFilters.availableFrom.toLowerCase())
+      );
+    });
+  };
+
   /* ---------------------------------------------------------------------- */
   /* Actions – edit / delete / archive / share (only for own listings)      */
   /* ---------------------------------------------------------------------- */
@@ -184,7 +258,7 @@ const [wantedFilters, setWantedFilters] = useState({
     }
   };
 
-  const handleEdit = (listingId) => navigate(`/edit-listing/${listingId}`);;
+  const handleEdit = (listingId) => navigate(`/edit-listing/${listingId}`);
 
   const share = (platform, listing) => {
     const url = encodeURIComponent(window.location.href);
@@ -200,6 +274,7 @@ const [wantedFilters, setWantedFilters] = useState({
     }
     window.open(shareUrl, '_blank');
   };
+
   const handleWantedEdit = (listingId) => navigate(`/edit-wanted-listing/${listingId}`);
 
   const handleWantedDelete = async (id) => {
@@ -231,29 +306,44 @@ const [wantedFilters, setWantedFilters] = useState({
     }
     window.open(shareUrl, '_blank');
   };
-  const filteredAndSortedWantedListings = () => {
-  return [...wantedListings].filter(listing => {
-    const matchesLocation = (listing.preferredLocation || '')
-      .toLowerCase()
-      .includes(wantedFilters.preferredLocation.toLowerCase());
-      
-    const matchesBudget = (listing.budget || '')
-      .toString()
-      .includes(wantedFilters.budget);
-      
-    const matchesDate = new Date(listing.createdAt)
-      .toLocaleDateString()
-      .includes(wantedFilters.postedOn);
-      
-    return matchesLocation && matchesBudget && matchesDate;
-  });
-};
+
+  const handlePgEdit = (listingId) => navigate(`/edit-pg-listing/${listingId}`);
+
+  const handlePgDelete = async (id) => {
+    try {
+      const res = await fetch(`${config.apiBaseUrl}/api/pg-listings/${id}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setPgListings((prev) => prev.filter((l) => l._id !== id));
+      } else {
+        alert(data.message || 'Delete failed');
+      }
+    } catch (err) {
+      console.error('PG listing delete failed:', err);
+    }
+  };
+
+  const sharePg = (platform, listing) => {
+    const url = encodeURIComponent(window.location.href);
+    const text = encodeURIComponent(`Check out this PG accommodation at ${listing.propertyAddress} (₹${listing.rent})`);
+    let shareUrl = '';
+    if (platform === 'facebook') {
+      shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${url}&quote=${text}`;
+    } else if (platform === 'twitter') {
+      shareUrl = `https://twitter.com/intent/tweet?text=${text}&url=${url}`;
+    } else if (platform === 'instagram') {
+      return; // no direct share support
+    }
+    window.open(shareUrl, '_blank');
+  };
+
   /* ---------------------------------------------------------------------- */
   /* Render helpers                                                         */
   /* ---------------------------------------------------------------------- */
   const renderRoommateNeeded = () => {
     const displayListings = filteredAndSortedListings();
-    
     return displayListings.length === 0 ? (
       <div>
         <table className="listings-table" style={{ fontSize: '12px' }}>
@@ -366,8 +456,7 @@ const [wantedFilters, setWantedFilters] = useState({
               </th>
               <th colSpan={1}>
                 <div className="actions-header">
-                  Actions
-                  
+                  Actions    
                 </div>
               </th>
               <th>Share</th>
@@ -452,10 +541,87 @@ const [wantedFilters, setWantedFilters] = useState({
   };
 
   const renderRoomsNeeded = () => {
-  const displayListings = filteredAndSortedWantedListings();
-  
-  return displayListings.length === 0 ? (
-    <div>
+    const displayListings = filteredAndSortedWantedListings();
+    
+    return displayListings.length === 0 ? (
+      <div>
+        <table className="listings-table" style={{ fontSize: '12px' }}>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>
+                <div className="header-with-sort">
+                  Preferred Location
+                </div>
+              </th>
+              <th>
+                <div className="header-with-sort">
+                  Budget (₹)
+                </div>
+              </th>
+              <th>
+                <div className="header-with-sort">
+                  Posted On
+                </div>
+              </th>
+              <th>
+                <div className="actions-header">
+                  Actions
+                  <button 
+                    onClick={() => setShowWantedFilters(!showWantedFilters)} 
+                    className="filter-toggle-btn"
+                    title="Toggle filters"
+                  >
+                    <FontAwesomeIcon icon={faFilter} />
+                  </button>
+                </div>
+              </th>
+              <th>Share</th>
+            </tr>
+            {showWantedFilters && (
+              <tr className="filter-row">
+                <th></th>
+                <th>
+                  <input
+                    type="text"
+                    placeholder="Filter location..."
+                    value={wantedFilters.preferredLocation}
+                    onChange={(e) => setWantedFilters({...wantedFilters, preferredLocation: e.target.value})}
+                    className="filter-input"
+                  />
+                </th>
+                <th>
+                  <input
+                    type="text"
+                    placeholder="Filter budget..."
+                    value={wantedFilters.budget}
+                    onChange={(e) => setWantedFilters({...wantedFilters, budget: e.target.value})}
+                    className="filter-input"
+                  />
+                </th>
+                <th>
+                  <input
+                    type="text"
+                    placeholder="Filter date..."
+                    value={wantedFilters.postedOn}
+                    onChange={(e) => setWantedFilters({...wantedFilters, postedOn: e.target.value})}
+                    className="filter-input"
+                  />
+                </th>
+                <th colSpan={1}>
+                  
+                </th>
+              </tr>
+            )}
+          </thead>
+          <tbody>
+            <tr>
+              <td colSpan="6" className="no-results">No wanted listings found matching your filters</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    ) : (
       <table className="listings-table" style={{ fontSize: '12px' }}>
         <thead>
           <tr>
@@ -526,133 +692,271 @@ const [wantedFilters, setWantedFilters] = useState({
           )}
         </thead>
         <tbody>
-          <tr>
-            <td colSpan="6" className="no-results">No wanted listings found matching your filters</td>
-          </tr>
+          {displayListings.map((wl, idx) => (
+            <tr key={wl._id}>
+              <td>{idx + 1}</td>
+              <td>{wl.preferredLocation || 'N/A'}</td>
+              <td>{wl.budget || 'N/A'}</td>
+              <td>{new Date(wl.createdAt).toLocaleDateString()}</td>
+              <td>
+                <div className="action-buttons">
+                  <button
+                    onClick={() => handleWantedEdit(wl._id)}
+                    className="action-btn edit-btn"
+                  >
+                    <FontAwesomeIcon icon={faEdit} />
+                  </button>
+                  <button
+                    onClick={() => handleWantedDelete(wl._id)}
+                    className="action-btn delete-btn"
+                  >
+                    <FontAwesomeIcon icon={faTrash} />
+                  </button>
+                </div>
+              </td>
+              <td>
+                <div className="action-buttons">
+                  <button
+                    onClick={() => shareWanted('facebook', wl)}
+                    className="share-btn facebook-btn"
+                  >
+                    <FontAwesomeIcon icon={faFacebookF} />
+                  </button>
+                  <button
+                    onClick={() => shareWanted('twitter', wl)}
+                    className="share-btn twitter-btn"
+                  >
+                    <FontAwesomeIcon icon={faTwitter} />
+                  </button>
+                  <button
+                    onClick={() => shareWanted('instagram', wl)}
+                    className="share-btn instagram-btn"
+                  >
+                    <FontAwesomeIcon icon={faInstagram} />
+                  </button>
+                </div>
+              </td>
+            </tr>
+          ))}
         </tbody>
       </table>
-    </div>
-  ) : (
-    <table className="listings-table" style={{ fontSize: '12px' }}>
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>
-            <div className="header-with-sort">
-              Preferred Location
-            </div>
-          </th>
-          <th>
-            <div className="header-with-sort">
-              Budget (₹)
-            </div>
-          </th>
-          <th>
-            <div className="header-with-sort">
-              Posted On
-            </div>
-          </th>
-          <th>
-            <div className="actions-header">
-              Actions
-              <button 
-                onClick={() => setShowWantedFilters(!showWantedFilters)} 
-                className="filter-toggle-btn"
-                title="Toggle filters"
-              >
-                <FontAwesomeIcon icon={faFilter} />
-              </button>
-            </div>
-          </th>
-          <th>Share</th>
-        </tr>
-        {showWantedFilters && (
-          <tr className="filter-row">
-            <th></th>
-            <th>
-              <input
-                type="text"
-                placeholder="Filter location..."
-                value={wantedFilters.preferredLocation}
-                onChange={(e) => setWantedFilters({...wantedFilters, preferredLocation: e.target.value})}
-                className="filter-input"
-              />
-            </th>
-            <th>
-              <input
-                type="text"
-                placeholder="Filter budget..."
-                value={wantedFilters.budget}
-                onChange={(e) => setWantedFilters({...wantedFilters, budget: e.target.value})}
-                className="filter-input"
-              />
-            </th>
-            <th>
-              <input
-                type="text"
-                placeholder="Filter date..."
-                value={wantedFilters.postedOn}
-                onChange={(e) => setWantedFilters({...wantedFilters, postedOn: e.target.value})}
-                className="filter-input"
-              />
-            </th>
-            <th colSpan={1}>
-              
-            </th>
-          </tr>
-        )}
-      </thead>
-      <tbody>
-        {displayListings.map((wl, idx) => (
-          <tr key={wl._id}>
-            <td>{idx + 1}</td>
-            <td>{wl.preferredLocation || 'N/A'}</td>
-            <td>{wl.budget || 'N/A'}</td>
-            <td>{new Date(wl.createdAt).toLocaleDateString()}</td>
-            <td>
-              <div className="action-buttons">
-                <button
-                  onClick={() => handleWantedEdit(wl._id)}
-                  className="action-btn edit-btn"
-                >
-                  <FontAwesomeIcon icon={faEdit} />
-                </button>
-                <button
-                  onClick={() => handleWantedDelete(wl._id)}
-                  className="action-btn delete-btn"
-                >
-                  <FontAwesomeIcon icon={faTrash} />
-                </button>
+    );
+  };
+
+  const renderPgListings = () => {
+    const displayListings = filteredAndSortedPgListings();
+    
+    return displayListings.length === 0 ? (
+      <div>
+        <table className="listings-table" style={{ fontSize: '12px' }}>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th className="address-column">
+                <div className="header-with-sort">
+                  <div className="sortable-header">
+                    Address
+                  </div>
+                </div>
+              </th>
+              <th>
+                <div className="header-with-sort">
+                  <div className="sortable-header">
+                    Rent (₹)
+                  </div>
+                </div>
+              </th>
+              <th>
+                <div className="header-with-sort">
+                  <div className="sortable-header">
+                    Available From
+                  </div>
+                </div>
+              </th>
+              <th>
+                <div className="actions-header">
+                  Actions
+                  <button 
+                    onClick={() => setShowPgFilters(!showPgFilters)} 
+                    className="filter-toggle-btn"
+                    title="Toggle filters"
+                  >
+                    <FontAwesomeIcon icon={faFilter} />
+                  </button>
+                </div>
+              </th>
+              <th>Share</th>
+            </tr>
+            {showPgFilters && (
+              <tr className="filter-row">
+                <th></th>
+                <th>
+                  <input
+                    type="text"
+                    placeholder="Filter address..."
+                    value={pgFilters.propertyAddress}
+                    onChange={(e) => handlePgFilterChange('propertyAddress', e.target.value)}
+                    className="filter-input"
+                  />
+                </th>
+                <th>
+                  <input
+                    type="text"
+                    placeholder="Filter rent..."
+                    value={pgFilters.rent}
+                    onChange={(e) => handlePgFilterChange('rent', e.target.value)}
+                    className="filter-input"
+                  />
+                </th>
+                <th>
+                  <input
+                    type="text"
+                    placeholder="Filter date..."
+                    value={pgFilters.availableFrom}
+                    onChange={(e) => handlePgFilterChange('availableFrom', e.target.value)}
+                    className="filter-input"
+                  />
+                </th>
+                <th colSpan={2}>
+                  
+                </th>
+              </tr>
+            )}
+          </thead>
+          <tbody>
+            <tr>
+              <td colSpan="6" className="no-results">No PG listings found matching your filters</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    ) : (
+      <table className="listings-table" style={{ fontSize: '12px' }}>
+        <thead>
+          <tr>
+            <th>#</th>
+            <th className="address-column">
+              <div className="header-with-sort">
+                <div className="sortable-header">
+                  <button 
+                    onClick={() => setShowPgFilters(!showPgFilters)} 
+                    className="filter-toggle-btn"
+                    title="Toggle filters"
+                  >
+                    <FontAwesomeIcon icon={faFilter} />
+                  </button>
+                  Address
+                </div>
               </div>
-            </td>
-            <td>
-              <div className="action-buttons">
-                <button
-                  onClick={() => shareWanted('facebook', wl)}
-                  className="share-btn facebook-btn"
-                >
-                  <FontAwesomeIcon icon={faFacebookF} />
-                </button>
-                <button
-                  onClick={() => shareWanted('twitter', wl)}
-                  className="share-btn twitter-btn"
-                >
-                  <FontAwesomeIcon icon={faTwitter} />
-                </button>
-                <button
-                  onClick={() => shareWanted('instagram', wl)}
-                  className="share-btn instagram-btn"
-                >
-                  <FontAwesomeIcon icon={faInstagram} />
-                </button>
+            </th>
+            <th>
+              <div className="header-with-sort">
+                <div className="sortable-header">
+                  Rent (₹)
+                </div>
               </div>
-            </td>
+            </th>
+            <th>
+              <div className="header-with-sort">
+                <div className="sortable-header">
+                  Available From
+                </div>
+              </div>
+            </th>
+            <th>
+              <div className="actions-header">
+                Actions
+              </div>
+            </th>
+            <th>Share</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
-  );
-};
+          {showPgFilters && (
+            <tr className="filter-row">
+              <th></th>
+              <th>
+                <input
+                  type="text"
+                  placeholder="Filter address..."
+                  value={pgFilters.propertyAddress}
+                  onChange={(e) => handlePgFilterChange('propertyAddress', e.target.value)}
+                  className="filter-input"
+                />
+              </th>
+              <th>
+                <input
+                  type="text"
+                  placeholder="Filter rent..."
+                  value={pgFilters.rent}
+                  onChange={(e) => handlePgFilterChange('rent', e.target.value)}
+                  className="filter-input"
+                />
+              </th>
+              <th>
+                <input
+                  type="text"
+                  placeholder="Filter date..."
+                  value={pgFilters.availableFrom}
+                  onChange={(e) => handlePgFilterChange('availableFrom', e.target.value)}
+                  className="filter-input"
+                />
+              </th>
+              <th colSpan={2}>
+                
+              </th>
+            </tr>
+          )}
+        </thead>
+        <tbody>
+          {displayListings.map((pg, idx) => (
+            <tr key={pg._id}>
+              <td>{idx + 1}</td>
+              <td className="address-column">{pg.propertyAddress || 'N/A'}</td>
+              <td>{pg.rent || 'N/A'}</td>
+              <td>{pg.availableFrom || 'N/A'}</td>
+              <td>
+                <div className="action-buttons">
+                  <button
+                    onClick={() => handlePgEdit(pg._id)}
+                    className="action-btn edit-btn"
+                  >
+                    <FontAwesomeIcon icon={faEdit} />
+                  </button>
+                  <button
+                    onClick={() => handlePgDelete(pg._id)}
+                    className="action-btn delete-btn"
+                  >
+                    <FontAwesomeIcon icon={faTrash} />
+                  </button>
+                </div>
+              </td>
+              <td>
+                <div className="action-buttons">
+                  <button
+                    onClick={() => sharePg('facebook', pg)}
+                    className="share-btn facebook-btn"
+                  >
+                    <FontAwesomeIcon icon={faFacebookF} />
+                  </button>
+                  <button
+                    onClick={() => sharePg('twitter', pg)}
+                    className="share-btn twitter-btn"
+                  >
+                    <FontAwesomeIcon icon={faTwitter} />
+                  </button>
+                  <button
+                    onClick={() => sharePg('instagram', pg)}
+                    className="share-btn instagram-btn"
+                  >
+                    <FontAwesomeIcon icon={faInstagram} />
+                  </button>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    );
+  };
 
   /* ---------------------------------------------------------------------- */
   /* JSX                                                                    */
@@ -673,11 +977,21 @@ const [wantedFilters, setWantedFilters] = useState({
         >
           Rooms Needed
         </button>
+        <button
+          className={`tab-btn ${activeTab === 'pg' ? 'active' : ''}`}
+          onClick={() => setActiveTab('pg')}
+        >
+          PG Listings
+        </button>
       </div>
 
       {/* Tab panels */}
       <div className="tab-panel">
-        {activeTab === 'roommate' ? renderRoommateNeeded() : renderRoomsNeeded()}
+        {activeTab === 'roommate' 
+          ? renderRoommateNeeded() 
+          : activeTab === 'rooms' 
+            ? renderRoomsNeeded() 
+            : renderPgListings()}
       </div>
     </div>
   );
