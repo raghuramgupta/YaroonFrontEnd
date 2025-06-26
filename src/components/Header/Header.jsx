@@ -134,17 +134,12 @@ const Header = ({ isLoggedIn = false, onLogout = () => {} }) => {
             </div>
           ) : (
             <div className="auth-buttons">
-              <button 
-                className="auth-button login-button"
-                onClick={() => navigate('/login')}
-              >
-                Log In
-              </button>
+              
               <button 
                 className="auth-button signup-button"
                 onClick={() => navigate('/signup')}
               >
-                Sign Up
+                Sign Up/Login
               </button>
             </div>
           )}

@@ -14,6 +14,7 @@ import ListingDetailsPage from './components/Home/ListingDetailsPage';
 import MessagesInbox from './components/UserProfile/MessagesInbox';
 import Dashboard from './components/Listing/Dashboard';
 import WantedRoomForm from './components/Listing/FlaWantedRoomForm';import CustomerSupport from './components/CustomerCare/CustomerSupport';
+import AccommodationForm from './components/Listing/AccommodationForm'
 
 function App() {
   return (<AuthProvider>
@@ -32,7 +33,9 @@ function App() {
         <Route path="/edit-listing/:listingId" element={<PropertyDescriptionForm />} />
         <Route path="/Daeshboard" element={<Dashboard />} />
         <Route path="/need-place" element={<WantedRoomForm />} />
-        <Route path="/edit-wanted-listing/:id" element={<WantedRoomForm />} /><Route path="/support" element={<CustomerSupport />} />
+        <Route path="/AccommodationForm" element={<AccommodationForm />} />
+        <Route path="/edit-wanted-listing/:id" element={<WantedRoomForm />} />
+        <Route path="/support" element={<CustomerSupport />} />
       </Routes>
     </AuthProvider>
   );

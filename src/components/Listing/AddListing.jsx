@@ -4,6 +4,7 @@ import './AddListing.css';
 import Header from '../Header/Header';
 import MyListings from './MyListings';
 import Dashboard from './Dashboard';
+import AccommodationForm from './AccommodationForm'
 
 const AddListing = ({ onBack }) => {
   const [selectedOption, setSelectedOption] = useState(null);
@@ -17,9 +18,10 @@ const AddListing = ({ onBack }) => {
     if (currentUserKey) {
       setIsLoggedIn(true);
     } else {
-      alert('Current user not found in localStorage');
+      alert('Please log in to access this feature');
+      navigate('/login');
     }
-  }, []);
+  }, [navigate]);
 
   const handleOptionChange = (option) => setSelectedOption(option);
 
@@ -28,8 +30,7 @@ const AddListing = ({ onBack }) => {
     const routeMap = {
       "List Room in your Property": "/room-in-shareholder",
       "I need a room": "/need-place",
-      "Student accommodation": "/student-accommodation",
-      "Homestay": "/homestay"
+      "PG /Co-Living": "/AccommodationForm"
     };
     const route = routeMap[selectedOption];
     if (route) {
@@ -37,123 +38,88 @@ const AddListing = ({ onBack }) => {
     }
   };
 
+  const accommodationOptions = [
+    { text: "List Room in your Property", icon: "🏠", description: "Rent out a room in your existing property" },
+    { text: "I need a room", icon: "🔍", description: "Find available rooms that match your needs" },
+    { text: "PG /Co-Living", icon: "🎓", description: "Find PGs and Co living spaces" }
+  ];
+
   return (
-    <div className="accommodation-form">
+    <div className="professional-accommodation-container">
       <Header isLoggedIn={isLoggedIn} />
 
-      {profile && (
-        <div className="current-user">
-          {/* Optional: Display user profile info here */}
-        </div>
-      )}
-
-      <div className="tabs-container">
-        <div className="tabs">
+      <div className="content-container">
+        <div className="navigation-tabs">
           <button
-            className={`tab-button ${activeTab === 'listings' ? 'active' : ''}`}
-            onClick={() => setActiveTab('listings')} style={{ fontSize: '12px',justifyContent:'center' }}
+            className={`nav-tab ${activeTab === 'listings' ? 'active' : ''}`}
+            onClick={() => setActiveTab('listings')}
           >
-            My Listings
+            <span className="tab-icon">📋</span>
+            <span className="tab-label">My Listings</span>
           </button>
           <button
-            className={`tab-button ${activeTab === 'add' ? 'active' : ''}`} style={{ fontSize: '12px',justifyContent:'center' }}
+            className={`nav-tab ${activeTab === 'add' ? 'active' : ''}`}
             onClick={() => setActiveTab('add')}
           >
-            Add New Listing
+            <span className="tab-icon">➕</span>
+            <span className="tab-label">Add Listing</span>
           </button>
           <button
-            className={`tab-button ${activeTab === 'dashboard' ? 'active' : ''}`} style={{ fontSize: '12px',justifyContent:'center' }}
+            className={`nav-tab ${activeTab === 'dashboard' ? 'active' : ''}`}
             onClick={() => setActiveTab('dashboard')}
           >
-            Dashboard
+            <span className="tab-icon">📊</span>
+            <span className="tab-label">Dashboard</span>
           </button>
         </div>
-      </div>
 
-      <div className="tab-content" style={{ fontSize: '12px',padding: '0px' }}>
-        {activeTab === 'listings' && <MyListings />}
+        <div className="main-content">
+          {activeTab === 'listings' && <MyListings />}
 
-        {activeTab === 'add' && (
-          <div className="listing-form" >
-            <h2 className="form-subtitle">What type of accommodation are you offering?</h2>
-            <div className="options-container" style={{ display: 'flex', gap: '2rem' }}>
-                {[
-                  { text: "List Room in your Property", icon: "🏠" },
-                  { text: "I need a room", icon: "🔍" }
-                ].map((option) => (
+          {activeTab === 'add' && (
+            <div className="professional-listing-form">
+              <div className="form-header">
+                <h2 className="form-title">Create New Listing</h2>
+                <p className="form-subtitle">Select the type of accommodation you want to list or find</p>
+              </div>
+              
+              <div className="options-grid">
+                {accommodationOptions.map((option) => (
                   <div
                     key={option.text}
-                    className={`card option-item ${selectedOption === option.text ? 'selected' : ''}`}
+                    className={`option-card ${selectedOption === option.text ? 'selected' : ''}`}
                     onClick={() => handleOptionChange(option.text)}
-                    style={{
-                      padding: '2rem',
-                      border: '1px solid #e0e0e0',
-                      borderRadius: '12px',
-                      cursor: 'pointer',
-                      flex: 1,
-                      minHeight: '180px', // Increased card height
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      backgroundColor: selectedOption === option.text ? '#f5f9ff' : '#ffffff',
-                      boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
-                      transition: 'all 0.3s ease',
-                      '&:hover': {
-                        transform: 'translateY(-5px)'
-                      }
-                    }}
                   >
-                    <input
-                      type="radio"
-                      id={option.text}
-                      name="accommodationType"
-                      value={option.text}
-                      checked={selectedOption === option.text}
-                      onChange={() => handleOptionChange(option.text)}
-                      hidden
-                    />
-                    <div style={{ 
-                      fontSize: '2.5rem',
-                      marginBottom: '1rem'
-                    }}>
-                      {option.icon}
-                    </div>
-                    <label 
-                      htmlFor={option.text} 
-                      style={{
-                        display: 'block',
-                        fontSize: '1.25rem',
-                        fontWeight: '600',
-                        color: '#000000', // Black text
-                        cursor: 'pointer',
-                        textAlign: 'center'
-                      }}
-                    >
-                      {option.text}
-                    </label>
+                    <div className="option-icon">{option.icon}</div>
+                    <h3 className="option-title">{option.text}</h3>
+                    <p className="option-description">{option.description}</p>
+                    
                   </div>
                 ))}
               </div>
 
-            <div className="form-footer">
-              <button type="button" className="back-button" onClick={onBack}>
-                Back
-              </button>
-              {selectedOption && (
+              <div className="form-actions">
+                <button 
+                  type="button" 
+                  className="secondary-button"
+                  onClick={onBack}
+                >
+                  Cancel
+                </button>
                 <button
                   type="button"
-                  className="next-button"
+                  className="primary-button"
                   onClick={handleNext}
+                  disabled={!selectedOption}
                 >
-                  Next
+                  Continue
                 </button>
-              )}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {activeTab === 'dashboard' && <Dashboard />}
+          {activeTab === 'dashboard' && <Dashboard />}
+        </div>
       </div>
     </div>
   );
