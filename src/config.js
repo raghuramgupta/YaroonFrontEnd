@@ -1,5 +1,5 @@
 const config = {
-  apiBaseUrl: 'http://localhost:5000'
+  apiBaseUrl: 'https://yaroonbackend.onrender.com'
 };
 
 export default config;

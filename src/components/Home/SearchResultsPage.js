@@ -8,34 +8,71 @@ import { AuthContext } from '../../context/AuthContext';
 import config from '../../config';
 
 // Utility function to normalize listing data
-const normalizeListing = (listing) => {
+const normalizeListing = (listing, listingType) => {
   let languages = [];
   if (Array.isArray(listing.languages)) {
     languages = listing.languages;
   } else if (typeof listing.languages === 'string') {
     languages = listing.languages.split(',').map(lang => lang.trim());
   }
-  return {
-    ...listing,
-    _id: listing._id || '',
+  
+  let propertyType = '';
+  if (listing.propertyType) {
+    propertyType = listing.propertyType;
+  } else if (listing.propertyStructure) {
+    propertyType = listing.propertyStructure;
+  } else if (listing.listingType) {
+    propertyType = listing.listingType;
+  }
+
+  // Common fields for all listing types
+  const baseFields = {
+    _id: listing._id || listing.id || '',
     title: listing.title || '',
-    propertyAddress: listing.propertyAddress || '',
-    rent: Number(listing.rent) || 0,
+    propertyAddress: listing.propertyAddress || listing.address?.street || listing.preferredLocation || '',
+    rent: Number(listing.rent) || Number(listing.budget) || 0,
     amenities: Array.isArray(listing.amenities) ? listing.amenities : [],
     images: Array.isArray(listing.images) ? listing.images : [],
-    propertyStructure: listing.propertyStructure || '',
-    roomSize: listing.roomSize || '',
-    gender: listing.gender || '',
-    foodchoices: listing.foodchoices || '',
-    userKey: listing.userKey || '',
-    availability: listing.availableFrom || '',
-    propertyType: listing.propertyStructure || '',
-    locality: listing.locality || '',
-    pets: listing.pets || '',
-    hobbies: Array.isArray(listing.hobbies) ? listing.hobbies : [],
-    postedBy: listing.postedBy || '', 
+    propertyType: propertyType,
+    locality: listing.locality || listing.address?.locality || '',
+    postedBy: listing.postedBy || listing.owner || listing.user || '',
     languages: languages,
+    userKey: listing.userKey || listing.user || '',
+    listingType: listingType || 'flat',
+    validPics: listing.validPics || []
   };
+  // Type-specific fields
+  if (listingType === 'roommate') {
+    return {
+      ...baseFields,
+      gender: listing.gender || '',
+      profession: listing.profession || '',
+      hobbies: Array.isArray(listing.hobbies) ? listing.hobbies : [],
+      lookingFor: listing.lookingFor || '',
+      age: listing.age || '',
+      about: listing.about || ''
+    };
+  } else if (listingType === 'pg') {
+    return {
+      ...baseFields,
+      foodIncluded: listing.foodIncluded || false,
+      sharingType: listing.sharingType || '',
+      pgType: listing.pgType || '',
+      rules: listing.rules || '',
+      meals: listing.meals || ''
+    };
+  } else {
+    // Default to flat listing
+    return {
+      ...baseFields,
+      roomSize: listing.roomSize || '',
+      gender: listing.gender || '',
+      foodchoices: listing.foodchoices || '',
+      availability: listing.availableFrom || '',
+      pets: listing.pets || '',
+      hobbies: Array.isArray(listing.hobbies) ? listing.hobbies : []
+    };
+  }
 };
 
 const SearchResultsPage = () => {
@@ -66,7 +103,10 @@ const SearchResultsPage = () => {
   const [favorites, setFavorites] = useState([]);
   const [activeFilter, setActiveFilter] = useState(null);
   const [myListings, setMyListings] = useState([]);
-  const [searchResults, setSearchResults] = useState(initialResults.map(normalizeListing));
+  const [searchResults, setSearchResults] = useState(
+    initialResults.map(listing => normalizeListing(listing, initialSearchType === 'roommates' ? 'roommate' : 
+      initialSearchType === 'pg' ? 'pg' : 'flat'))
+  );
   const [appliedFilterValues, setAppliedFilterValues] = useState(initialAppliedFilters);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [searchType, setSearchType] = useState(initialSearchType);
@@ -88,121 +128,118 @@ const SearchResultsPage = () => {
     propertyAgent: [], 
     pets: [],
   });
-const normalizeCityName = (city) => {
-  if (!city) return '';
-  
-  const cityVariations = {
-    'mumbai': ['bombay'],
-    'bangalore': ['bengaluru'],
-    'delhi': ['new delhi', 'ncr'],
-    'hyderabad': ['secunderabad'],
-    'chennai': ['madras'],
-    'kolkata': ['calcutta'],
-    'pune': ['poona']
-  };
-  
-  const lowerCity = city.toLowerCase().trim();
-  
-  for (const [mainCity, aliases] of Object.entries(cityVariations)) {
-    if (aliases.includes(lowerCity) || lowerCity.includes(mainCity)) {
-      return mainCity;
-    }
-  }
-  
-  return lowerCity.replace(/[^a-z]/g, '');
-};
+  const [isLoading, setIsLoading] = useState(false);
 
-const extractCityFromSearch = (searchText) => {
-  // Common Indian cities
-  const indianCities = ['mumbai', 'delhi', 'bangalore', 'hyderabad', 
-                       'chennai', 'kolkata', 'pune', 'ahmedabad', 'noida', 'gurugram'];
-  
-  const lowerSearch = searchText.toLowerCase();
-  
-  // Check each part of comma-separated address
-  const parts = lowerSearch.split(',');
-  for (const part of parts) {
-    const trimmed = part.trim();
-    // Check exact matches first
-    for (const city of indianCities) {
-      if (new RegExp(`\\b${city}\\b`).test(trimmed)) {
-        return city;
+  const normalizeCityName = (city) => {
+    if (!city) return '';
+    
+    const cityVariations = {
+      'mumbai': ['bombay'],
+      'bangalore': ['bengaluru'],
+      'delhi': ['new delhi', 'ncr'],
+      'hyderabad': ['secunderabad'],
+      'chennai': ['madras'],
+      'kolkata': ['calcutta'],
+      'pune': ['poona']
+    };
+    
+    const lowerCity = city.toLowerCase().trim();
+    
+    for (const [mainCity, aliases] of Object.entries(cityVariations)) {
+      if (aliases.includes(lowerCity) || lowerCity.includes(mainCity)) {
+        return mainCity;
       }
     }
-    // Then check normalized versions
-    const normalized = normalizeCityName(trimmed);
-    if (indianCities.includes(normalized)) {
-      return normalized;
+    
+    return lowerCity.replace(/[^a-z]/g, '');
+  };
+
+  const extractCityFromSearch = (searchText) => {
+    const indianCities = ['mumbai', 'delhi', 'bangalore', 'hyderabad', 
+                         'chennai', 'kolkata', 'pune', 'ahmedabad', 'noida', 'gurugram'];
+    
+    const lowerSearch = searchText.toLowerCase();
+    
+    const parts = lowerSearch.split(',');
+    for (const part of parts) {
+      const trimmed = part.trim();
+      for (const city of indianCities) {
+        if (new RegExp(`\\b${city}\\b`).test(trimmed)) {
+          return city;
+        }
+      }
+      const normalized = normalizeCityName(trimmed);
+      if (indianCities.includes(normalized)) {
+        return normalized;
+      }
     }
-  }
-  
-  // Fallback to normalized full search
-  return normalizeCityName(lowerSearch);
-};
+    
+    return normalizeCityName(lowerSearch);
+  };
+
   useEffect(() => {
-  let isMounted = true;
-  let instance = null;
+    let isMounted = true;
+    let instance = null;
 
-  const initAutocomplete = async () => {
-    try {
-      const google = await loadGoogleMaps('AIzaSyB6MA27FGtx8g83oF57MAxLAOdcs1rsu7c');
-      if (!isMounted) return;
+    const initAutocomplete = async () => {
+      try {
+        const google = await loadGoogleMaps('AIzaSyB6MA27FGtx8g83oF57MAxLAOdcs1rsu7c');
+        if (!isMounted) return;
 
-      const input = document.getElementById('searchInput');
-      if (!input) return;
+        const input = document.getElementById('searchInput');
+        if (!input) return;
 
-      await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 100));
 
-      instance = new google.maps.places.Autocomplete(input, {
-        types: ['geocode'],
-        componentRestrictions: { country: 'in' },
-        fields: ['address_components', 'formatted_address', 'geometry', 'name']
-      });
-
-      // Add the listener here - ONLY ONCE
-      instance.addListener('place_changed', () => {
-        const place = instance.getPlace();
-        if (!place) return;
-
-        const locationInfo = {
-          city: '',
-          locality: '',
-          landmark: place.name || '',
-          fullAddress: place.formatted_address || ''
-        };
-
-        place.address_components?.forEach(component => {
-          if (component.types.includes('locality')) {
-            locationInfo.locality = component.long_name;
-          }
-          if (component.types.includes('administrative_area_level_2')) {
-            locationInfo.city = component.long_name;
-          }
-          if (component.types.includes('sublocality')) {
-            locationInfo.locality = component.long_name;
-          }
+        instance = new google.maps.places.Autocomplete(input, {
+          types: ['geocode'],
+          componentRestrictions: { country: 'in' },
+          fields: ['address_components', 'formatted_address', 'geometry', 'name']
         });
 
-        setLocationDetails(locationInfo);
-        setSearchTerm(locationInfo.fullAddress);
-      });
+        instance.addListener('place_changed', () => {
+          const place = instance.getPlace();
+          if (!place) return;
 
-      setAutocompleteInstance(instance);
+          const locationInfo = {
+            city: '',
+            locality: '',
+            landmark: place.name || '',
+            fullAddress: place.formatted_address || ''
+          };
 
-    } catch (error) {
-      console.error('Error initializing Google Maps Autocomplete:', error);
-    }
-  };
+          place.address_components?.forEach(component => {
+            if (component.types.includes('locality')) {
+              locationInfo.locality = component.long_name;
+            }
+            if (component.types.includes('administrative_area_level_2')) {
+              locationInfo.city = component.long_name;
+            }
+            if (component.types.includes('sublocality')) {
+              locationInfo.locality = component.long_name;
+            }
+          });
 
-  initAutocomplete();
+          setLocationDetails(locationInfo);
+          setSearchTerm(locationInfo.fullAddress);
+        });
 
-  return () => {
-    isMounted = false;
-    if (instance && window.google?.maps?.event) {
-      window.google.maps.event.clearInstanceListeners(instance);
-    }
-  };
-}, []);
+        setAutocompleteInstance(instance);
+
+      } catch (error) {
+        console.error('Error initializing Google Maps Autocomplete:', error);
+      }
+    };
+
+    initAutocomplete();
+
+    return () => {
+      isMounted = false;
+      if (instance && window.google?.maps?.event) {
+        window.google.maps.event.clearInstanceListeners(instance);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const fetchFavorites = async () => {
@@ -241,28 +278,49 @@ const extractCityFromSearch = (searchText) => {
     setUser(currentUserKey);
     if (currentUserKey) setIsLoggedIn(true);
     
-    // Only fetch listings if we didn't come from a search (no initial results)
     if (initialResults.length === 0) {
       fetchListings();
     } else {
-      // If we have initial results, update filtered listings with them
       updateFilteredListings(initialResults);
     }
-  }, [searchType, initialResults.length]);
-
+  }, [searchType, initialResults.length, initialSearchType]);
+console.log('Initial results:', initialResults);
+console.log('Initial search term:', initialSearchTerm);
+console.log('Initial search type:', initialSearchType);
   const fetchListings = async () => {
-    const endpoint = searchType === 'roommates' 
-      ? `${config.apiBaseUrl}/api/wanted-listings` 
-      : `${config.apiBaseUrl}/api/listings`;
+    setIsLoading(true);
+    let endpoint;
+    let listingType;
+    
+    switch(searchType) {
+      case 'roommates':
+        endpoint = `${config.apiBaseUrl}/api/wanted-listings`;
+        listingType = 'roommate';
+        break;
+      case 'pg':
+        endpoint = `${config.apiBaseUrl}/api/accommodations`;
+        listingType = 'pg';
+        break;
+      case 'co-living':
+        endpoint = `${config.apiBaseUrl}/api/accommodations`;
+        listingType = 'pg';
+        break;
+      default: // 'flats'
+        endpoint = `${config.apiBaseUrl}/api/listings`;
+        listingType = 'flat';
+    }alert(endpoint)
     try {
       const res = await axios.get(endpoint);
-      const listings = Array.isArray(res.data) ? res.data.map(normalizeListing) : [];
+      const listings = Array.isArray(res.data) ? 
+        res.data.map(listing => normalizeListing(listing, listingType)) : [];
       setMyListings(listings);
       updateFilteredListings(listings);
     } catch (err) {
       console.error("Error fetching listings:", err);
       setMyListings([]);
       updateFilteredListings([]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -275,8 +333,8 @@ const extractCityFromSearch = (searchText) => {
         hobbies: [],
         coding: [],
         language: [],
-        propertyAgent: [],
-        pets:[]
+        propertyAgent: [], 
+        pets: [],
       });
       return;
     }
@@ -297,7 +355,6 @@ const extractCityFromSearch = (searchText) => {
     }
 
     // Apply search term filter if it exists
-    // Apply search term filter if it exists
     if (searchTerm.trim()) {
       const searchCity = extractCityFromSearch(searchTerm);
       filtered = filtered.filter(listing => {
@@ -314,55 +371,57 @@ const extractCityFromSearch = (searchText) => {
       });
     }
 
+    // Type-specific filtering
     const petFriendlyMatches = filtered.filter(listing => listing.pets);
     const cuisineMatches = profile ? filtered.filter(listing => {
       const userFoodChoice = profile.habits?.foodChoice;
+      if (!userFoodChoice) return false;
       if (userFoodChoice === "Veg") {
-          return listing.foodchoices === "Veg";
+          return listing.foodchoices === "Veg" || listing.foodIncluded === "Vegetarian";
       }
-      return listing.foodchoices === userFoodChoice;
+      return listing.foodchoices === userFoodChoice || listing.foodIncluded === userFoodChoice;
     }) : [];
    
     const genderMatches = profile ? filtered.filter(listing => 
       listing.gender === profile.gender
     ) : [];
-    const femaleOnlyListings = filtered.filter(listing => listing.gender === 'Female');
-   
+    
     const hobbyMatches = profile ? filtered.filter(listing => 
       profile.hobbies?.some(hobby => 
-          listing.hobbies?.includes("Football")
+          listing.hobbies?.includes(hobby)
       )
     ) : [];
 
     const codingMatches = profile ? filtered.filter(listing => 
-      listing.hobbies?.includes("Coding")
+      listing.hobbies?.includes("Coding") || listing.profession?.includes("Developer")
     ) : [];
     
     const languageMatches = profile?.languages ? filtered.filter(listing => {
-  const userLanguages = typeof profile.languages === 'string' 
-    ? profile.languages.split(',').map(lang => lang.trim().toLowerCase())
-    : Array.isArray(profile.languages)
-      ? profile.languages.map(lang => 
-          typeof lang === 'string' ? lang.trim().toLowerCase() : String(lang).toLowerCase()
-        )
-      : [];
+      const userLanguages = typeof profile.languages === 'string' 
+        ? profile.languages.split(',').map(lang => lang.trim().toLowerCase())
+        : Array.isArray(profile.languages)
+          ? profile.languages.map(lang => 
+              typeof lang === 'string' ? lang.trim().toLowerCase() : String(lang).toLowerCase()
+            )
+          : [];
 
-  const listingLangs = Array.isArray(listing.languages) 
-    ? listing.languages.map(lang => 
-        typeof lang === 'string' ? lang.trim().toLowerCase() : String(lang).toLowerCase()
-      )
-    : typeof listing.languages === 'string' 
-      ? listing.languages.split(',').map(lang => lang.trim().toLowerCase())
-      : [];
-      
-  return userLanguages.length > 0 && listingLangs.some(lang => 
-    userLanguages.some(userLang => 
-      userLang.toLowerCase() === lang.toLowerCase() || 
-      userLang.includes(lang) || 
-      lang.includes(userLang)
-    )
-  );
-}) : [];
+      const listingLangs = Array.isArray(listing.languages) 
+        ? listing.languages.map(lang => 
+            typeof lang === 'string' ? lang.trim().toLowerCase() : String(lang).toLowerCase()
+          )
+        : typeof listing.languages === 'string' 
+          ? listing.languages.split(',').map(lang => lang.trim().toLowerCase())
+          : [];
+          
+      return userLanguages.length > 0 && listingLangs.some(lang => 
+        userLanguages.some(userLang => 
+          userLang.toLowerCase() === lang.toLowerCase() || 
+          userLang.includes(lang) || 
+          lang.includes(userLang)
+        )
+      );
+    }) : [];
+    
     const propertyAgentMatches = filtered.filter(listing => listing.postedBy === 'Agent');
 
     setFilteredListings({
@@ -401,41 +460,48 @@ const extractCityFromSearch = (searchText) => {
   };
   
   const handleSearchClick = () => {
-  if (!user) {
-    setUser("Dummy");
+    if (!user) {
+      setUser("Dummy");
+      return;
+    }
+
+    const searchCity = extractCityFromSearch(searchTerm);
+    console.log('Searching for city:', searchCity);
+
+    const listingsToSearch = initialResults.length > 0 ? initialResults : myListings;
+    if (!searchTerm.trim()) {
+    updateFilteredListings(listingsToSearch);
     return;
   }
 
-  const searchCity = extractCityFromSearch(searchTerm);
-  console.log('Searching for city:', searchCity);
+    const results = listingsToSearch.filter(listing => {
+      if (listing.userKey === user) return false;
+      
+      const listingCity = normalizeCityName(listing.city);
+      const listingLocality = normalizeCityName(listing.locality);
+      const listingLandmark = normalizeCityName(listing.landmark);
+      const listingAddress = (listing.propertyAddress || '').toLowerCase();
+      const listingFullLocation = `${listingCity} ${listingLocality} ${listingAddress}`.toLowerCase();
 
-  const listingsToSearch = initialResults.length > 0 ? initialResults : myListings;
-  
-  const results = listingsToSearch.filter(listing => {
-    // Skip user's own listings
-    if (listing.userKey === user) return false;
-    
-    // If no search term, return all (will be filtered by other filters)
-    if (!searchTerm.trim()) return true;
-    
-    // Normalize listing location data
-    const listingCity = normalizeCityName(listing.city);
-    const listingLocality = normalizeCityName(listing.locality);
-    const listingLandmark = normalizeCityName(listing.landmark);
-    const listingAddress = (listing.propertyAddress || '').toLowerCase();
-    
-    // Check if any part of the listing matches the search city
-    return (
-      listingCity.includes(searchCity) ||
-      listingLocality.includes(searchCity) ||
-      listingLandmark.includes(searchCity) ||
-      listingAddress.includes(searchCity) ||
-      searchCity.includes(listingCity)
-    );
-  });
+      console.log('Comparing:', {
+      searchCity,
+      listingCity,
+      listingLocality,
+      listingAddress,
+      listingFullLocation
+    });
 
-  updateFilteredListings(results);
-};
+      return (
+        listingCity.includes(searchCity) ||
+        listingLocality.includes(searchCity) ||
+        listingLandmark.includes(searchCity) ||
+        listingAddress.includes(searchCity) ||
+        searchCity.includes(listingCity)
+      );
+    });
+    console.log('Filtered results:', results);
+    updateFilteredListings(results);
+  };
 
   const toggleFilters = () => {
     setFiltersVisible(prev => !prev);
@@ -461,14 +527,12 @@ const extractCityFromSearch = (searchText) => {
     setAppliedFilterValues(newFilters);
     setActiveFilter(null);
     
-    // Apply the new filters immediately
     const listingsToFilter = initialResults.length > 0 ? initialResults : myListings;
     updateFilteredListings(listingsToFilter);
   };
 
   const handleSidebarFilterChange = (filterName, value) => {
     setSidebarFilters(prev => {
-      // For radio buttons, if clicking the same value that's already selected, unset it
       if ((filterName === 'propertyType' || filterName === 'availability') && 
           prev[filterName] === value) {
         return { ...prev, [filterName]: '' };
@@ -644,7 +708,6 @@ const extractCityFromSearch = (searchText) => {
             </button>
           </div>
 
-          {/* Display applied filters from home page */}
           {Object.keys(appliedFilterValues).length > 0 && (
             <div className="filter-section">
               <h4>Applied Filters</h4>
@@ -793,15 +856,30 @@ const extractCityFromSearch = (searchText) => {
             <div className="view-toggle">
               <button 
                 className={`view-option ${searchType === 'flats' ? 'active' : ''}`}
-                onClick={() => setSearchType('flats')}
+                onClick={() => {
+                  setSearchType('flats');
+                  fetchListings();
+                }}
               >
                 Flats
               </button>
               <button 
                 className={`view-option ${searchType === 'roommates' ? 'active' : ''}`}
-                onClick={() => setSearchType('roommates')}
+                onClick={() => {
+                  setSearchType('roommates');
+                  fetchListings();
+                }}
               >
                 Roommates
+              </button>
+              <button 
+                className={`view-option ${searchType === 'pg' ? 'active' : ''}`}
+                onClick={() => {
+                  setSearchType('pg');
+                  fetchListings();
+                }}
+              >
+                PG/Co-Living
               </button>
             </div>
           </div>
@@ -811,7 +889,6 @@ const extractCityFromSearch = (searchText) => {
             <div className="tabs">
               <TabButton tabName="All" displayName="All" />
              
-              {/* Conditionally render tabs based on initial filters and profile */}
               {appliedFilterValues['Food Options'] ? (
                 <TabButton 
                   tabName="Cuisine" 
@@ -905,23 +982,28 @@ const extractCityFromSearch = (searchText) => {
           </div>
 
           {/* Results Grid */}
-          {searchResults.length > 0 ? (
+          {isLoading ? (
+            <div className="loading-spinner">
+              <div className="spinner"></div>
+              <p>Loading {searchType} listings...</p>
+            </div>
+          ) : searchResults.length > 0 ? (
             <div className="results-grid">
               {searchResults.map((listing, idx) => {
                 const listingAmenities = Array.isArray(listing.amenities) ? listing.amenities : [];
                 const isFurnished = listingAmenities.includes('Furnished');
+                const isRoommate = listing.listingType === 'roommate';
+                const isPG = listing.listingType === 'pg';
                
                 return (
                   <div key={idx} className="property-card">
                     <div className="property-image">
                       {listing.images && listing.images.length > 0 ? (
                         (() => {
-                          // Find the first valid image index
                           const validIndex = listing.validPics
                             ? listing.validPics.findIndex(valid => valid === true)
                             : -1;
 
-                          // If there is a valid image, use it; otherwise, use the first image (blurred)
                           const imageSrc = validIndex !== -1
                             ? `${config.apiBaseUrl}${listing.images[validIndex]}`
                             : `${config.apiBaseUrl}${listing.images[0]}`;
@@ -939,7 +1021,9 @@ const extractCityFromSearch = (searchText) => {
                           );
                         })()
                       ) : (
-                        <div className="image-placeholder">No image</div>
+                        <div className="image-placeholder">
+                          {isRoommate ? 'Roommate' : isPG ? 'PG' : 'Property'}
+                        </div>
                       )}
                       <button 
                         className={`favorite-button ${favorites.includes(listing._id) ? 'active' : ''}`}
@@ -950,12 +1034,18 @@ const extractCityFromSearch = (searchText) => {
                         </svg>
                       </button>
                       <div className="property-badge">
-                        {listing.propertyType || 'Property'}
+                        {isRoommate ? 'Roommate' : 
+                         isPG ? 'PG/Co-Living' : 
+                         listing.propertyType || 'Property'}
                       </div>
                     </div>
                    
                     <div className="property-details">
-                      <h3 onClick={() => openListingDetails(listing)}>{listing.locality || 'Property'}</h3>
+                      <h3 onClick={() => openListingDetails(listing)}>
+                        {isRoommate ? 
+                          `${listing.title || 'Roommate'} (${listing.age || '--'})` : 
+                          listing.locality || 'Property'}
+                      </h3>
                       <p className="location">
                         <svg viewBox="0 0 24 24">
                           <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
@@ -964,18 +1054,37 @@ const extractCityFromSearch = (searchText) => {
                       </p>
                      
                       <div className="property-features">
-                        <span>
-                          <svg viewBox="0 0 24 24">
-                            <path d="M17 11V3H7v4H3v14h8v-4h2v4h8V11h-4zM7 19H5v-2h2v2zm0-4H5v-2h2v2zm0-4H5V9h2v2zm4 4H9v-2h2v2zm0-4H9V9h2v2zm0-4H9V5h2v2zm4 8h-2v-2h2v2zm0-4h-2V9h2v2zm0-4h-2V5h2v2zm4 12h-2v-2h2v2zm0-4h-2v-2h2v2z"/>
-                          </svg>
-                          {listing.roomSize || '--'} sqft
-                        </span>
-                        <span>
-                          <svg viewBox="0 0 24 24">
-                            <path d="M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99z"/>
-                          </svg>
-                          {isFurnished ? 'Furnished' : 'Unfurnished'}
-                        </span>
+                        {isRoommate ? (
+                          <>
+                            <span>
+                              <svg viewBox="0 0 24 24">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/>
+                              </svg>
+                              {listing.profession || '--'}
+                            </span>
+                            <span>
+                              <svg viewBox="0 0 24 24">
+                                <path d="M12 3c-4.97 0-9 4.03-9 9s4.03 9 9 9 9-4.03 9-9-4.03-9-9-9zm0 16c-3.86 0-7-3.14-7-7s3.14-7 7-7 7 3.14 7 7-3.14 7-7 7zm1-11h-2v3H8v2h3v3h2v-3h3v-2h-3V8z"/>
+                              </svg>
+                              {listing.hobbies?.join(', ') || '--'}
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <span>
+                              <svg viewBox="0 0 24 24">
+                                <path d="M17 11V3H7v4H3v14h8v-4h2v4h8V11h-4zM7 19H5v-2h2v2zm0-4H5v-2h2v2zm0-4H5V9h2v2zm4 4H9v-2h2v2zm0-4H9V9h2v2zm0-4H9V5h2v2zm4 8h-2v-2h2v2zm0-4h-2V9h2v2zm0-4h-2V5h2v2zm4 12h-2v-2h2v2zm0-4h-2v-2h2v2z"/>
+                              </svg>
+                              {listing.roomSize || '--'} sqft
+                            </span>
+                            <span>
+                              <svg viewBox="0 0 24 24">
+                                <path d="M3.5 18.49l6-6.01 4 4L22 6.92l-1.41-1.41-7.09 7.97-4-4L2 16.99z"/>
+                              </svg>
+                              {isFurnished ? 'Furnished' : 'Unfurnished'}
+                            </span>
+                          </>
+                        )}
                       </div>
                      
                       <div className="property-footer">
@@ -1000,7 +1109,7 @@ const extractCityFromSearch = (searchText) => {
               <svg viewBox="0 0 24 24">
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
               </svg>
-              <h3>No properties found</h3>
+              <h3>No {searchType} found</h3>
               <p>Try adjusting your filters or search criteria</p>
             </div>
           )}

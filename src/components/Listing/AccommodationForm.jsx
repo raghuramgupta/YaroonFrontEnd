@@ -67,6 +67,7 @@ const AccommodationForm = ({ editMode = false }) => {
   const [mediaFiles, setMediaFiles] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [existingImages, setExistingImages] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const currentUserKey = localStorage.getItem('currentUser');
@@ -82,35 +83,62 @@ const AccommodationForm = ({ editMode = false }) => {
   }, [editMode, id]);
 
   const fetchExistingListing = async () => {
+    setIsLoading(true);
     try {
       const response = await axios.get(`${config.apiBaseUrl}/api/accommodations/${id}`);
       const data = response.data;
+      
       setFormData({
-        title: data.title,
-        description: data.description,
-        type: data.type,
+        title: data.title || '',
+        description: data.description || '',
+        type: data.type || 'PG',
         address: {
-          street: data.address.street,
-          locality: data.address.locality,
-          city: data.address.city,
-          state: data.address.state,
-          pincode: data.address.pincode,
-          coordinates: data.address.coordinates.coordinates || [0, 0]
+          street: data.address?.street || '',
+          locality: data.address?.locality || '',
+          city: data.address?.city || '',
+          state: data.address?.state || '',
+          pincode: data.address?.pincode || '',
+          coordinates: data.address?.coordinates?.coordinates || [0, 0]
         },
-        totalFloors: data.totalFloors,
-        roomTypes: data.roomTypes,
-        commonFacilities: data.commonFacilities,
-        meals: data.meals,
-        rules: data.rules,
-        contactNumber: data.contactNumber,
-        images: data.images,
-        videos: data.videos
+        totalFloors: data.totalFloors || 1,
+        roomTypes: data.roomTypes || [{
+          type: 'Single',
+          facilities: [
+            { name: 'Air Conditioner', available: false },
+            { name: 'Attached Bathroom', available: false },
+            { name: 'Wardrobe', available: false },
+            { name: 'TV', available: false }
+          ],
+          totalRooms: 1,
+          vacantRooms: 1,
+          price: 0
+        }],
+        commonFacilities: data.commonFacilities || [
+          { name: 'WiFi', available: false },
+          { name: 'Game Room', available: false },
+          { name: 'Lounge', available: false },
+          { name: 'Laundry', available: false }
+        ],
+        meals: data.meals || {
+          breakfast: false,
+          lunch: false,
+          dinner: false,
+          packedLunch: false,
+          cuisines: []
+        },
+        rules: data.rules || [],
+        contactNumber: data.contactNumber || '',
+        images: data.images || [],
+        videos: data.videos || []
       });
-      setSelectedCity(data.address.city);
+      
+      setSelectedCity(data.address?.city || '');
       setExistingImages(data.images || []);
     } catch (error) {
-      console.error('Error fetching listing:', error);
-      alert('Failed to load listing data');
+      console.error('Error fetching listing:', error.response?.data || error.message);
+      alert(`Failed to load listing data: ${error.response?.data?.message || error.message}`);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -327,14 +355,16 @@ const AccommodationForm = ({ editMode = false }) => {
         rules: formData.rules,
         contactNumber: formData.contactNumber,
         owner: currentUser,
-        ...(editMode && { existingImages: existingImages })
+        existingImages: existingImages.map(img => img._id),
+        deletedImages: formData.images
+          .filter(img => !existingImages.some(ei => ei._id === img._id))
+          .map(img => img._id)
       };
 
       const formDataToSend = new FormData();
       formDataToSend.append('data', JSON.stringify({
         ...submissionData,
-        // For edit mode, include the ID
-        ...(editMode && { _id: id })
+        ...(editMode && { _id: id }) // Include ID for edit mode
       }));
       
       mediaFiles.forEach(file => {
@@ -343,12 +373,13 @@ const AccommodationForm = ({ editMode = false }) => {
 
       let response;
       if (editMode) {
+        
         response = await axios.put(
           `${config.apiBaseUrl}/api/accommodations/${id}`,
           formDataToSend,
           {
             headers: {
-              'Content-Type': 'multipart/form-data'
+              'Content-Type': 'multipart/form-data',timeout: 10000
             }
           }
         );
@@ -358,20 +389,32 @@ const AccommodationForm = ({ editMode = false }) => {
           formDataToSend,
           {
             headers: {
-              'Content-Type': 'multipart/form-data'
+              'Content-Type': 'multipart/form-data',timeout: 10000
             }
           }
         );
       }
 
-      navigate(`/listing-details/${response.data._id}`);
+      navigate(`/`);
     } catch (error) {
-      console.error('Submission error:', error);
+      console.error('Full error:', error);
+      console.error('Response data:', error.response?.data);
       alert(`Submission failed: ${error.response?.data?.message || error.message}`);
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="accommodation-form-container">
+        <Header isLoggedIn={isLoggedIn} />
+        <div className="loading-container">
+          <p>Loading listing data...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="accommodation-form-container">

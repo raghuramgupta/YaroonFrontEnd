@@ -73,21 +73,45 @@ function UpdatedHome() {
   
   // Fetch listings whenever searchType changes
   useEffect(() => {
-    const fetchListings = async () => {
-      const endpoint =
-        searchType === 'roommates'
-          ? `${config.apiBaseUrl}/api/wanted-listings`
-          : `${config.apiBaseUrl}/api/listings`;
-      try {
-        const res = await axios.get(endpoint);
-        setMyListings(Array.isArray(res.data) ? res.data : []);
-      } catch (err) {
-        console.error('Error fetching listings:', err);
-      }
-    };
+  const fetchListings = async () => {
+    let endpoint;
+    switch(searchType) {
+      case 'roommates':
+        endpoint = `${config.apiBaseUrl}/api/wanted-listings`;
+        break;
+      case 'pg':
+        endpoint = `${config.apiBaseUrl}/api/accommodations?type=PG`;
+        break;
+      case 'co-living':
+        endpoint = `${config.apiBaseUrl}/api/accommodations?type=Co-Living`;
+        break;
+      default: // 'flats'
+        endpoint = `${config.apiBaseUrl}/api/listings`;
+    }
 
-    fetchListings();
-  }, [searchType]);
+    try {
+      const res = await axios.get(endpoint);
+      const data = res.data;
+      
+      // Normalize different response structures
+      let listings = [];
+      if (Array.isArray(data)) {
+        listings = data;
+      } else if (data && Array.isArray(data.listings)) {
+        listings = data.listings;
+      } else if (data && Array.isArray(data.accommodations)) {
+        listings = data.accommodations;
+      }
+
+      setMyListings(listings);
+    } catch (err) {
+      console.error('Error fetching listings:', err);
+      setMyListings([]);
+    }
+  };
+
+  fetchListings();
+}, [searchType]);
     
   useEffect(() => {
     if (profile) {
@@ -351,7 +375,7 @@ function UpdatedHome() {
         ...locationDetails,
         city: searchCity
       },
-      searchType,
+      searchType, // Make sure this is included
       appliedFilters: appliedFilterValues
     } 
   });
@@ -423,36 +447,37 @@ function UpdatedHome() {
           {/* search type radio */}
           <div className="search-container">
             <div className="search-type-selector">
-              <label className={`radio-option ${isMobile ? 'mobile' : ''}`}>
-                <input
-                  type="radio"
-                  name="searchType"
-                  value="flats"
-                  checked={searchType === 'flats'}
-                  onChange={() => setSearchType('flats')}
-                />
-                <span>Flats</span>
-              </label>
-              <label className={`radio-option ${isMobile ? 'mobile' : ''}`}>
-                <input
-                  type="radio"
-                  name="searchType"
-                  value="roommates"
-                  checked={searchType === 'roommates'}
-                  onChange={() => setSearchType('roommates')}
-                />
-                <span>Roommates</span>
-              </label><label className={`radio-option ${isMobile ? 'mobile' : ''}`}>
-                <input
-                  type="radio"
-                  name="searchType"
-                  value="PG/Co-Living"
-                  checked={searchType === 'PGAccomodation'}
-                  onChange={() => setSearchType('PGAccomodation')}
-                />
-                <span>PG/Co-Living</span>
-              </label>
-            </div>
+            <label className={`radio-option ${isMobile ? 'mobile' : ''}`}>
+              <input
+                type="radio"
+                name="searchType"
+                value="flats"
+                checked={searchType === 'flats'}
+                onChange={() => setSearchType('flats')}
+              />
+              <span>Flats</span>
+            </label>
+            <label className={`radio-option ${isMobile ? 'mobile' : ''}`}>
+              <input
+                type="radio"
+                name="searchType"
+                value="roommates"
+                checked={searchType === 'roommates'}
+                onChange={() => setSearchType('roommates')}
+              />
+              <span>Roommates</span>
+            </label>
+            <label className={`radio-option ${isMobile ? 'mobile' : ''}`}>
+              <input
+                type="radio"
+                name="searchType"
+                value="pg" // Changed from "PG/Co-Living" to "pg"
+                checked={searchType === 'pg'} // Changed from "PGAccomodation" to "pg"
+                onChange={() => setSearchType('pg')} // Changed from "PGAccomodation" to "pg"
+              />
+              <span>PG/Co-Living</span>
+            </label>
+          </div>
             
             {/* SEARCH BAR */}
             <div className="search-bar-wrapper">
