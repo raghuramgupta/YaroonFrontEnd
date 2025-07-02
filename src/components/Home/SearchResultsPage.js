@@ -35,12 +35,14 @@ const normalizeListing = (listing, listingType) => {
     images: Array.isArray(listing.images) ? listing.images : [],
     propertyType: propertyType,
     locality: listing.locality || listing.address?.locality || '',
+    city: listing.city || '', // Added city field which was missing
     postedBy: listing.postedBy || listing.owner || listing.user || '',
     languages: languages,
     userKey: listing.userKey || listing.user || '',
     listingType: listingType || 'flat',
     validPics: listing.validPics || []
   };
+  
   // Type-specific fields
   if (listingType === 'roommate') {
     return {
@@ -86,6 +88,8 @@ const SearchResultsPage = () => {
     appliedFilters: initialAppliedFilters = {}
   } = location.state || {};
 
+  console.log('Initial results received:', initialResults);
+
   const [autocompleteInstance, setAutocompleteInstance] = useState(null);
   const [user, setUser] = useState(null);
   const { profile, loadingProfile } = useContext(AuthContext);
@@ -103,10 +107,7 @@ const SearchResultsPage = () => {
   const [favorites, setFavorites] = useState([]);
   const [activeFilter, setActiveFilter] = useState(null);
   const [myListings, setMyListings] = useState([]);
-  const [searchResults, setSearchResults] = useState(
-    initialResults.map(listing => normalizeListing(listing, initialSearchType === 'roommates' ? 'roommate' : 
-      initialSearchType === 'pg' ? 'pg' : 'flat'))
-  );
+  const [searchResults, setSearchResults] = useState([]);
   const [appliedFilterValues, setAppliedFilterValues] = useState(initialAppliedFilters);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [searchType, setSearchType] = useState(initialSearchType);
@@ -129,6 +130,11 @@ const SearchResultsPage = () => {
     pets: [],
   });
   const [isLoading, setIsLoading] = useState(false);
+
+  // Debug effect to track searchResults changes
+  useEffect(() => {
+    console.log('searchResults updated:', searchResults);
+  }, [searchResults]);
 
   const normalizeCityName = (city) => {
     if (!city) return '';
@@ -278,15 +284,19 @@ const SearchResultsPage = () => {
     setUser(currentUserKey);
     if (currentUserKey) setIsLoggedIn(true);
     
-    if (initialResults.length === 0) {
-      fetchListings();
+    // Initialize searchResults after normalization
+    if (initialResults.length > 0) {
+      const normalizedResults = initialResults.map(listing => 
+        normalizeListing(listing, initialSearchType === 'roommates' ? 'roommate' : 
+        initialSearchType === 'pg' ? 'pg' : 'flat')
+      );
+      setSearchResults(normalizedResults);
+      updateFilteredListings(normalizedResults);
     } else {
-      updateFilteredListings(initialResults);
+      fetchListings();
     }
   }, [searchType, initialResults.length, initialSearchType]);
-console.log('Initial results:', initialResults);
-console.log('Initial search term:', initialSearchTerm);
-console.log('Initial search type:', initialSearchType);
+
   const fetchListings = async () => {
     setIsLoading(true);
     let endpoint;
@@ -308,7 +318,8 @@ console.log('Initial search type:', initialSearchType);
       default: // 'flats'
         endpoint = `${config.apiBaseUrl}/api/listings`;
         listingType = 'flat';
-    }alert(endpoint)
+    }
+    
     try {
       const res = await axios.get(endpoint);
       const listings = Array.isArray(res.data) ? 
@@ -325,7 +336,10 @@ console.log('Initial search type:', initialSearchType);
   };
 
   const updateFilteredListings = (listings) => {
-    if (!listings) {
+    console.log('Updating filtered listings with:', listings);
+    
+    if (!listings || listings.length === 0) {
+      console.log('No listings to filter');
       setFilteredListings({
         all: [],
         cuisine: [],
@@ -346,10 +360,17 @@ console.log('Initial search type:', initialSearchType);
         return Object.entries(appliedFilterValues).every(([filter, value]) => {
           const key = filter.toLowerCase().replace(/\s/g, '');
           const listingValue = listing[key];
-          if (!listingValue) return false;
-          return Array.isArray(listingValue)
+          if (!listingValue) {
+            console.log(`Filter ${key} not found in listing`, listing);
+            return false;
+          }
+          const matches = Array.isArray(listingValue)
             ? listingValue.includes(value)
             : listingValue === value;
+          if (!matches) {
+            console.log(`Listing failed filter ${key}=${value}`, listing);
+          }
+          return matches;
         });
       });
     }
@@ -357,19 +378,32 @@ console.log('Initial search type:', initialSearchType);
     // Apply search term filter if it exists
     if (searchTerm.trim()) {
       const searchCity = extractCityFromSearch(searchTerm);
+      console.log('Filtering by city:', searchCity);
       filtered = filtered.filter(listing => {
         const listingCity = normalizeCityName(listing.city);
         const listingLocality = normalizeCityName(listing.locality);
         const listingAddress = (listing.propertyAddress || '').toLowerCase();
         
-        return (
+        const matches = (
           listingCity.includes(searchCity) ||
           listingLocality.includes(searchCity) ||
           listingAddress.includes(searchCity) ||
           searchCity.includes(listingCity)
         );
+        
+        if (!matches) {
+          console.log('Location filter excluded listing:', {
+            searchCity,
+            listingCity,
+            listingLocality,
+            listingAddress
+          });
+        }
+        return matches;
       });
     }
+
+    console.log('Listings after filters:', filtered);
 
     // Type-specific filtering
     const petFriendlyMatches = filtered.filter(listing => listing.pets);
@@ -388,8 +422,7 @@ console.log('Initial search type:', initialSearchType);
     
     const hobbyMatches = profile ? filtered.filter(listing => 
       profile.hobbies?.some(hobby => 
-          listing.hobbies?.includes(hobby)
-      )
+          listing.hobbies?.includes(hobby))
     ) : [];
 
     const codingMatches = profile ? filtered.filter(listing => 
@@ -424,21 +457,30 @@ console.log('Initial search type:', initialSearchType);
     
     const propertyAgentMatches = filtered.filter(listing => listing.postedBy === 'Agent');
 
-    setFilteredListings({
-        all: filtered,
-        cuisine: cuisineMatches,
-        gender: genderMatches,
-        hobbies: hobbyMatches,
-        coding: codingMatches,
-        language: languageMatches,
-        propertyAgent: propertyAgentMatches,
-        pets: petFriendlyMatches, 
-    });
+    const updatedFilteredListings = {
+      all: filtered,
+      cuisine: cuisineMatches,
+      gender: genderMatches,
+      hobbies: hobbyMatches,
+      coding: codingMatches,
+      language: languageMatches,
+      propertyAgent: propertyAgentMatches,
+      pets: petFriendlyMatches, 
+    };
+
+    console.log('Updated filtered listings:', updatedFilteredListings);
+    setFilteredListings(updatedFilteredListings);
   };
   
   useEffect(() => {
     if (profile && (myListings.length > 0 || initialResults.length > 0)) {
-      updateFilteredListings(initialResults.length > 0 ? initialResults : myListings);
+      const listingsToFilter = initialResults.length > 0 ? 
+        initialResults.map(listing => 
+          normalizeListing(listing, initialSearchType === 'roommates' ? 'roommate' : 
+          initialSearchType === 'pg' ? 'pg' : 'flat')
+        ) : 
+        myListings;
+      updateFilteredListings(listingsToFilter);
     }
   }, [profile, myListings, initialResults]);
 
@@ -470,9 +512,9 @@ console.log('Initial search type:', initialSearchType);
 
     const listingsToSearch = initialResults.length > 0 ? initialResults : myListings;
     if (!searchTerm.trim()) {
-    updateFilteredListings(listingsToSearch);
-    return;
-  }
+      updateFilteredListings(listingsToSearch);
+      return;
+    }
 
     const results = listingsToSearch.filter(listing => {
       if (listing.userKey === user) return false;
@@ -484,12 +526,12 @@ console.log('Initial search type:', initialSearchType);
       const listingFullLocation = `${listingCity} ${listingLocality} ${listingAddress}`.toLowerCase();
 
       console.log('Comparing:', {
-      searchCity,
-      listingCity,
-      listingLocality,
-      listingAddress,
-      listingFullLocation
-    });
+        searchCity,
+        listingCity,
+        listingLocality,
+        listingAddress,
+        listingFullLocation
+      });
 
       return (
         listingCity.includes(searchCity) ||
@@ -551,19 +593,27 @@ console.log('Initial search type:', initialSearchType);
   };
 
   const applyFiltersToResults = (listings) => {
+    console.log('Applying sidebar filters to:', listings);
+    
+    if (!listings || listings.length === 0) return [];
+
     let filtered = [...listings];
 
     // Apply budget filter
-    filtered = filtered.filter(listing => 
-      listing.rent >= sidebarFilters.budget.min && 
-      listing.rent <= sidebarFilters.budget.max
-    );
+    filtered = filtered.filter(listing => {
+      const rent = listing.rent || 0;
+      const pass = rent >= sidebarFilters.budget.min && rent <= sidebarFilters.budget.max;
+      if (!pass) console.log('Budget filter excluded listing:', listing.rent);
+      return pass;
+    });
 
     // Apply property type filter
     if (sidebarFilters.propertyType) {
-      filtered = filtered.filter(listing => 
-        listing.propertyType === sidebarFilters.propertyType
-      );
+      filtered = filtered.filter(listing => {
+        const pass = listing.propertyType === sidebarFilters.propertyType;
+        if (!pass) console.log('Property type filter excluded listing:', listing.propertyType);
+        return pass;
+      });
     }
 
     // Apply availability filter
@@ -572,7 +622,10 @@ console.log('Initial search type:', initialSearchType);
       today.setHours(0, 0, 0, 0);
       
       filtered = filtered.filter(listing => {
-        if (!listing.availability) return false;
+        if (!listing.availability) {
+          console.log('Availability filter excluded listing (no availability date)');
+          return false;
+        }
         
         try {
           const availableDate = new Date(listing.availability);
@@ -585,6 +638,7 @@ console.log('Initial search type:', initialSearchType);
           }
           return true;
         } catch (e) {
+          console.log('Invalid availability date:', listing.availability);
           return false;
         }
       });
@@ -594,15 +648,21 @@ console.log('Initial search type:', initialSearchType);
     if (sidebarFilters.amenities.length > 0) {
       filtered = filtered.filter(listing => {
         const listingAmenities = Array.isArray(listing.amenities) ? listing.amenities : [];
-        return sidebarFilters.amenities.every(amenity => 
+        const pass = sidebarFilters.amenities.every(amenity => 
           listingAmenities.includes(amenity)
         );
+        if (!pass) console.log('Amenities filter excluded listing:', listingAmenities);
+        return pass;
       });
     }
 
     // Exclude user's own listings
     if (user) {
-      filtered = filtered.filter(listing => listing.userKey !== user);
+      filtered = filtered.filter(listing => {
+        const pass = listing.userKey !== user;
+        if (!pass) console.log('User filter excluded own listing');
+        return pass;
+      });
     }
 
     // Sort listings with valid images first
@@ -623,12 +683,15 @@ console.log('Initial search type:', initialSearchType);
       return 0;
     });
 
+    console.log('After sidebar filters:', filtered);
     return filtered;
   };
 
   useEffect(() => {
     let resultsToShow = [];
-   
+    
+    console.log('Applying filters to:', activeTab, filteredListings[activeTab]);
+    
     switch (activeTab) {
       case 'All':
         resultsToShow = applyFiltersToResults(filteredListings.all);
@@ -662,7 +725,8 @@ console.log('Initial search type:', initialSearchType);
       default:
         resultsToShow = applyFiltersToResults(filteredListings.all);
     }
-
+    
+    console.log('Final results to show:', resultsToShow);
     setSearchResults(resultsToShow);
   }, [activeTab, sidebarFilters, filteredListings, user]);
 
@@ -674,7 +738,7 @@ console.log('Initial search type:', initialSearchType);
 
   const TabButton = ({ tabName, displayName }) => {
     const isActive = activeTab === tabName;
-   
+    
     return (
       <button
         className={`tab ${isActive ? 'active' : ''}`}

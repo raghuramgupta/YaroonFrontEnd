@@ -80,10 +80,10 @@ function UpdatedHome() {
         endpoint = `${config.apiBaseUrl}/api/wanted-listings`;
         break;
       case 'pg':
-        endpoint = `${config.apiBaseUrl}/api/accommodations?type=PG`;
+        endpoint = `${config.apiBaseUrl}/api/accommodations`;
         break;
       case 'co-living':
-        endpoint = `${config.apiBaseUrl}/api/accommodations?type=Co-Living`;
+        endpoint = `${config.apiBaseUrl}/api/accommodations`;
         break;
       default: // 'flats'
         endpoint = `${config.apiBaseUrl}/api/listings`;
