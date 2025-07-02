@@ -6,7 +6,6 @@ import axios from 'axios';
 import loadGoogleMaps from '../Utils/loadGoogleMaps';
 import { AuthContext } from '../../context/AuthContext';
 import config from '../../config';
-
 // Utility function to normalize listing data
 const normalizeListing = (listing, listingType) => {
   let languages = [];
@@ -103,7 +102,7 @@ const SearchResultsPage = () => {
     'Food Options': ['Vegetarian', 'No Preference', 'Non-Vegetarian'],
     'Parking': ['Bike Parking', 'Car Parking', 'None'],
     'Language': ['English', 'Hindi', 'Telugu', 'Tamil', 'Kannada', 'Other']
-  });
+  });const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
   const [favorites, setFavorites] = useState([]);
   const [activeFilter, setActiveFilter] = useState(null);
   const [myListings, setMyListings] = useState([]);
@@ -1023,7 +1022,8 @@ const SearchResultsPage = () => {
               />
             </div>
            
-            <button className="filter-toggle" onClick={toggleFilters}>
+            <button className="filter-toggle" 
+  onClick={() => setIsMobileFilterOpen(!isMobileFilterOpen)}>
               <svg viewBox="0 0 24 24">
                 <path d="M4.25 5.61C6.27 8.2 10 13 10 13v6c0 .55.45 1 1 1h2c.55 0 1-.45 1-1v-6s3.72-4.8 5.74-7.39c.51-.66.04-1.61-.79-1.61H5.04c-.83 0-1.3.95-.79 1.61z"/>
               </svg>

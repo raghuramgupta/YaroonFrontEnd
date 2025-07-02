@@ -76,6 +76,7 @@ const Dashboard = () => {
       const statsRes = await fetch(
         `${config.apiBaseUrl}/api/listings/stats/${encodeURIComponent(userKey)}`
       );
+      
       if (!statsRes.ok) throw new Error("Failed to fetch listing stats");
       const statsData = await statsRes.json();
       setStats(statsData);
@@ -363,7 +364,8 @@ const Dashboard = () => {
                         <span>Messages</span>
                       </div>
                     </th>
-                    <th>Last Viewed</th>
+                      
+                      <th>Last Viewed</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -377,6 +379,7 @@ const Dashboard = () => {
                     const propertyMessages = messageStats.messagesPerProperty.find(
                       item => item.propertyId === l._id
                     )?.count || 0;
+
                     const lastView = l.viewsLog?.length 
                       ? format(new Date(l.viewsLog[l.viewsLog.length - 1].date), 'MMM d, yyyy')
                       : 'Never';
