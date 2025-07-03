@@ -689,7 +689,7 @@ const SearchResultsPage = () => {
   useEffect(() => {
     let resultsToShow = [];
     
-    console.log('Applying filters to:', activeTab, filteredListings[activeTab]);
+    console.log('Applying filteclassName="quick-filters"rs to:', activeTab, filteredListings[activeTab]);
     
     switch (activeTab) {
       case 'All':
@@ -949,87 +949,115 @@ const SearchResultsPage = () => {
 
           {/* Quick Filters */}
           <div className="quick-filters">
-            <div className="tabs">
-              <TabButton tabName="All" displayName="All" />
-             
-              {appliedFilterValues['Food Options'] ? (
-                <TabButton 
-                  tabName="Cuisine" 
-                  displayName={appliedFilterValues['Food Options']} 
-                />
-              ) : profile?.habits?.foodChoice && filteredListings.cuisine.length > 0 && (
-                <TabButton 
-                  tabName="Cuisine" 
-                  displayName={`${profile.habits.foodChoice}`} 
-                />
-              )}
-              
-              {filteredListings.pets.length > 0 && (
-                <TabButton 
-                  tabName="Pets" 
-                  displayName="Pet Friendly" 
-                />
-              )}
-              
-              {appliedFilterValues.Profession ? (
-                <TabButton 
-                  tabName="Profession" 
-                  displayName={appliedFilterValues.Profession} 
-                />
-              ) : profile?.gender && filteredListings.gender.length > 0 && profile.gender === 'Female' && (
-                <TabButton 
-                  tabName="Gender" 
-                  displayName={`${profile.gender}`} 
-                />
-              )}
-             
-              {profile?.hobbies?.length > 0 && filteredListings.hobbies.length > 0 && (
-                <TabButton 
-                  tabName="Hobbies" 
-                  displayName="Gamers" 
-                />
-              )}
+  {/* Tabs Section */}
+  <div className="tabs-container">
+    <div 
+      className={`tab-item ${activeTab === 'All' ? 'active' : ''}`} 
+      onClick={() => setActiveTab('All')}
+    >
+      All
+    </div>
 
-              {filteredListings.coding.length > 0 && (
-                <TabButton 
-                  tabName="Coding" 
-                  displayName="Coders" 
-                />
-              )}
+    {appliedFilterValues['Food Options'] ? (
+      <div 
+        className={`tab-item ${activeTab === 'Cuisine' ? 'active' : ''}`} 
+        onClick={() => setActiveTab('Cuisine')}
+      >
+        {appliedFilterValues['Food Options']}
+      </div>
+    ) : profile?.habits?.foodChoice && filteredListings.cuisine.length > 0 && (
+      <div 
+        className={`tab-item ${activeTab === 'Cuisine' ? 'active' : ''}`} 
+        onClick={() => setActiveTab('Cuisine')}
+      >
+        {profile.habits.foodChoice}
+      </div>
+    )}
 
-              {appliedFilterValues.Language ? (
-                <TabButton 
-                  tabName="Language" 
-                  displayName={appliedFilterValues.Language} 
-                />
-              ) : profile?.languages?.length > 0 && filteredListings.language.length > 0 && (
-                <TabButton 
-                  tabName="Language" 
-                  displayName="Language Match" 
-                />
-              )}
+    {filteredListings.pets.length > 0 && (
+      <div 
+        className={`tab-item ${activeTab === 'Pets' ? 'active' : ''}`} 
+        onClick={() => setActiveTab('Pets')}
+      >
+        Pet Friendly
+      </div>
+    )}
 
-              {filteredListings.propertyAgent.length > 0 && (
-                <TabButton
-                  tabName="Property Agent"
-                  displayName="Property Agent"
-                />
-              )}
-             
-              <TabButton 
-                tabName="Gated Community" 
-                displayName="Gated Community"
-              />
-            </div>
-           
-            <button className="filter-toggle" 
-  onClick={() => setIsMobileFilterOpen(!isMobileFilterOpen)}>
-              <svg viewBox="0 0 24 24">
-                <path d="M4.25 5.61C6.27 8.2 10 13 10 13v6c0 .55.45 1 1 1h2c.55 0 1-.45 1-1v-6s3.72-4.8 5.74-7.39c.51-.66.04-1.61-.79-1.61H5.04c-.83 0-1.3.95-.79 1.61z"/>
-              </svg>
-              Filters
-            </button>
-          </div>
+    {appliedFilterValues.Profession ? (
+      <div 
+        className={`tab-item ${activeTab === 'Profession' ? 'active' : ''}`} 
+        onClick={() => setActiveTab('Profession')}
+      >
+        {appliedFilterValues.Profession}
+      </div>
+    ) : profile?.gender && filteredListings.gender.length > 0 && profile.gender === 'Female' && (
+      <div 
+        className={`tab-item ${activeTab === 'Gender' ? 'active' : ''}`} 
+        onClick={() => setActiveTab('Gender')}
+      >
+        {profile.gender}
+      </div>
+    )}
+
+    {profile?.hobbies?.length > 0 && filteredListings.hobbies.length > 0 && (
+      <div 
+        className={`tab-item ${activeTab === 'Hobbies' ? 'active' : ''}`} 
+        onClick={() => setActiveTab('Hobbies')}
+      >
+        Gamers
+      </div>
+    )}
+
+    {filteredListings.coding.length > 0 && (
+      <div 
+        className={`tab-item ${activeTab === 'Coding' ? 'active' : ''}`} 
+        onClick={() => setActiveTab('Coding')}
+      >
+        Coders
+      </div>
+    )}
+
+    {appliedFilterValues.Language ? (
+      <div 
+        className={`tab-item ${activeTab === 'Language' ? 'active' : ''}`} 
+        onClick={() => setActiveTab('Language')}
+      >
+        {appliedFilterValues.Language}
+      </div>
+    ) : profile?.languages?.length > 0 && filteredListings.language.length > 0 && (
+      <div 
+        className={`tab-item ${activeTab === 'Language' ? 'active' : ''}`} 
+        onClick={() => setActiveTab('Language')}
+      >
+        Language Match
+      </div>
+    )}
+
+    {filteredListings.propertyAgent.length > 0 && (
+      <div 
+        className={`tab-item ${activeTab === 'Property Agent' ? 'active' : ''}`} 
+        onClick={() => setActiveTab('Property Agent')}
+      >
+        Property Agent
+      </div>
+    )}
+
+    <div 
+      className={`tab-item ${activeTab === 'Gated Community' ? 'active' : ''}`} 
+      onClick={() => setActiveTab('Gated Community')}
+    >
+      Gated Community
+    </div>
+  </div>
+
+  {/* Mobile Filter Button */}
+  <button className="filter-toggle" onClick={() => setIsMobileFilterOpen(!isMobileFilterOpen)}>
+    <svg viewBox="0 0 24 24">
+      <path d="M4.25 5.61C6.27 8.2 10 13 10 13v6c0 .55.45 1 1 1h2c.55 0 1-.45 1-1v-6s3.72-4.8 5.74-7.39c.51-.66.04-1.61-.79-1.61H5.04c-.83 0-1.3.95-.79 1.61z"/>
+    </svg>
+    Filters
+  </button>
+</div>
 
           {/* Results Count */}
           <div className="results-header">
