@@ -485,7 +485,7 @@ function UpdatedHome() {
                 <input
                   id="searchInput"
                   type="text"
-                  placeholder="Search by city, locality or landmark..."
+                  placeholder={isMobile ? "Search..." : "Search by city, locality or landmark..."}
                   value={searchTerm}
                   onChange={handleInputChange}
                   onKeyDown={handleKeyDown}
