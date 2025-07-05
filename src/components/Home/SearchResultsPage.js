@@ -959,117 +959,152 @@ const SearchResultsPage = () => {
           </div>
 
           {/* Quick Filters */}
-          <div className="quick-filters">
+          {/* Quick Filters - Improved Version */}
+<div className="quick-filters">
   {/* Tabs Section */}
   <div className="tabs-container">
-    <div 
-      className={`tab-item ${activeTab === 'All' ? 'active' : ''}`} 
-      onClick={() => setActiveTab('All')}
-    >
-      All
-    </div>
+    <div className="tabs-scroll-wrapper">
+      {/* Always show All tab */}
+      <div 
+        className={`tab-item ${activeTab === 'All' ? 'active' : ''}`} 
+        onClick={() => setActiveTab('All')}
+      >
+        All
+        <span className="tab-count">{filteredListings.all.length}</span>
+      </div>
 
-    {appliedFilterValues['Food Options'] ? (
-      <div 
-        className={`tab-item ${activeTab === 'Cuisine' ? 'active' : ''}`} 
-        onClick={() => setActiveTab('Cuisine')}
-      >
-        {appliedFilterValues['Food Options']}
-      </div>
-    ) : profile?.habits?.foodChoice && filteredListings.cuisine.length > 0 && (
-      <div 
-        className={`tab-item ${activeTab === 'Cuisine' ? 'active' : ''}`} 
-        onClick={() => setActiveTab('Cuisine')}
-      >
-        {profile.habits.foodChoice}
-      </div>
-    )}
+      {/* Dynamic tabs based on available filters and profile data */}
+      {[
+        // Cuisine tab - show if food preference exists in profile
+        profile?.habits?.foodChoice && filteredListings.cuisine.length > 0 && (
+          <div 
+            key="Cuisine"
+            className={`tab-item ${activeTab === 'Cuisine' ? 'active' : ''}`} 
+            onClick={() => setActiveTab('Cuisine')}
+          >
+            {appliedFilterValues['Food Options'] || profile.habits.foodChoice}
+            <span className="tab-count">{filteredListings.cuisine.length}</span>
+          </div>
+        ),
 
-    {filteredListings.pets.length > 0 && (
-      <div 
-        className={`tab-item ${activeTab === 'Pets' ? 'active' : ''}`} 
-        onClick={() => setActiveTab('Pets')}
-      >
-        Pet Friendly
-      </div>
-    )}
+        // Gender tab - show if gender exists in profile and there are matches
+        profile?.gender && filteredListings.gender.length > 0 && (
+          <div 
+            key="Gender"
+            className={`tab-item ${activeTab === 'Gender' ? 'active' : ''}`} 
+            onClick={() => setActiveTab('Gender')}
+          >
+            {profile.gender} Only
+            <span className="tab-count">{filteredListings.gender.length}</span>
+          </div>
+        ),
 
-    {appliedFilterValues.Profession ? (
-      <div 
-        className={`tab-item ${activeTab === 'Profession' ? 'active' : ''}`} 
-        onClick={() => setActiveTab('Profession')}
-      >
-        {appliedFilterValues.Profession}
-      </div>
-    ) : profile?.gender && filteredListings.gender.length > 0 && profile.gender === 'Female' && (
-      <div 
-        className={`tab-item ${activeTab === 'Gender' ? 'active' : ''}`} 
-        onClick={() => setActiveTab('Gender')}
-      >
-        {profile.gender}
-      </div>
-    )}
+        // Hobbies tab - show if hobbies exist in profile
+        profile?.hobbies?.length > 0 && filteredListings.hobbies.length > 0 && (
+          <div 
+            key="Hobbies"
+            className={`tab-item ${activeTab === 'Hobbies' ? 'active' : ''}`} 
+            onClick={() => setActiveTab('Hobbies')}
+          >
+            Similar Interests
+            <span className="tab-count">{filteredListings.hobbies.length}</span>
+          </div>
+        ),
 
-    {profile?.hobbies?.length > 0 && filteredListings.hobbies.length > 0 && (
-      <div 
-        className={`tab-item ${activeTab === 'Hobbies' ? 'active' : ''}`} 
-        onClick={() => setActiveTab('Hobbies')}
-      >
-        Gamers
-      </div>
-    )}
+        // Coding tab - show if relevant listings exist
+        filteredListings.coding.length > 0 && (
+          <div 
+            key="Coding"
+            className={`tab-item ${activeTab === 'Coding' ? 'active' : ''}`} 
+            onClick={() => setActiveTab('Coding')}
+          >
+            Tech Community
+            <span className="tab-count">{filteredListings.coding.length}</span>
+          </div>
+        ),
 
-    {filteredListings.coding.length > 0 && (
-      <div 
-        className={`tab-item ${activeTab === 'Coding' ? 'active' : ''}`} 
-        onClick={() => setActiveTab('Coding')}
-      >
-        Coders
-      </div>
-    )}
+        // Language tab - show if languages exist in profile
+        (appliedFilterValues.Language || profile?.languages?.length > 0) && 
+        filteredListings.language.length > 0 && (
+          <div 
+            key="Language"
+            className={`tab-item ${activeTab === 'Language' ? 'active' : ''}`} 
+            onClick={() => setActiveTab('Language')}
+          >
+            {appliedFilterValues.Language || 'Language Match'}
+            <span className="tab-count">{filteredListings.language.length}</span>
+          </div>
+        ),
 
-    {appliedFilterValues.Language ? (
-      <div 
-        className={`tab-item ${activeTab === 'Language' ? 'active' : ''}`} 
-        onClick={() => setActiveTab('Language')}
-      >
-        {appliedFilterValues.Language}
-      </div>
-    ) : profile?.languages?.length > 0 && filteredListings.language.length > 0 && (
-      <div 
-        className={`tab-item ${activeTab === 'Language' ? 'active' : ''}`} 
-        onClick={() => setActiveTab('Language')}
-      >
-        Language Match
-      </div>
-    )}
+        // Pet Friendly tab
+        filteredListings.pets.length > 0 && (
+          <div 
+            key="Pets"
+            className={`tab-item ${activeTab === 'Pets' ? 'active' : ''}`} 
+            onClick={() => setActiveTab('Pets')}
+          >
+            Pet Friendly
+            <span className="tab-count">{filteredListings.pets.length}</span>
+          </div>
+        ),
 
-    {filteredListings.propertyAgent.length > 0 && (
-      <div 
-        className={`tab-item ${activeTab === 'Property Agent' ? 'active' : ''}`} 
-        onClick={() => setActiveTab('Property Agent')}
-      >
-        Property Agent
-      </div>
-    )}
+        // Property Agent tab
+        filteredListings.propertyAgent.length > 0 && (
+          <div 
+            key="PropertyAgent"
+            className={`tab-item ${activeTab === 'Property Agent' ? 'active' : ''}`} 
+            onClick={() => setActiveTab('Property Agent')}
+          >
+            Verified Agents
+            <span className="tab-count">{filteredListings.propertyAgent.length}</span>
+          </div>
+        ),
 
-    <div 
-      className={`tab-item ${activeTab === 'Gated Community' ? 'active' : ''}`} 
-      onClick={() => setActiveTab('Gated Community')}
-    >
-      Gated Community
+        // Gated Community tab
+        filteredListings.all.filter(l => l.propertyStructure === 'Gated community').length > 0 && (
+          <div 
+            key="GatedCommunity"
+            className={`tab-item ${activeTab === 'Gated Community' ? 'active' : ''}`} 
+            onClick={() => setActiveTab('Gated Community')}
+          >
+            Gated Community
+            <span className="tab-count">{
+              filteredListings.all.filter(l => l.propertyStructure === 'Gated community').length
+            }</span>
+          </div>
+        ),
+
+        // Profession tab - if applied as filter
+        appliedFilterValues.Profession && (
+          <div 
+            key="Profession"
+            className={`tab-item ${activeTab === 'Profession' ? 'active' : ''}`} 
+            onClick={() => setActiveTab('Profession')}
+          >
+            {appliedFilterValues.Profession}
+            <span className="tab-count">{
+              filteredListings.all.filter(l => l.profession === appliedFilterValues.Profession).length
+            }</span>
+          </div>
+        )
+      ].filter(Boolean)} {/* Remove any null/undefined entries */}
     </div>
   </div>
 
-  {/* Mobile Filter Button */}
-  <button className="filter-toggle" onClick={() => setIsMobileFilterOpen(!isMobileFilterOpen)}>
-    <svg viewBox="0 0 24 24">
+  {/* Mobile Filter Button with improved styling */}
+  <button 
+    className={`filter-toggle ${isMobileFilterOpen ? 'active' : ''}`} 
+    onClick={() => setIsMobileFilterOpen(!isMobileFilterOpen)}
+  >
+    <svg viewBox="0 0 24 24" width="20" height="20">
       <path d="M4.25 5.61C6.27 8.2 10 13 10 13v6c0 .55.45 1 1 1h2c.55 0 1-.45 1-1v-6s3.72-4.8 5.74-7.39c.51-.66.04-1.61-.79-1.61H5.04c-.83 0-1.3.95-.79 1.61z"/>
     </svg>
     Filters
+    {Object.keys(appliedFilterValues).length > 0 && (
+      <span className="filter-badge">{Object.keys(appliedFilterValues).length}</span>
+    )}
   </button>
 </div>
-
           {/* Results Count */}
           <div className="results-header">
             <h2>{searchResults.length} {searchResults.length === 1 ? 'Property' : 'Properties'} Found</h2>
