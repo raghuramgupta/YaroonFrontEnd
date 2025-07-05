@@ -184,22 +184,28 @@ const Dashboard = () => {
       .sort((a, b) => b.count - a.count);
 
     // Prepare message data
-    const messageBarData = [
-      { name: 'Total Messages', count: messageStats.totalMessages },
-      ...messageStats.messagesPerProperty.map(item => ({
-        ...item,
-        name: item.propertyName || 'Unknown',
-        count: item.count
-      }))
-    ].sort((a, b) => b.count - a.count);
+    const messageBarData = messageStats.messagesPerProperty
+    .map((item, index) => ({
+      name: item.propertyName || `Property ${index + 1}`,
+      count: item.count,
+      fill: palette[index % palette.length]
+    }))
+    .sort((a, b) => b.count - a.count);
+    if (messageStats.totalMessages > 0) {
+    messageBarData.unshift({
+      name: 'Total Messages',
+      count: messageStats.totalMessages,
+      fill: palette[0]
+    });
+  }
 
-    const messagePieData = messageStats.messagesPerProperty
-      .map((item, index) => ({
-        name: item.propertyName || 'Unknown',
-        value: item.count,
-        color: palette[index % palette.length]
-      }))
-      .sort((a, b) => b.value - a.value);
+  const messagePieData = messageStats.messagesPerProperty
+    .map((item, index) => ({
+      name: item.propertyName || `Property ${index + 1}`,
+      value: item.count,
+      color: palette[index % palette.length]
+    }))
+    .sort((a, b) => b.value - a.value);
 
     return {
       totalListings,

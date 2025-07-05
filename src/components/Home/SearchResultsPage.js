@@ -6,6 +6,8 @@ import axios from 'axios';
 import loadGoogleMaps from '../Utils/loadGoogleMaps';
 import { AuthContext } from '../../context/AuthContext';
 import config from '../../config';
+import EnhancedLoading from '../EnhancedLoading';
+
 // Utility function to normalize listing data
 const normalizeListing = (listing, listingType) => {
   let languages = [];
@@ -134,7 +136,7 @@ const SearchResultsPage = () => {
   useEffect(() => {
     console.log('searchResults updated:', searchResults);
   }, [searchResults]);
-
+  
   const normalizeCityName = (city) => {
     if (!city) return '';
     
@@ -297,42 +299,43 @@ const SearchResultsPage = () => {
   }, [searchType, initialResults.length, initialSearchType]);
 
   const fetchListings = async () => {
-    setIsLoading(true);
-    let endpoint;
-    let listingType;
-    
-    switch(searchType) {
-      case 'roommates':
-        endpoint = `${config.apiBaseUrl}/api/wanted-listings`;
-        listingType = 'roommate';
-        break;
-      case 'pg':
-        endpoint = `${config.apiBaseUrl}/api/accommodations`;
-        listingType = 'pg';
-        break;
-      case 'co-living':
-        endpoint = `${config.apiBaseUrl}/api/accommodations`;
-        listingType = 'pg';
-        break;
-      default: // 'flats'
-        endpoint = `${config.apiBaseUrl}/api/listings`;
-        listingType = 'flat';
-    }
-    
-    try {
-      const res = await axios.get(endpoint);
-      const listings = Array.isArray(res.data) ? 
-        res.data.map(listing => normalizeListing(listing, listingType)) : [];
-      setMyListings(listings);
-      updateFilteredListings(listings);
-    } catch (err) {
-      console.error("Error fetching listings:", err);
-      setMyListings([]);
-      updateFilteredListings([]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  setIsLoading(true);
+  let endpoint;
+  let listingType;
+  
+  switch(searchType) {
+    case 'roommates':
+      endpoint = `${config.apiBaseUrl}/api/wanted-listings`;
+      listingType = 'roommate';
+      break;
+    case 'pg':
+      endpoint = `${config.apiBaseUrl}/api/accommodations`;
+      listingType = 'pg';
+      break;
+    case 'co-living':
+      endpoint = `${config.apiBaseUrl}/api/accommodations`;
+      listingType = 'pg';
+      break;
+    default: // 'flats'
+      endpoint = `${config.apiBaseUrl}/api/listings`;
+      listingType = 'flat';
+  }
+  
+  try {
+    const res = await axios.get(endpoint);
+    const listings = Array.isArray(res.data) ? 
+      res.data.map(listing => normalizeListing(listing, listingType)) : [];
+    setMyListings(listings);
+    updateFilteredListings(listings);
+  } catch (err) {
+    console.error("Error fetching listings:", err);
+    setMyListings([]);
+    updateFilteredListings([]);
+  } finally {
+    // Add slight delay to prevent flickering when loading is very fast
+    setTimeout(() => setIsLoading(false), 300);
+  }
+};
 
   const updateFilteredListings = (listings) => {
     console.log('Updating filtered listings with:', listings);
@@ -728,7 +731,7 @@ const SearchResultsPage = () => {
     console.log('Final results to show:', resultsToShow);
     setSearchResults(resultsToShow);
   }, [activeTab, sidebarFilters, filteredListings, user]);
-
+  
   const openListingDetails = (listing) => {
     localStorage.setItem('selectedListing', JSON.stringify(listing));
     const detailsUrl = `${window.location.origin}/listing-details/${listing._id}`;
@@ -1075,9 +1078,8 @@ const SearchResultsPage = () => {
 
           {/* Results Grid */}
           {isLoading ? (
-            <div className="loading-spinner">
-              <div className="spinner"></div>
-              <p>Loading {searchType} listings...</p>
+             <div className="px-4 py-6">
+              <EnhancedLoading />
             </div>
           ) : searchResults.length > 0 ? (
             <div className="results-grid">

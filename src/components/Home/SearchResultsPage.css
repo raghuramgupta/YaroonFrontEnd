@@ -465,6 +465,117 @@ body {
 .tab-item.active {
   background-color: #1a73e8;
   color: white;
+}/* Enhanced Loading Animations */
+@keyframes progress {
+  0% { width: 0%; }
+  100% { width: 100%; }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+.animate-progress {
+  animation: progress 2s ease-in-out infinite alternate;
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.loading-container {
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Property Card Skeleton Loading */
+.property-card.skeleton {
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.skeleton .property-image {
+  background: #f3f4f6;
+  height: 200px;
+  position: relative;
+  overflow: hidden;
+}
+
+.skeleton .property-details {
+  padding: 16px;
+}
+
+.skeleton .property-details h3 {
+  background: #f3f4f6;
+  height: 24px;
+  width: 70%;
+  margin-bottom: 12px;
+  border-radius: 4px;
+}
+
+.skeleton .property-details p {
+  background: #f3f4f6;
+  height: 16px;
+  width: 90%;
+  margin-bottom: 16px;
+  border-radius: 4px;
+}
+
+.skeleton .property-features span {
+  background: #f3f4f6;
+  height: 16px;
+  width: 80px;
+  display: inline-block;
+  margin-right: 8px;
+  border-radius: 4px;
+}
+
+.skeleton .property-footer {
+  margin-top: 16px;
+}
+
+.skeleton .property-footer .price {
+  background: #f3f4f6;
+  height: 24px;
+  width: 100px;
+  border-radius: 4px;
+}
+
+/* Shimmer effect for skeleton */
+.skeleton-shimmer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.5),
+    transparent
+  );
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
 }
 @keyframes spin {
   0% { transform: rotate(0deg); }
