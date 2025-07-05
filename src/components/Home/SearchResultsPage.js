@@ -25,6 +25,14 @@ const normalizeListing = (listing, listingType) => {
   } else if (listing.listingType) {
     propertyType = listing.listingType;
   }
+  let propertyStructure = '';
+  if (listing.propertyStructure) {
+    propertyStructure = listing.propertyStructure.toLowerCase().trim();
+    // Standardize the value
+    if (propertyStructure.includes('Gated') || propertyStructure.includes('community')) {
+      propertyStructure = 'gated community';
+    }
+  }
 
   // Common fields for all listing types
   const baseFields = {
