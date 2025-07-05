@@ -135,17 +135,35 @@ const Dashboard = () => {
 
     // Prepare daily views data
     const dayMap = {};
-    filteredStats.forEach((listing) => {
+  
+  // First pass: aggregate all views by date
+  filteredStats.forEach((listing) => {
+    (listing.viewsLog || []).forEach((v) => {
+      if (!v.viewer || v.viewer === userKey) return;
+      const day = new Date(v.date).toISOString().slice(0, 10);
+      if (!dayMap[day]) {
+        dayMap[day] = {
+          date: day,
+          total: 0,
+          properties: {}
+        };
+      }
+      dayMap[day].total += 1;
+      
+      // Track by property if needed
       const addrKey = listing.propertyAddress;
-      (listing.viewsLog || []).forEach((v) => {
-        if (!v.viewer || v.viewer === userKey) return;
-        const day = new Date(v.date).toISOString().slice(0, 10);
-        if (!dayMap[day]) dayMap[day] = { date: day };
-        dayMap[day][addrKey] = (dayMap[day][addrKey] || 0) + 1;
-      });
+      dayMap[day].properties[addrKey] = (dayMap[day].properties[addrKey] || 0) + 1;
     });
+  });
 
-    const lineData = Object.values(dayMap).sort((a, b) => a.date.localeCompare(b.date));
+
+    const lineData = Object.values(dayMap)
+    .map(day => ({
+      date: day.date,
+      total: day.total,
+      ...day.properties
+    }))
+    .sort((a, b) => a.date.localeCompare(b.date));
 
     // Prepare locality and type data
     const localityCounts = {};
@@ -430,32 +448,32 @@ const Dashboard = () => {
                   {processedData.lineData.length > 0 ? (
                     <ResponsiveContainer width="100%" height={300}>
                       <AreaChart data={processedData.lineData}>
-                        <defs>
-                          <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.8}/>
-                            <stop offset="95%" stopColor="#4f46e5" stopOpacity={0}/>
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-                        <XAxis 
-                          dataKey="date" 
-                          tick={{ fill: '#6b7280' }}
-                          tickFormatter={(date) => format(new Date(date), 'MMM d')}
-                        />
-                        <YAxis 
-                          allowDecimals={false} 
-                          tick={{ fill: '#6b7280' }}
-                        />
-                        <Tooltip content={<CustomTooltip />} />
-                        <Area
-                          type="monotone"
-                          dataKey={activeProperty || "total"}
-                          stroke="#4f46e5"
-                          fillOpacity={1}
-                          fill="url(#colorViews)"
-                          activeDot={{ r: 6 }}
-                        />
-                      </AreaChart>
+                      <defs>
+                        <linearGradient id="colorViews" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.8}/>
+                          <stop offset="95%" stopColor="#4f46e5" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+                      <XAxis 
+                        dataKey="date" 
+                        tick={{ fill: '#6b7280' }}
+                        tickFormatter={(date) => format(new Date(date), 'MMM d')}
+                      />
+                      <YAxis 
+                        allowDecimals={false} 
+                        tick={{ fill: '#6b7280' }}
+                      />
+                      <Tooltip content={<CustomTooltip />} />
+                      <Area
+                        type="monotone"
+                        dataKey="total"  // Changed to use the aggregated total
+                        stroke="#4f46e5"
+                        fillOpacity={1}
+                        fill="url(#colorViews)"
+                        activeDot={{ r: 6 }}
+                      />
+                    </AreaChart>
                     </ResponsiveContainer>
                   ) : (
                     <div className="no-data-message">

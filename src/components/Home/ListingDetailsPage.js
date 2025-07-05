@@ -81,6 +81,7 @@ const ListingDetailsPage = () => {
         body: JSON.stringify({
           senderId: user,
           receiverId: listing.userKey,
+          listingId: listing._id, // Include listing ID
           listingAddress: listing.propertyAddress,
           content: messageText.trim(),
           timestamp: new Date(),
