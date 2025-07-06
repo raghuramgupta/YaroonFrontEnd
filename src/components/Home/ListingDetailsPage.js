@@ -173,9 +173,10 @@ const ListingDetailsPage = () => {
                       aria-label={`View image ${idx + 1}`}
                     >
                       <img
-                        src={img}
+                        src={`${config.apiBaseUrl}${img}`} 
                         alt={`Thumbnail ${idx + 1}`}
                         className="thumbnail"
+                        loading="lazy" 
                       />
                     </button>
                   ))}
