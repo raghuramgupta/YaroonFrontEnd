@@ -15,6 +15,9 @@ import MessagesInbox from './components/UserProfile/MessagesInbox';
 import Dashboard from './components/Listing/Dashboard';
 import WantedRoomForm from './components/Listing/FlaWantedRoomForm';import CustomerSupport from './components/CustomerCare/CustomerSupport';
 import AccommodationForm from './components/Listing/AccommodationForm'
+import StaffRegister  from './components/UserProfile/StaffRegister';
+import StaffLogin  from './components/UserProfile/StaffLogin';
+import StaffDashboard  from './components/UserProfile/StaffDashboard';
 
 function App() {
   return (<AuthProvider>
@@ -35,6 +38,9 @@ function App() {
         <Route path="/need-place" element={<WantedRoomForm />} />
         <Route path="/AccommodationForm" element={<AccommodationForm />} />
         <Route path="/edit-wanted-listing/:id" element={<WantedRoomForm />} />
+         <Route path="/staff/register" element={<StaffRegister />} />
+        <Route path="/staff/login" element={<StaffLogin />} />
+        <Route path="/staff/dashboard" element={<StaffDashboard />} />
         // Change the route to use AccommodationForm instead
         <Route path="/edit-pg-listing/:id" element={<AccommodationForm editMode={true} />} />
         <Route path="/support" element={<CustomerSupport />} /><Route path="/accommodation-form" element={<AccommodationForm />} />
