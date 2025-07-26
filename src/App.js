@@ -18,7 +18,8 @@ import AccommodationForm from './components/Listing/AccommodationForm'
 import StaffRegister  from './components/UserProfile/StaffRegister';
 import StaffLogin  from './components/UserProfile/StaffLogin';
 import StaffDashboard  from './components/UserProfile/StaffDashboard';
-
+import AdminPage from './components/Admin/AdminPage';
+import TicketManagement from './components/CustomerCare/TicketManagement';
 function App() {
   return (<AuthProvider>
       <Routes>
@@ -34,8 +35,10 @@ function App() {
         <Route path="/listing-details/:id" element={<ListingDetailsPage />} />
         <Route path="/inbox" element={<MessagesInbox />} />
         <Route path="/edit-listing/:listingId" element={<PropertyDescriptionForm />} />
+        <Route path= "/TicketManagement" element={<TicketManagement />} />
         <Route path="/Daeshboard" element={<Dashboard />} />
         <Route path="/need-place" element={<WantedRoomForm />} />
+        <Route path="/AdminPage" element={<AdminPage />} />
         <Route path="/AccommodationForm" element={<AccommodationForm />} />
         <Route path="/edit-wanted-listing/:id" element={<WantedRoomForm />} />
          <Route path="/staff/register" element={<StaffRegister />} />

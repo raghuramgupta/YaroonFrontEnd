@@ -3,9 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import Header from '../Header/Header';
 import './CustomerSupport.css';
-import config from '../../config';
+import config from '../../config'
 
 const CustomerSupport = () => {
+  const [title, setTitle] = useState('');
   const [issueType, setIssueType] = useState('');
   const [user, setUser] = useState(null);
   const [listingId, setListingId] = useState('');
@@ -19,6 +20,10 @@ const CustomerSupport = () => {
   const [editingTicket, setEditingTicket] = useState(null);
   const [userListings, setUserListings] = useState([]);
   const [isFetchingListings, setIsFetchingListings] = useState(false);
+  const [selectedTicket, setSelectedTicket] = useState(null);
+  const [newMessage, setNewMessage] = useState('');
+  const [attachments, setAttachments] = useState([]);
+  const [previewUrls, setPreviewUrls] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -45,7 +50,6 @@ const CustomerSupport = () => {
           }
 
           const response = await axios.get(`${config.apiBaseUrl}/api/listings/user/${encodeURIComponent(parsedUserId)}`);
-          
           setUserListings(response.data);
         } catch (error) {
           console.error('Error fetching user listings:', error);
@@ -80,6 +84,21 @@ const CustomerSupport = () => {
     }
   };
 
+  const fetchTicketDetails = async (ticketId) => {
+    try {
+      setIsLoading(true);
+      const response = await axios.get(`${config.apiBaseUrl}/api/support/${ticketId}`, {
+        params: { userId: user }
+      });
+      setSelectedTicket(response.data);
+    } catch (error) {
+      console.error('Error fetching ticket details:', error);
+      alert('Failed to load ticket details');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const issueTypes = [
     'Problem with a listing',
     'Can\'t create a listing',
@@ -87,6 +106,20 @@ const CustomerSupport = () => {
     'Payment problems',
     'Other'
   ];
+
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files);
+    setAttachments(files);
+    
+    // Create preview URLs for images
+    const urls = files.map(file => {
+      if (file.type.startsWith('image/')) {
+        return URL.createObjectURL(file);
+      }
+      return null;
+    });
+    setPreviewUrls(urls);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -107,30 +140,41 @@ const CustomerSupport = () => {
         return;
       }
 
-      if (editingTicket) {
-        const response = await axios.put(`${config.apiBaseUrl}/api/support/${editingTicket._id}`, {
-          issueType,
-          listingId: issueType === 'Problem with a listing' ? listingId : undefined,
-          description,
-          userId: userId.toString()
-        });
+      const formData = new FormData();
+      formData.append('title', title);
+      formData.append('issueType', issueType);
+      formData.append('description', description);
+      formData.append('userId', userId);
+      
+      if (issueType === 'Problem with a listing') {
+        formData.append('listingId', listingId);
+      }
 
+      attachments.forEach(file => {
+        formData.append('attachments', file);
+      });
+
+      const config = {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      };
+      
+      const axiosConfig = {  // Changed from 'config' to 'axiosConfig'
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      };
+      if (editingTicket) {
+        const response = await axios.put(`http://localhost:5000/api/support/${editingTicket._id}`, formData, axiosConfig);
         setSuccessMessage('Support ticket updated successfully!');
         setEditingTicket(null);
       } else {
-        const response = await axios.post(`${config.apiBaseUrl}/api/support`, {
-          issueType,
-          listingId: issueType === 'Problem with a listing' ? listingId : undefined,
-          description,
-          userId: userId.toString()
-        });
-
+        const response = await axios.post("http://localhost:5000/api/support", formData, axiosConfig);
         setSuccessMessage('Your support ticket has been submitted successfully!');
       }
 
-      setIssueType('');
-      setListingId('');
-      setDescription('');
+      resetForm();
       await fetchTickets(userId);
       setActiveTab('existing');
       
@@ -147,8 +191,51 @@ const CustomerSupport = () => {
     }
   };
 
+  const handleSendMessage = async () => {
+    if (!newMessage.trim() && attachments.length === 0) return;
+
+    try {
+      const formData = new FormData();
+      formData.append('senderType', 'user');
+      formData.append('senderId', user);
+      formData.append('content', newMessage);
+      
+      attachments.forEach(file => {
+        formData.append('attachments', file);
+      });
+
+      const response = await axios.post(
+        `${config.apiBaseUrl}/api/support/${selectedTicket._id}/messages`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        }
+      );
+
+      setSelectedTicket(response.data.ticket);
+      setNewMessage('');
+      setAttachments([]);
+      setPreviewUrls([]);
+    } catch (error) {
+      console.error('Error sending message:', error);
+      alert('Failed to send message');
+    }
+  };
+
+  const resetForm = () => {
+    setTitle('');
+    setIssueType('');
+    setListingId('');
+    setDescription('');
+    setAttachments([]);
+    setPreviewUrls([]);
+  };
+
   const handleEditTicket = (ticket) => {
     setEditingTicket(ticket);
+    setTitle(ticket.title);
     setIssueType(ticket.issueType);
     setListingId(ticket.listingId || '');
     setDescription(ticket.description);
@@ -172,7 +259,7 @@ const CustomerSupport = () => {
         userId = currentUserString;
       }
 
-      await axios.delete(`${config.apiBaseUrl}/api/support/${ticketId}`, {
+      await axios.delete("http://localhost:5000/api/support/${ticketId}", {
         params: { userId }
       });
 
@@ -190,15 +277,46 @@ const CustomerSupport = () => {
 
   const cancelEdit = () => {
     setEditingTicket(null);
-    setIssueType('');
-    setListingId('');
-    setDescription('');
+    resetForm();
+  };
+
+  const renderAttachmentPreview = (attachment) => {
+  switch (attachment.type) {
+    case 'image':
+      return <img src={attachment.url} alt={attachment.originalName} className="attachment-preview" />;
+    case 'video':
+      return (
+        <video controls className="attachment-preview">
+          <source src={attachment.url} type="video/mp4" />
+          Your browser does not support the video tag.
+        </video>
+      );
+    default:
+      return (
+        <div className="file-attachment">
+          <a href={attachment.url} download>
+            {attachment.originalName}
+          </a>
+        </div>
+      );
+    }
   };
 
   const renderNewTicketForm = () => (
     <div className="support-form">
       <h2>{editingTicket ? 'Edit Support Ticket' : 'Submit a New Support Request'}</h2>
       <form onSubmit={handleSubmit}>
+        <div className="form-group">
+          <label>Title</label>
+          <input
+            type="text"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            required
+            placeholder="Brief description of your issue"
+          />
+        </div>
+
         <div className="form-group">
           <label>What's the issue about?</label>
           <select 
@@ -256,6 +374,29 @@ const CustomerSupport = () => {
             placeholder="Provide details about your issue..."
           />
         </div>
+
+        <div className="form-group">
+          <label>Attachments (optional)</label>
+          <input
+            type="file"
+            onChange={handleFileChange}
+            multiple
+            accept="image/*, video/*, .pdf, .doc, .docx"
+          />
+          <div className="attachment-previews">
+            {previewUrls.map((url, index) => (
+              url && <img key={index} src={url} alt="Preview" className="attachment-preview" />
+            ))}
+            {attachments.map((file, index) => (
+              !file.type.startsWith('image/') && (
+                <div key={index} className="file-attachment">
+                  {file.name}
+                </div>
+              )
+            ))}
+          </div>
+        </div>
+
         <div className="form-actions">
           <button type="submit">{editingTicket ? 'Update Ticket' : 'Submit Request'}</button>
           {editingTicket && (
@@ -280,8 +421,8 @@ const CustomerSupport = () => {
           <thead>
             <tr>
               <th>Date</th>
+              <th>Title</th>
               <th>Type</th>
-              <th>Description</th>
               <th>Status</th>
               <th>Actions</th>
             </tr>
@@ -290,28 +431,34 @@ const CustomerSupport = () => {
             {tickets.map((ticket) => (
               <tr key={ticket._id}>
                 <td>{new Date(ticket.createdAt).toLocaleDateString()}</td>
+                <td>{ticket.title}</td>
                 <td>{ticket.issueType}</td>
-                <td className="description-cell">{ticket.description}</td>
                 <td className={`status ${ticket.status.toLowerCase()}`}>
                   {ticket.status}
                 </td>
                 <td className="actions-cell">
-                  {ticket.status === 'open' && (
-                    <>
-                      <button 
-                        onClick={() => handleEditTicket(ticket)}
-                        className="edit-button"
-                      >
-                        Edit
-                      </button>
-                      <button 
-                        onClick={() => handleDeleteTicket(ticket._id)}
-                        className="delete-button"
-                      >
-                        Delete
-                      </button>
-                    </>
-                  )}
+                  <button 
+                    onClick={() => {
+                      setSelectedTicket(ticket);
+                      setActiveTab('conversation');
+                    }}
+                    className="view-button"
+                  >
+                    View
+                  </button>
+                  <button 
+                    onClick={() => handleEditTicket(ticket)}
+                    className="edit-button"
+                    disabled={ticket.status !== 'open'}
+                  >
+                    Edit
+                  </button>
+                  <button 
+                    onClick={() => handleDeleteTicket(ticket._id)}
+                    className="delete-button"
+                  >
+                    Delete
+                  </button>
                 </td>
               </tr>
             ))}
@@ -320,6 +467,97 @@ const CustomerSupport = () => {
       )}
     </div>
   );
+
+  const renderConversation = () => {
+    if (!selectedTicket) return <div>No ticket selected</div>;
+
+    return (
+      <div className="conversation-view">
+        <button 
+          className="back-button"
+          onClick={() => setActiveTab('existing')}
+        >
+          &larr; Back to Tickets
+        </button>
+
+        <div className="ticket-header">
+          <h2>{selectedTicket.title}</h2>
+          <div className="ticket-meta">
+            <span className={`status ${selectedTicket.status.toLowerCase()}`}>
+              {selectedTicket.status}
+            </span>
+            <span>Created: {new Date(selectedTicket.createdAt).toLocaleString()}</span>
+          </div>
+        </div>
+
+        <div className="messages-container">
+          {selectedTicket.messages.map((message, index) => (
+            <div 
+              key={index} 
+              className={`message ${message.senderType === 'user' ? 'user-message' : 'staff-message'}`}
+            >
+              <div className="message-header">
+                <span className="sender">
+                  {message.senderType === 'user' ? 'You' : 'Support Agent'}
+                </span>
+                <span className="timestamp">
+                  {new Date(message.createdAt).toLocaleString()}
+                </span>
+              </div>
+              <div className="message-content">
+                {message.content}
+              </div>
+              {message.attachments && message.attachments.length > 0 && (
+                <div className="message-attachments">
+                  {message.attachments.map((attachment, idx) => (
+                    <div key={idx} className="attachment">
+                      {renderAttachmentPreview(attachment)}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        <div className="message-composer">
+          <textarea
+            value={newMessage}
+            onChange={(e) => setNewMessage(e.target.value)}
+            placeholder="Type your message here..."
+            rows="3"
+          />
+          <div className="composer-controls">
+            <div className="file-upload">
+              <label>
+                <input
+                  type="file"
+                  onChange={handleFileChange}
+                  multiple
+                  accept="image/*, video/*, .pdf, .doc, .docx"
+                />
+                Attach Files
+              </label>
+              {attachments.length > 0 && (
+                <span className="file-count">{attachments.length} file(s) selected</span>
+              )}
+            </div>
+            <button 
+              onClick={handleSendMessage}
+              disabled={!newMessage.trim() && attachments.length === 0}
+            >
+              Send
+            </button>
+          </div>
+          <div className="attachment-previews">
+            {previewUrls.map((url, index) => (
+              url && <img key={index} src={url} alt="Preview" className="attachment-preview" />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="customer-support">
@@ -331,26 +569,33 @@ const CustomerSupport = () => {
         </div>
       )}
       
-      <div className="support-tabs">
-        <button 
-          className={`tab-button ${activeTab === 'new' ? 'active' : ''}`}
-          onClick={() => setActiveTab('new')}
-        >
-          {editingTicket ? 'Editing Ticket' : 'New Ticket'}
-        </button>
-        <button 
-          className={`tab-button ${activeTab === 'existing' ? 'active' : ''}`}
-          onClick={() => {
-            setEditingTicket(null);
-            setActiveTab('existing');
-          }}
-        >
-          Existing Tickets
-        </button>
-      </div>
+      {activeTab !== 'conversation' && (
+        <div className="support-tabs">
+          <button 
+            className={`tab-button ${activeTab === 'new' ? 'active' : ''}`}
+            onClick={() => {
+              setEditingTicket(null);
+              setActiveTab('new');
+            }}
+          >
+            {editingTicket ? 'Editing Ticket' : 'New Ticket'}
+          </button>
+          <button 
+            className={`tab-button ${activeTab === 'existing' ? 'active' : ''}`}
+            onClick={() => {
+              setEditingTicket(null);
+              setActiveTab('existing');
+            }}
+          >
+            Existing Tickets
+          </button>
+        </div>
+      )}
       
       <div className="tab-content">
-        {activeTab === 'new' ? renderNewTicketForm() : renderExistingTickets()}
+        {activeTab === 'new' && renderNewTicketForm()}
+        {activeTab === 'existing' && renderExistingTickets()}
+        {activeTab === 'conversation' && renderConversation()}
       </div>  
     </div>
   );

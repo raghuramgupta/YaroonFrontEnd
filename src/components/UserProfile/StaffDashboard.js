@@ -1,244 +1,235 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
-import { 
-  FiLogOut, 
-  FiUser, 
-  FiMail, 
-  FiShield, 
-  FiCalendar, 
-  FiHome 
-} from 'react-icons/fi';
-import PropTypes from 'prop-types';
+import { useNavigate } from 'react-router-dom';
+import StaffHeader from '../Header/StaffHeader';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell } from 'recharts';
 import './StaffDashboard.css';
-import config from '../../config';
 
 const StaffDashboard = () => {
-  const [staff, setStaff] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const [stats, setStats] = useState({
+  totalListings: 0,
+  totalUsers: 0,
+  todayListings: 0,
+  activeListings: 0,
+  weeklyListings: 0,
+  monthlyListings: 0,
+  weeklyUsers: 0,
+  monthlyUsers: 0,
+  listingsByLocation: [],
+  usersByLocation: [],
+  openTickets: 0,
+  inProgressTickets: 0,
+  resolvedTickets: 0,
+  totalTickets: 0
+});
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let isMounted = true;
-    const controller = new AbortController();
-    
-    const fetchStaff = async () => {
-      try {
-        const token = localStorage.getItem('staffToken');
-        
-        if (!token) {
-          navigate('/staff/login');
-          return;
-        }
-
-        const res = await axios.get(`${config.apiBaseUrl}/api/staff/me`, {
-          headers: {
-            'x-auth-token': token
-          },
-          signal: controller.signal,
-          timeout: 10000 // 10 second timeout
-        });
-       
-        if (isMounted) {
-          setStaff(res.data);
-          setError(null);
-        }
-      } catch (err) {
-        if (isMounted) {
-          console.error('Error fetching staff data:', err);
-          setError(err.response?.data?.message || err.message);
-          
-          if (err.response?.status === 401) {
-            localStorage.removeItem('staffToken');
-            navigate('/staff/login');
-          }
-        }
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    fetchStaff();
-
-    return () => {
-      isMounted = false;
-      controller.abort();
-    };
+    const token = localStorage.getItem('staffToken');
+    if (!token) {
+      navigate('/staff/login');
+    } else {
+      fetchDashboardData();
+    }
   }, [navigate]);
 
-  const logout = () => {
+  const fetchDashboardData = async () => {
+    try {
+      const token = localStorage.getItem('staffToken');
+      const response = await fetch('http://localhost:5000/api/staff/dashboard', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch dashboard data');
+      }
+      
+      const data = await response.json();
+      setStats({
+        totalListings: data.totalListings || 0,
+        totalUsers: data.totalUsers || 0,
+        todayListings: data.todayListings || 0,
+        activeListings: data.activeListings || 0,
+        weeklyListings: data.weeklyListings || 0,
+        monthlyListings: data.monthlyListings || 0,
+        weeklyUsers: data.weeklyUsers || 0,
+        monthlyUsers: data.monthlyUsers || 0,
+        listingsByLocation: data.listingsByCity || [],
+        usersByLocation: data.usersByLocation || [],
+        openTickets: data.openTickets || 0,
+        inProgressTickets: data.inProgressTickets || 0,
+        resolvedTickets: data.resolvedTickets || 0,
+        totalTickets: data.totalTickets || 0
+      });
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+      setLoading(false);
+    }
+  };
+
+  const handleLogout = () => {
     localStorage.removeItem('staffToken');
     navigate('/staff/login');
   };
 
-  if (isLoading) {
-    return (
-      <div className="loading-container">
-        <div className="loading-spinner" aria-label="Loading..."></div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="error-container">
-        <h2>Error Loading Dashboard</h2>
-        <p>{error}</p>
-        <button 
-          onClick={() => window.location.reload()}
-          className="retry-button"
-        >
-          Retry
-        </button>
-      </div>
-    );
-  }
-
-  if (!staff) {
-    return (
-      <div className="error-container">
-        <h2>No Staff Data Found</h2>
-        <p>Please try logging in again</p>
-        <button 
-          onClick={logout}
-          className="logout-button"
-        >
-          <FiLogOut className="button-icon" /> Go to Login
-        </button>
-      </div>
-    );
-  }
+  const COLORS = ['#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'];
 
   return (
-    <div className="staff-dashboard">
-      {/* Header */}
-      <header className="dashboard-header">
-        <div className="header-content">
-          <h1>Yaroon Staff Portal</h1>
-          <button
-            onClick={logout}
-            className="logout-button"
-            aria-label="Logout"
-          >
-            <FiLogOut className="button-icon" /> Logout
-          </button>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="dashboard-main">
-        <div className="profile-card">
-          {/* Profile Section */}
-          <div className="profile-section">
-            <div className="profile-info">
-              <div className="profile-avatar" aria-label="Profile picture">
-                <FiUser className="avatar-icon" />
-              </div>
-              <div className="profile-details">
-                <h2>{staff.name}</h2>
-                <p>{staff.email}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Stats */}
-          <div className="stats-section">
-            <div className="stats-grid">
-              <div className="stat-card">
-                <div className="stat-icon-container">
-                  <FiShield className="stat-icon" aria-hidden="true" />
-                </div>
-                <div className="stat-content">
-                  <p className="stat-label">Role</p>
-                  <p className="stat-value">{staff.role}</p>
-                </div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-icon-container">
-                  <FiCalendar className="stat-icon" aria-hidden="true" />
-                </div>
-                <div className="stat-content">
-                  <p className="stat-label">Member Since</p>
-                  <p className="stat-value">
-                    {new Date(staff.createdAt).toLocaleDateString()}
-                  </p>
-                </div>
-              </div>
-              <div className="stat-card">
-                <div className="stat-icon-container">
-                  <FiHome className="stat-icon" aria-hidden="true" />
-                </div>
-                <div className="stat-content">
-                  <p className="stat-label">Properties</p>
-                  <p className="stat-value">
-                    {staff.propertyCount || 'Loading...'}
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Quick Actions */}
-          <div className="actions-section">
-            <h3>Quick Actions</h3>
-            <div className="actions-grid">
-              <Link
-                to="/staff/properties"
-                className="action-card"
-                aria-label="Manage Properties"
-              >
-                <div className="action-icon">
-                  <FiHome aria-hidden="true" />
-                </div>
-                <h4>Manage Properties</h4>
-                <p>View and edit properties</p>
-              </Link>
-              <Link
-                to="/staff/tenants"
-                className="action-card"
-                aria-label="Tenant Management"
-              >
-                <div className="action-icon">
-                  <FiUser aria-hidden="true" />
-                </div>
-                <h4>Tenant Management</h4>
-                <p>Manage tenant accounts</p>
-              </Link>
-              <Link
-                to="/staff/reports"
-                className="action-card"
-                aria-label="Reports"
-              >
-                <div className="action-icon">
-                  <FiShield aria-hidden="true" />
-                </div>
-                <h4>Reports</h4>
-                <p>Generate financial reports</p>
-              </Link>
-              <Link
-                to="/staff/settings"
-                className="action-card"
-                aria-label="Settings"
-              >
-                <div className="action-icon">
-                  <FiMail aria-hidden="true" />
-                </div>
-                <h4>Settings</h4>
-                <p>Account preferences</p>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </main>
+  <div className="staff-dashboard">
+    <StaffHeader />
+    <div className="dashboard-header">
+      <h1>Dashboard Overview</h1>
+      <button onClick={handleLogout} className="logout-btn">
+        Sign Out
+      </button>
     </div>
-  );
-};
 
-StaffDashboard.propTypes = {
-  // Add prop types if this component receives any props
+    {loading ? (
+      <div className="loading-state">Loading data...</div>
+    ) : (
+      <>
+        {/* Main Stats Grid */}
+        <div className="stats-grid">
+          {/* Property Stats */}
+          <div className="stat-card">
+            <h3>Total Listings</h3>
+            <p>{stats.totalListings.toLocaleString()}</p>
+          </div>
+          <div className="stat-card">
+            <h3>Total Users</h3>
+            <p>{stats.totalUsers.toLocaleString()}</p>
+          </div>
+          <div className="stat-card">
+            <h3>Active Listings</h3>
+            <p>{stats.activeListings.toLocaleString()}</p>
+          </div>
+          <div className="stat-card">
+            <h3>Today's Listings</h3>
+            <p>{stats.todayListings.toLocaleString()}</p>
+          </div>
+          
+          {/* Ticket Stats */}
+          <div className="stat-card">
+            <h3>Total Tickets</h3>
+            <p>{stats.totalTickets.toLocaleString()}</p>
+          </div>
+          <div className="stat-card">
+            <h3>Open Tickets</h3>
+            <p>{stats.openTickets.toLocaleString()}</p>
+          </div>
+          <div className="stat-card">
+            <h3>In Progress</h3>
+            <p>{stats.inProgressTickets.toLocaleString()}</p>
+          </div>
+          <div className="stat-card">
+            <h3>Resolved</h3>
+            <p>{stats.resolvedTickets.toLocaleString()}</p>
+          </div>
+        </div>
+
+        {/* Recent Activity Section */}
+        <div className="dashboard-section">
+          <h2 className="section-title">Recent Activity</h2>
+          <div className="activity-grid">
+            <div className="activity-card">
+              <h3>Listings</h3>
+              <div className="activity-stats">
+                <div>
+                  <span>This Week</span>
+                  <strong>{stats.weeklyListings}</strong>
+                </div>
+                <div>
+                  <span>This Month</span>
+                  <strong>{stats.monthlyListings}</strong>
+                </div>
+              </div>
+            </div>
+            <div className="activity-card">
+              <h3>Users</h3>
+              <div className="activity-stats">
+                <div>
+                  <span>This Week</span>
+                  <strong>{stats.weeklyUsers}</strong>
+                </div>
+                <div>
+                  <span>This Month</span>
+                  <strong>{stats.monthlyUsers}</strong>
+                </div>
+              </div>
+            </div>
+            <div className="activity-card">
+              <h3>Tickets</h3>
+              <div className="activity-stats">
+                <div>
+                  <span>Open</span>
+                  <strong>{stats.openTickets}</strong>
+                </div>
+                <div>
+                  <span>In Progress</span>
+                  <strong>{stats.inProgressTickets}</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Charts Section */}
+        <div className="dashboard-section">
+          <h2 className="section-title">Analytics</h2>
+          <div className="charts-grid">
+            <div className="chart-card">
+              <h3>Listings by Location</h3>
+              {stats.listingsByLocation?.length > 0 ? (
+                <BarChart
+                  width={500}
+                  height={300}
+                  data={stats.listingsByLocation}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis dataKey="_id" />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="count" fill="#4f46e5" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              ) : (
+                <p className="no-data">No listing data available</p>
+              )}
+            </div>
+            
+            <div className="chart-card">
+              <h3>Users by Location</h3>
+              {stats.usersByLocation?.length > 0 ? (
+                <PieChart width={400} height={300}>
+                  <Pie
+                    data={stats.usersByLocation}
+                    cx="50%"
+                    cy="50%"
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="count"
+                    nameKey="_id"
+                    label={({ name, count }) => `${name}: ${count}`}
+                  >
+                    {stats.usersByLocation.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              ) : (
+                <p className="no-data">No user data available</p>
+              )}
+            </div>
+          </div>
+        </div>
+      </>
+    )}
+  </div>
+);
 };
 
 export default StaffDashboard;

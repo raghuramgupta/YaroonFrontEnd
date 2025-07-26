@@ -1,126 +1,104 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { FiLogIn, FiMail, FiLock, FiArrowRight } from 'react-icons/fi';
-import './StaffAuth.css';
-import config from '../../config';
+import './StaffLogin.css';import StaffHeader from '../Header/StaffHeader';
 
 const StaffLogin = () => {
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   });
-  const [errors, setErrors] = useState({});
-  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  const { email, password } = formData;
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
 
-  const onChange = e => setFormData({ ...formData, [e.target.name]: e.target.value });
-
-  const onSubmit = async e => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsLoading(true);
-    
     try {
-    const axiosConfig = {  // Renamed to avoid conflict
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      };
-
-      const body = JSON.stringify({ email, password });
-      const res = await axios.post(`${config.apiBaseUrl}/api/staff/login`, body, axiosConfig);
-
-      
-      localStorage.setItem('staffToken', res.data.token);
-      navigate('/staff/dashboard');
+      const response = await axios.post('http://localhost:5000/api/staff/login', formData);
+      if (response.data.success) {
+        localStorage.setItem('staffToken', response.data.token);
+        localStorage.setItem('currentStaff', JSON.stringify({
+          email: formData.email
+          // Add any other relevant staff data you need
+        }));
+        navigate('/staff/dashboard');
+      }
     } catch (err) {
-      setErrors(err.response?.data?.errors || { msg: err.response?.data?.msg || 'An error occurred' });
-    } finally {
-      setIsLoading(false);
+      setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
     }
   };
 
+  const handleForgotPassword = (e) => {
+    e.preventDefault();
+    navigate('/staff/forgot-password');
+  };
+
   return (
-    <div className="staff-auth-container">
-      <div className="staff-auth-card">
-        <div className="staff-auth-header">
-          <h1>Yaroon Staff Portal</h1>
-          <p>Sign in to your staff account</p>
+    <div className="staff-login-container"><StaffHeader></StaffHeader>
+      <div className="login-card">
+        <div className="login-header">
+          <h1 className="login-title">Staff Login</h1>
+          <p className="login-subtitle">Enter your credentials to access your account</p>
         </div>
-        
-        <form onSubmit={onSubmit} className="staff-auth-form">
-          {errors.msg && (
-            <div className="auth-error-message">
-              {errors.msg}
-            </div>
-          )}
-          
-          <div className="form-group">
-            <label htmlFor="email">
-              Email Address
-            </label>
-            <div className="input-with-icon">
-              <FiMail className="input-icon" />
-              <input
-                type="email"
-                id="email"
-                name="email"
-                value={email}
-                onChange={onChange}
-                placeholder="your@email.com"
-                required
-              />
-            </div>
+
+        {error && (
+          <div className="error-alert">
+            <svg className="error-icon" width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+            </svg>
+            <p className="error-text">{error}</p>
           </div>
-          
+        )}
+
+        <form className="login-form" onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="password">
-              Password
-            </label>
-            <div className="input-with-icon">
-              <FiLock className="input-icon" />
-              <input
-                type="password"
-                id="password"
-                name="password"
-                value={password}
-                onChange={onChange}
-                placeholder="••••••••"
-                required
-              />
-            </div>
-            <div className="forgot-password-link">
-              <Link to="/staff/forgot-password">
+            <label htmlFor="email" className="form-label">Email Address</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              className="form-input"
+              placeholder="you@example.com"
+              required
+            />
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="password" className="form-label">Password</label>
+            <input
+              type="password"
+              id="password"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              className="form-input"
+              placeholder="••••••••"
+              required
+            />
+            <div className="forgot-password">
+              <a href="/staff/forgot-password" onClick={handleForgotPassword} className="forgot-password-link">
                 Forgot password?
-              </Link>
+              </a>
             </div>
           </div>
-          
-          <button
-            type="submit"
-            disabled={isLoading}
-            className={`auth-submit-button ${isLoading ? 'loading' : ''}`}
-          >
-            {isLoading ? (
-              'Signing in...'
-            ) : (
-              <>
-                Sign In <FiArrowRight className="button-icon" />
-              </>
-            )}
+
+          <button type="submit" className="login-button">
+            Sign In
           </button>
-          
-          <div className="auth-footer">
-            <p>
-              Don't have an account?{' '}
-              <Link to="/staff/register">
-                Register here
-              </Link>
-            </p>
-          </div>
         </form>
+
+        <div className="login-footer">
+          Don't have an account?{' '}
+          <a href="/staff/register" className="login-footer-link">
+            Register here
+          </a>
+        </div>
       </div>
     </div>
   );
