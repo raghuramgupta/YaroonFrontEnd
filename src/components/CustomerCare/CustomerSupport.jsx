@@ -449,7 +449,7 @@ const CustomerSupport = () => {
                   <button 
                     onClick={() => handleEditTicket(ticket)}
                     className="edit-button"
-                    disabled={ticket.status !== 'open'}
+                    disabled={!['open', 'in-progress'].includes(ticket.status)}
                   >
                     Edit
                   </button>
@@ -469,48 +469,56 @@ const CustomerSupport = () => {
   );
 
   const renderConversation = () => {
-    if (!selectedTicket) return <div>No ticket selected</div>;
+  if (!selectedTicket) return <div className="no-ticket-selected">No ticket selected</div>;
 
-    return (
-      <div className="conversation-view">
+  return (
+    <div className="conversation-container">
+      <div className="conversation-header">
         <button 
           className="back-button"
           onClick={() => setActiveTab('existing')}
         >
           &larr; Back to Tickets
         </button>
-
-        <div className="ticket-header">
-          <h2>{selectedTicket.title}</h2>
+        
+        <div className="ticket-info">
+          <h2 className="ticket-title">{selectedTicket.title}</h2>
           <div className="ticket-meta">
-            <span className={`status ${selectedTicket.status.toLowerCase()}`}>
-              {selectedTicket.status}
+            <span className={`ticket-status ${selectedTicket.status.toLowerCase()}`}>
+              Status: {selectedTicket.status}
             </span>
-            <span>Created: {new Date(selectedTicket.createdAt).toLocaleString()}</span>
+            <span className="ticket-date">
+              Created: {new Date(selectedTicket.createdAt).toLocaleString()}
+            </span>
+            <span className="ticket-type">
+              Type: {selectedTicket.issueType}
+            </span>
           </div>
         </div>
+      </div>
 
-        <div className="messages-container">
+      <div className="conversation-content">
+        <div className="messages-list">
           {selectedTicket.messages.map((message, index) => (
             <div 
               key={index} 
-              className={`message ${message.senderType === 'user' ? 'user-message' : 'staff-message'}`}
+              className={`message-bubble ${message.senderType === 'user' ? 'user-message' : 'staff-message'}`}
             >
               <div className="message-header">
-                <span className="sender">
+                <span className="message-sender">
                   {message.senderType === 'user' ? 'You' : 'Support Agent'}
                 </span>
-                <span className="timestamp">
-                  {new Date(message.createdAt).toLocaleString()}
+                <span className="message-time">
+                  {new Date(message.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
               </div>
-              <div className="message-content">
+              <div className="message-text">
                 {message.content}
               </div>
               {message.attachments && message.attachments.length > 0 && (
                 <div className="message-attachments">
                   {message.attachments.map((attachment, idx) => (
-                    <div key={idx} className="attachment">
+                    <div key={idx} className="attachment-item">
                       {renderAttachmentPreview(attachment)}
                     </div>
                   ))}
@@ -520,44 +528,69 @@ const CustomerSupport = () => {
           ))}
         </div>
 
-        <div className="message-composer">
-          <textarea
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            placeholder="Type your message here..."
-            rows="3"
-          />
-          <div className="composer-controls">
-            <div className="file-upload">
-              <label>
-                <input
-                  type="file"
-                  onChange={handleFileChange}
-                  multiple
-                  accept="image/*, video/*, .pdf, .doc, .docx"
-                />
-                Attach Files
-              </label>
-              {attachments.length > 0 && (
-                <span className="file-count">{attachments.length} file(s) selected</span>
-              )}
+        <div className="message-input-area">
+          <div className="composer-box">
+            <textarea
+              value={newMessage}
+              onChange={(e) => setNewMessage(e.target.value)}
+              placeholder="Type your reply here..."
+              rows={3}
+              className="message-input"
+            />
+            <div className="composer-actions">
+              <div className="file-upload-container">
+                <label className="file-upload-label">
+                  <input
+                    type="file"
+                    onChange={handleFileChange}
+                    multiple
+                    accept="image/*, video/*, .pdf, .doc, .docx"
+                    className="file-input"
+                  />
+                  <span className="attach-icon">📎</span>
+                </label>
+                {attachments.length > 0 && (
+                  <span className="files-selected">{attachments.length} file(s) selected</span>
+                )}
+              </div>
+              <button 
+                onClick={handleSendMessage}
+                disabled={!newMessage.trim() && attachments.length === 0}
+                className="send-button"
+              >
+                Send
+              </button>
             </div>
-            <button 
-              onClick={handleSendMessage}
-              disabled={!newMessage.trim() && attachments.length === 0}
-            >
-              Send
-            </button>
-          </div>
-          <div className="attachment-previews">
-            {previewUrls.map((url, index) => (
-              url && <img key={index} src={url} alt="Preview" className="attachment-preview" />
-            ))}
+            {previewUrls.length > 0 && (
+              <div className="attachment-previews">
+                {previewUrls.map((url, index) => (
+                  url && (
+                    <div key={index} className="preview-item">
+                      <img src={url} alt="Preview" className="preview-image" />
+                      <button 
+                        onClick={() => {
+                          const newAttachments = [...attachments];
+                          const newPreviewUrls = [...previewUrls];
+                          newAttachments.splice(index, 1);
+                          newPreviewUrls.splice(index, 1);
+                          setAttachments(newAttachments);
+                          setPreviewUrls(newPreviewUrls);
+                        }}
+                        className="remove-preview"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  )
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
-    );
-  };
+    </div>
+  );
+};
 
   return (
     <div className="customer-support">

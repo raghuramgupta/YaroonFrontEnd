@@ -78,39 +78,38 @@ const TicketManagement = () => {
 
   const handleUpdateTicket = async (updatedData) => {
   try {
-    setLoading(true);
+    const formData = new FormData();
     
-    // Prepare the complete ticket data with required fields
-    const ticketData = {
-      issueType: selectedTicket.issueType,
-      description: selectedTicket.description,
-      userId: selectedTicket.userId,
-      ...updatedData // Spread in the updates (status, assignedTo, notes)
-    };
+    formData.append('status', updatedData.status || '');
+    formData.append('assignedTo', updatedData.assignedTo || '');
+    formData.append('notes', updatedData.assignmentNotes || '');
+    formData.append('messageContent', updatedData.newMessage || '');
+
+    if (updatedData.attachments) {
+      updatedData.attachments.forEach(file => {
+        formData.append('attachments', file);
+      });
+    }
 
     const response = await axios.put(
       `http://localhost:5000/api/support/${selectedTicket._id}`,
-      ticketData,
-      {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`
-        }
-      }
+      formData
     );
 
-    setTickets(prevTickets =>
-      prevTickets.map(ticket =>
-        ticket._id === selectedTicket._id ? response.data.ticket : ticket
-      )
-    );
-    
-    setSelectedTicket(response.data.ticket);
-    setError('');
+    // Handle success...
   } catch (err) {
-    console.error('Update error:', err);
-    setError(err.response?.data?.message || 'Error updating ticket');
-  } finally {
-    setLoading(false);
+    let errorMessage = err.response?.data?.error || err.message;
+    
+    // Handle validation errors
+    if (err.response?.data?.details) {
+      const validationErrors = Object.values(err.response.data.details)
+        .map(e => e.message)
+        .join(', ');
+      errorMessage = `Validation errors: ${validationErrors}`;
+    }
+    
+    setError(errorMessage || 'Error updating ticket');
+    throw err;
   }
 };
   const handleSelectionChange = (ticketId, staffId) => {
